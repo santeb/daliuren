@@ -1090,8 +1090,7 @@ function genAdvice(r,qtype){
   var zhangShengChu=SHENG[chuE]===zhangE; // 中传生初传
   var moShengZhang=SHENG[zhangE]===moE;   // 末传生中传
   
-  var html='<hr class="dv"><p><strong>◆ 针对您的问题：「</strong><span class="hl">'+escHtml(r.question)+'</span><strong>」</strong></p>';
-  html+='<p>系统识别为 <span class="hl">【'+qtype.l+'】</span> 类问题，以下为详细一事一断：</p>';
+  var html='';
   
   // ── 财运类 ──
   if(qtype.key==='cai'){
