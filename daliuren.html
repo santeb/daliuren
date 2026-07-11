@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大六壬占卜 · 天地盘</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Ma+Shan+Zheng&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #1a1410;
+  color: #d4c9b8;
+  font-family: 'Noto Serif SC', 'SimSun', serif;
+  min-height: 100vh;
+  padding: 20px;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset:0; z-index:-1;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 20%, rgba(160,80,30,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 80% 80%, rgba(80,40,10,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 30% 30% at 20% 70%, rgba(120,60,20,0.06) 0%, transparent 60%);
+}
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background: #2a221c; }
+::-webkit-scrollbar-thumb { background: #5a4a38; border-radius:3px; }
+.bg-pattern {
+  position: fixed; inset:0; z-index:-1; pointer-events:none;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(200,180,150,0.03) 80px, rgba(200,180,150,0.03) 81px),
+    repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(200,180,150,0.03) 80px, rgba(200,180,150,0.03) 81px);
+}
+
+/* === Header === */
+.header {
+  text-align: center;
+  padding: 40px 20px 20px;
+  position: relative;
+}
+.header::after {
+  content: '';
+  display: block;
+  width: 180px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #b8860b, transparent);
+  margin: 20px auto 0;
+}
+.header h1 {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 4rem;
+  color: #d4a853;
+  text-shadow: 0 0 40px rgba(180,120,40,0.3), 0 2px 4px rgba(0,0,0,0.5);
+  letter-spacing: 0.3em;
+  margin-bottom: 8px;
+}
+.header .subtitle {
+  font-size: 0.95rem;
+  color: #8a7a68;
+  letter-spacing: 0.15em;
+}
+
+/* === Container === */
+.container { max-width: 1100px; margin: 0 auto; }
+
+/* === Control Panel === */
+.control-panel {
+  background: linear-gradient(135deg, rgba(40,30,22,0.95), rgba(30,22,16,0.95));
+  border: 1px solid #3d2e1e;
+  border-radius: 12px;
+  padding: 24px 32px;
+  margin: 24px 0;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.control-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 130px;
+}
+.control-group label {
+  font-size: 0.82rem;
+  color: #a09078;
+  letter-spacing: 0.05em;
+}
+.control-group input,
+.control-group select {
+  background: #0f0a06;
+  border: 1px solid #3d2e1e;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #d4c9b8;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.95rem;
+  transition: border-color 0.3s;
+}
+.control-group input:focus,
+.control-group select:focus {
+  outline: none;
+  border-color: #b8860b;
+  box-shadow: 0 0 10px rgba(180,120,40,0.15);
+}
+.control-group select option { background: #1a1410; }
+
+/* Question Box */
+.question-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 2;
+  min-width: 280px;
+}
+.question-box label {
+  font-size: 0.82rem;
+  color: #a09078;
+  letter-spacing: 0.05em;
+}
+.question-box textarea {
+  background: #0f0a06;
+  border: 1px solid #3d2e1e;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #d4c9b8;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 54px;
+  max-height: 120px;
+  transition: border-color 0.3s;
+}
+.question-box textarea:focus {
+  outline: none;
+  border-color: #b8860b;
+  box-shadow: 0 0 10px rgba(180,120,40,0.15);
+}
+.question-box textarea::placeholder { color: #5a4a38; font-size: 0.85rem; }
+
+.btn-divine {
+  background: linear-gradient(135deg, #b8860b, #8b6508);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 36px;
+  color: #fff;
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+  letter-spacing: 0.2em;
+  box-shadow: 0 4px 12px rgba(180,120,40,0.2);
+  height: 54px;
+  align-self: flex-end;
+}
+.btn-divine:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(180,120,40,0.35);
+  background: linear-gradient(135deg, #d4a030, #9a7010);
+}
+.btn-divine:active { transform: translateY(0); }
+.btn-divine.secondary {
+  background: linear-gradient(135deg, #4a3a28, #3a2a1a);
+  box-shadow: none;
+  font-size: 1rem;
+  padding: 10px 24px;
+  height: 54px;
+}
+.btn-divine.secondary:hover {
+  background: linear-gradient(135deg, #5a4a38, #4a3a28);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+/* === Four Pillars === */
+.four-pillars {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  margin: 8px 0 16px;
+  flex-wrap: wrap;
+}
+.pillar {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid #3d2e1e;
+  border-radius: 10px;
+  padding: 10px 20px;
+  text-align: center;
+  min-width: 95px;
+}
+.pillar .pillar-label { font-size: 0.72rem; color: #6a5a48; margin-bottom: 3px; }
+.pillar .pillar-value {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1.45rem;
+  color: #d4a853;
+  letter-spacing: 0.1em;
+}
+
+/* === Main Grid === */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 24px 0;
+}
+@media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+/* === Cards === */
+.card {
+  background: linear-gradient(135deg, rgba(35,25,18,0.95), rgba(25,18,12,0.95));
+  border: 1px solid #3d2e1e;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.card-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1.45rem;
+  color: #d4a853;
+  letter-spacing: 0.15em;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(180,120,40,0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* === 天地盘 Canvas === */
+.heaven-earth-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+}
+#heavenEarthCanvas { max-width: 100%; height: auto; }
+
+/* === 四课 Grid === */
+.lessons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media (max-width: 500px) { .lessons-grid { grid-template-columns: repeat(2, 1fr); } }
+.lesson-cell {
+  border: 1px solid #3d2e1e;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.2);
+}
+.lesson-cell .lesson-header {
+  background: rgba(180,120,40,0.12);
+  padding: 3px 6px;
+  font-size: 0.72rem;
+  color: #8a7a68;
+  text-align: center;
+  border-bottom: 1px solid #3d2e1e;
+}
+.lesson-cell .lesson-body {
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.lesson-cell .branch-above {
+  color: #e8c878;
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1.35rem;
+}
+.lesson-cell .branch-below { color: #a09888; font-size: 0.95rem; }
+.lesson-cell .pair-label { font-size: 0.62rem; color: #6a5a48; }
+.lesson-k {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  margin-top: 3px;
+}
+.lesson-k.have-k { background: rgba(200,60,40,0.2); color: #d06040; }
+.lesson-k.no-k { background: rgba(100,100,100,0.12); color: #6a6a5a; }
+
+/* === 三传 === */
+.transmission-cell {
+  text-align: center;
+  border: 1px solid #3d2e1e;
+  border-radius: 10px;
+  padding: 14px 6px;
+  background: rgba(0,0,0,0.2);
+}
+.transmission-cell .trans-order { font-size: 0.72rem; color: #6a5a48; margin-bottom: 3px; }
+.transmission-cell .trans-branch {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1.9rem;
+  color: #d4a853;
+  line-height: 1.2;
+}
+.transmission-cell .trans-general { font-size: 0.78rem; color: #a09078; margin-top: 3px; }
+.transmission-cell.primary {
+  border-color: #b8860b;
+  box-shadow: 0 0 12px rgba(180,120,40,0.15);
+}
+
+/* === 天将 Table === */
+.generals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+.generals-table th,
+.generals-table td { padding: 5px 7px; border: 1px solid #2a221c; text-align: center; }
+.generals-table th {
+  background: rgba(180,120,40,0.12);
+  color: #b09060;
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+.generals-table tr:hover td { background: rgba(180,120,40,0.06); }
+
+/* === 吉凶卡 === */
+.fortune-card {
+  background: linear-gradient(135deg, rgba(30,22,16,0.95), rgba(20,14,10,0.95));
+  border: 1px solid #3d2e1e;
+  border-radius: 12px;
+  padding: 22px;
+  margin: 0 0 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.fortune-inner {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.fortune-symbol {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 3.5rem;
+  line-height: 1;
+  text-align: center;
+  flex-shrink: 0;
+  min-width: 80px;
+}
+.fortune-symbol .symbol-char { display: block; }
+.fortune-body { flex: 1; min-width: 200px; }
+.fortune-label {
+  font-size: 0.78rem;
+  color: #6a5a48;
+  margin-bottom: 6px;
+  letter-spacing: 0.1em;
+}
+.fortune-result {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1.8rem;
+  letter-spacing: 0.15em;
+  margin-bottom: 8px;
+}
+.fortune-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.fortune-tag {
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid;
+}
+.tag-jia { color: #c8a030; border-color: rgba(200,160,48,0.4); background: rgba(200,160,48,0.08); }
+.tag-xiong { color: #c05030; border-color: rgba(200,80,48,0.4); background: rgba(200,80,48,0.08); }
+.tag-ping { color: #8a8070; border-color: rgba(138,128,112,0.4); background: rgba(138,128,112,0.08); }
+.tag-yibanci { color: #c89040; border-color: rgba(200,144,64,0.4); background: rgba(200,144,64,0.08); }
+
+/* === 问题解读 === */
+.interpretation {
+  line-height: 2;
+  font-size: 0.92rem;
+  color: #c4b898;
+}
+.interpretation p { margin-bottom: 10px; text-indent: 2em; }
+.highlight { color: #d4a853; font-weight: 600; }
+.kan-sep {
+  display: block;
+  text-align: center;
+  color: #5a4a38;
+  margin: 14px 0;
+  letter-spacing: 1em;
+  font-size: 0.8rem;
+}
+.section-divider {
+  border: none;
+  border-top: 1px solid rgba(180,120,40,0.12);
+  margin: 18px 0;
+}
+
+/* === 术语卡片 === */
+.glossary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 10px;
+}
+@media (max-width: 600px) { .glossary-grid { grid-template-columns: repeat(2, 1fr); } }
+.glossary-item {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid #2a221c;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.glossary-item .term {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1.15rem;
+  color: #d4a853;
+  margin-bottom: 4px;
+}
+.glossary-item .desc {
+  font-size: 0.75rem;
+  color: #7a6a58;
+  line-height: 1.6;
+}
+
+/* === Bottom grid === */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 24px 0;
+}
+@media (max-width: 900px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+/* Element color badges */
+.elem-mu { color: #4a9a4a; }
+.elem-huo { color: #d06030; }
+.elem-tu { color: #b08040; }
+.elem-jin { color: #a0a0b8; }
+.elem-shui { color: #4080c0; }
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+
+<div class="header">
+  <h1>大六壬</h1>
+  <div class="subtitle">— 天地阴阳 · 神机默运 —</div>
+</div>
+
+<div class="container">
+  <!-- Control Panel -->
+  <div class="control-panel">
+    <div class="control-row">
+      <div class="control-group">
+        <label>公历年</label>
+        <input type="number" id="inputYear" min="1900" max="2100">
+      </div>
+      <div class="control-group">
+        <label>月</label>
+        <input type="number" id="inputMonth" min="1" max="12">
+      </div>
+      <div class="control-group">
+        <label>日</label>
+        <input type="number" id="inputDay" min="1" max="31">
+      </div>
+      <div class="control-group">
+        <label>时辰</label>
+        <select id="inputHour">
+          <option value="0">子时 23:00-00:59</option>
+          <option value="1">丑时 01:00-02:59</option>
+          <option value="2">寅时 03:00-04:59</option>
+          <option value="3">卯时 05:00-06:59</option>
+          <option value="4">辰时 07:00-08:59</option>
+          <option value="5">巳时 09:00-10:59</option>
+          <option value="6">午时 11:00-12:59</option>
+          <option value="7">未时 13:00-14:59</option>
+          <option value="8">申时 15:00-16:59</option>
+          <option value="9">酉时 17:00-18:59</option>
+          <option value="10">戌时 19:00-20:59</option>
+          <option value="11">亥时 21:00-22:59</option>
+        </select>
+      </div>
+      <button class="btn-divine" onclick="divine()">起 课</button>
+      <button class="btn-divine secondary" onclick="useNow()">↻ 当前</button>
+    </div>
+    <div class="control-row" style="margin-bottom:0">
+      <div class="question-box" style="flex:1;min-width:300px">
+        <label>问  题  （您想求问何事？）</label>
+        <textarea id="inputQuestion" placeholder="例如：明日出门办事顺利吗？最近工作上有变动，能否升职？感情上与某人的关系如何？测财运、求职、婚嫁、疾病、出行、诉讼、失物……"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fortune Summary -->
+  <div class="fortune-card" id="fortuneCard" style="display:none">
+    <div class="fortune-inner">
+      <div class="fortune-symbol">
+        <span class="symbol-char" id="fortuneSymbol"></span>
+      </div>
+      <div class="fortune-body">
+        <div class="fortune-label">综合判断</div>
+        <div class="fortune-result" id="fortuneResult"></div>
+        <div class="fortune-tags" id="fortuneTags"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Four Pillars -->
+  <div id="pillarsArea"></div>
+
+  <!-- Main Grid -->
+  <div class="main-grid">
+    <div class="card">
+      <div class="card-title">☰ 天地盘</div>
+      <div class="heaven-earth-wrap">
+        <canvas id="heavenEarthCanvas" width="420" height="420"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">课 四课 · 三传</div>
+      <div id="lessonsArea"></div>
+      <div style="margin-top:14px" id="transmissionsArea"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Grid -->
+  <div class="bottom-grid">
+    <div class="card">
+      <div class="card-title">将 天将</div>
+      <div id="generalsArea"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">解 课象解读</div>
+      <div id="interpretationArea" class="interpretation"></div>
+    </div>
+  </div>
+
+  <!-- 术语图解 -->
+  <div class="card">
+    <div class="card-title">典 术语图解</div>
+    <div class="glossary-grid">
+      <div class="glossary-item"><div class="term">四课</div><div class="desc">日干（日辰）与其上神形成的四层关系，是六壬推算的基础结构。</div></div>
+      <div class="glossary-item"><div class="term">三传</div><div class="desc">初传（发机之处）→中传（变化之中）→末传（归结之方），主事情的开始、过程、结局。</div></div>
+      <div class="glossary-item"><div class="term">天盘</div><div class="desc">以月将加于所占时辰，顺旋布于十二宫，象征天时之运。</div></div>
+      <div class="glossary-item"><div class="term">地盘</div><div class="desc">十二地支固定排列，子北午南，永定不移，象征地理方位。</div></div>
+      <div class="glossary-item"><div class="term">上克下</div><div class="desc">上神克下神，主外来之克、他人施压、上级管制。事情来得较直接。</div></div>
+      <div class="glossary-item"><div class="term">下贼上</div><div class="desc">下神克上神，主内在之变、本身失守、小人作祟。事情往往出乎意料。</div></div>
+      <div class="glossary-item"><div class="term">贵人</div><div class="desc">十二天将之首，主吉庆扶助。得贵人者多逢助力，昼贵与夜贵有别。</div></div>
+      <div class="glossary-item"><div class="term">月将</div><div class="desc">每月的中气后更换，太阳所临之方。月将加时起天盘，是六壬起课的根本。</div></div>
+      <div class="glossary-item"><div class="term">贼克法</div><div class="desc">以四课中有无克关系来决定三传的起法，是六壬最常用的九宗门之一。</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 大六壬核心算法
+// ============================================================
+
+const CSTEM   = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const BRANCH  = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const BRANCH_ANIMALS = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
+
+const ELEM_BRANCH = {
+  0:'水',1:'土',2:'木',3:'木',4:'土',5:'火',
+  6:'火',7:'土',8:'金',9:'金',10:'土',11:'水'
+};
+const KE_MAP = { '木':'土', '土':'水', '水':'火', '火':'金', '金':'木' };
+const KE_REV  = { '土':'木', '水':'土', '火':'水', '金':'火', '木':'金' };
+
+const MONTH_GENERALS = [
+  { name:'登明', branch:11, from:'雨水' },
+  { name:'河魁', branch:10, from:'春分' },
+  { name:'从魁', branch: 9, from:'谷雨' },
+  { name:'传送', branch: 8, from:'小满' },
+  { name:'小吉', branch: 7, from:'夏至' },
+  { name:'胜光', branch: 6, from:'大暑' },
+  { name:'太乙', branch: 5, from:'处暑' },
+  { name:'天罡', branch: 4, from:'秋分' },
+  { name:'太冲', branch: 3, from:'霜降' },
+  { name:'功曹', branch: 2, from:'小雪' },
+  { name:'大吉', branch: 1, from:'冬至' },
+  { name:'神后', branch: 0, from:'大寒' }
+];
+
+const GENERAL_NAMES = [
+  '贵人','螣蛇','朱雀','六合','勾陈','青龙','天空','白虎','太常','玄武','太阴','天后'
+];
+const GENERAL_DESC = {
+  '贵人':'统御诸神，主吉庆、福佑、扶持。得之者有贵人相助。',
+  '螣蛇':'主虚惊、怪异、变化。临身主心绪不安，临事主突发变故。',
+  '朱雀':'主文书、口舌、信息。临身主文书往来或口舌是非。',
+  '六合':'主和合、婚姻、交易、合作。临身主事物联络、与人共事。',
+  '勾陈':'主争斗、诉讼、迟滞、疾病。临身主拖延或纷争。',
+  '青龙':'主财禄、喜庆、升迁、酒宴。临身主进财或喜事临门。',
+  '天空':'主虚诈、空亡、飘渺。临身主计划落空或机缘难测。',
+  '白虎':'主凶丧、血光、威权、孝服。临身主灾祸或意外。',
+  '太常':'主宴饮、祭祀、常事、馈赠。临身主日常往来或喜庆之事。',
+  '玄武':'主盗贼、隐私、暧昧、阴谋。临身主失物或暗中之事。',
+  '太阴':'主阴私、隐藏、女性、暗中相助。临身主暗中助力或女性事务。',
+  '天后':'主恩泽、庇护、婚姻、慈爱。临身主有人庇护或婚姻之事。'
+};
+
+const GUIREN_DAY   = { 0:1, 4:1, 6:1, 1:0, 5:8, 2:11, 3:9, 8:5, 9:3, 7:6 };
+const GUIREN_NIGHT = { 0:7, 4:7, 6:7, 1:8, 5:0, 2:9, 3:11, 8:3, 9:5, 7:2 };
+
+// 寄宫口诀: 甲寅乙辰丙丁巳, 戊己亦寄巳与未, 庚申辛戌壬亥癸丑真
+const STEM_LODGE = [2, 4, 5, 7, 5, 7, 8, 10, 11, 1];
+// 甲寅(2), 乙辰(4), 丙巳(5), 丁未(7), 戊巳(5), 己未(7), 庚申(8), 辛戌(10), 壬亥(11), 癸丑(1)
+
+function mod(n, m) { return ((n % m) + m) % m; }
+
+function jdn(y, m, d) {
+  if (m <= 2) { y--; m += 12; }
+  const A = Math.floor(y / 100);
+  const B = 2 - A + Math.floor(A / 4);
+  return Math.floor(365.25*(y+4716)) + Math.floor(30.6001*(m+1)) + d + B - 1524.5;
+}
+
+function dayStemBranch(y, m, d) {
+  const j = jdn(y, m, d) + 0.5;
+  const idx = mod(Math.floor(j) + 15, 60);
+  return { stem: mod(idx, 10), branch: mod(idx, 12), index: idx };
+}
+
+function yearStemBranch(y) {
+  return { stem: mod(y-4, 10), branch: mod(y-4, 12) };
+}
+
+function monthStemBranch(y, m) {
+  const yGan = mod(y-4, 10);
+  // Simplified: 寅月=1, 丑月=0
+  const monthBranch = mod(m + 1, 12); // approximate
+  let stem = mod((mod(yGan, 5)*2) + monthBranch, 10);
+  return { stem, branch: monthBranch };
+}
+
+function hourStemBranch(dayStem, hourBranch) {
+  // 日上起时: 甲己还加甲...
+  const map = { 0:0, 1:2, 2:4, 3:6, 4:8, 5:0, 6:2, 7:4, 8:6, 9:8 };
+  return { stem: mod(map[dayStem] + hourBranch, 10), branch: hourBranch };
+}
+
+function getMonthGeneral(month, day) {
+  const thresholds = [
+    {m:2,d:19},{m:3,d:21},{m:4,d:20},{m:5,d:21},{m:6,d:21},{m:7,d:23},
+    {m:8,d:23},{m:9,d:23},{m:10,d:23},{m:11,d:22},{m:12,d:22},{m:1,d:20}
+  ];
+  const val = month * 100 + day;
+  for (let i = thresholds.length-1; i>=0; i--) {
+    if (val >= thresholds[i].m*100+thresholds[i].d) {
+      if (i === 0 && month < 2) return {...MONTH_GENERALS[10], idx:10};
+      return {...MONTH_GENERALS[i], idx:i};
+    }
+  }
+  return {...MONTH_GENERALS[11], idx:11};
+}
+
+// ============================================================
+// 大六壬计算
+// ============================================================
+
+function daLiuRenCalculate(year, month, day, hb) {
+  const ysb = yearStemBranch(year);
+  const msb = monthStemBranch(year, month);
+  const dsb = dayStemBranch(year, month, day);
+  const hsb = hourStemBranch(dsb.stem, hb);
+
+  const gen = getMonthGeneral(month, day);
+  const moonGenBranch = gen.branch;
+
+  // 天盘: 月将加时
+  const heavenPlate = [];
+  for (let i = 0; i < 12; i++) {
+    heavenPlate[mod(moonGenBranch - hb + i, 12)] = i;
+  }
+  const heavenMap = {};
+  for (let eb=0; eb<12; eb++) heavenMap[heavenPlate[eb]] = eb;
+
+  const dayStemLodge = STEM_LODGE[dsb.stem];
+  const dayBranch = dsb.branch;
+
+  const ganShang   = heavenMap[dayStemLodge];
+  const ganShang2  = heavenMap[ganShang];
+  const zhiShang   = heavenMap[dayBranch];
+  const zhiShang2  = heavenMap[zhiShang];
+
+  const lessons = [
+    { upper: ganShang,  lower: dayStemLodge, label: '第一课 · 干' },
+    { upper: ganShang2, lower: ganShang,      label: '第二课 · 干阴' },
+    { upper: zhiShang,  lower: dayBranch,     label: '第三课 · 支' },
+    { upper: zhiShang2, lower: zhiShang,      label: '第四课 · 支阴' }
+  ];
+
+  lessons.forEach(l => {
+    const eU = ELEM_BRANCH[l.upper], eL = ELEM_BRANCH[l.lower];
+    if (KE_MAP[eU] === eL) l.ke = '上克下';
+    else if (KE_MAP[eL] === eU) l.ke = '下贼上';
+    else l.ke = null;
+  });
+
+  const kes = lessons.filter(l=>l.ke);
+  const zeis = kes.filter(l=>l.ke==='下贼上');
+  const kesOnly = kes.filter(l=>l.ke==='上克下');
+
+  let chuChuan, zhongChuan, moChuan, transMethod = '';
+  if (kes.length > 0) {
+    let firstKe;
+    if (zeis.length > 0) {
+      firstKe = zeis.sort((a,b)=>lessons.indexOf(a)-lessons.indexOf(b))[0];
+      transMethod = '贼克法（下贼上）';
+    } else if (kesOnly.length > 0) {
+      firstKe = kesOnly.sort((a,b)=>lessons.indexOf(a)-lessons.indexOf(b))[0];
+      transMethod = '贼克法（上克下）';
+    }
+    if (kes.length > 1) {
+      const dayYang = dsb.stem % 2 === 0;
+      const matched = kes.filter(k => (k.lower % 2 === 0) === dayYang);
+      if (matched.length > 0) {
+        firstKe = matched.sort((a,b)=>lessons.indexOf(a)-lessons.indexOf(b))[0];
+        transMethod = '比用法';
+      }
+    }
+    chuChuan = firstKe.upper;
+    zhongChuan = heavenMap[chuChuan];
+    moChuan = heavenMap[zhongChuan];
+  } else {
+    transMethod = '遥克法';
+    chuChuan = lessons[0].upper;
+    zhongChuan = heavenMap[chuChuan];
+    moChuan = heavenMap[zhongChuan];
+  }
+
+  const isDay = hb >= 3 && hb <= 8;
+  let guiRenBranch = isDay ? (GUIREN_DAY[dsb.stem] ?? 1) : (GUIREN_NIGHT[dsb.stem] ?? 7);
+  const guiRenHeaven = heavenMap[guiRenBranch];
+  const shun = guiRenBranch >= 0 && guiRenBranch <= 5;
+
+  const generals = {};
+  for (let eb=0; eb<12; eb++) {
+    const hb2 = heavenMap[eb];
+    const diff = mod(hb2 - guiRenHeaven, 12);
+    const gi = shun ? mod(diff, 12) : mod(-diff, 12);
+    generals[eb] = { branch: eb, heaven: hb2, general: GENERAL_NAMES[gi] };
+  }
+
+  const ganGen = generals[dayStemLodge];
+  const zhiGen = generals[dayBranch];
+  const chuGen = generals[chuChuan];
+  const zhongGen = generals[zhongChuan];
+  const moGen = generals[moChuan];
+
+  return {
+    fourPillars: {
+      year:  { stem:ysb.stem, branch:ysb.branch },
+      month: { stem:msb.stem, branch:msb.branch },
+      day:   { stem:dsb.stem, branch:dsb.branch },
+      hour:  { stem:hsb.stem, branch:hsb.branch }
+    },
+    moonGen: gen,
+    heavenMap,
+    dayStemLodge,
+    lessons,
+    transmissions: {
+      chu:BRANCH[chuChuan], zhong:BRANCH[zhongChuan], mo:BRANCH[moChuan],
+      chuIdx:chuChuan, zhongIdx:zhongChuan, moIdx:moChuan,
+      chuGen:chuGen?.general||'', zhongGen:zhongGen?.general||'', moGen:moGen?.general||'',
+      method: transMethod
+    },
+    generals: {
+      gan:ganGen, zhi:zhiGen,
+      list:Object.values(generals),
+      guiRenEarth:guiRenBranch, guiRenHeaven, shun
+    }
+  };
+}
+
+// ============================================================
+// 问题解读引擎
+// ============================================================
+
+const QUESTION_TYPES = {
+  cai:  { keywords:['财','钱','财运','收入','奖金','投资','股票','生意','买卖','盈利','工资','加薪'], label:'财运' },
+  guan: { keywords:['官','工作','升职','晋升','事业','求职','跳槽','面试','辞职','公司','同事','上司'], label:'事业官' },
+  hun:  { keywords:['婚','感情','恋爱','对象','桃花','分手','复合','婚姻','她','他','姻缘','男友','女友'], label:'感情' },
+  bing: { keywords:['病','健康','身体','医院','手术','怀孕','生育','孩子'], label:'健康' },
+  song: { keywords:['讼','官司','诉讼','纠纷','调解','警察','法律','起诉'], label:'诉讼' },
+  shi:  { keywords:['失物','丢失','遗失','找','东西','钥匙','证件','钱包'], label:'失物' },
+  chu:  { keywords:['出行','出门','远行','旅行','旅游','出差','飞机','火车','搬家','迁移'], label:'出行' },
+  xue:  { keywords:['考试','学习','升学','学业','面试','答辩','培训'], label:'学业' },
+  tao:  { keywords:['桃花','异性','追求','表白','暗恋','脱单'], label:'桃花' }
+};
+
+const FORTUNE_RULES = {
+  // 初传天将 -> 吉凶基础分
+  chuScore: {
+    '贵人':  3, '青龙':  3, '六合':  2, '太阴':  2, '太常':  1,
+    '天后':  1, '朱雀':  0, '螣蛇': -1, '勾陈': -1, '玄武': -2, '天空': -2, '白虎': -3
+  },
+  // 末传天将 -> 结局权重
+  moScore: {
+    '贵人':  3, '青龙':  3, '太阴':  2, '太常':  2, '六合':  2,
+    '天后':  1, '朱雀':  0, '天空': -1, '螣蛇': -1, '勾陈': -1, '玄武': -2, '白虎': -3
+  },
+  // 特殊格局
+  specialPatterns: [
+    { condition: (r) => [r.transmissions.chuGen, r.transmissions.zhongGen, r.transmissions.moGen].filter(g=>g==='贵人').length>=2, label:'双贵' },
+    { condition: (r) => r.transmissions.chuGen==='白虎'||r.transmissions.moGen==='白虎', label:'虎临' },
+    { condition: (r) => r.transmissions.chuGen==='青龙'||r.transmissions.moGen==='青龙', label:'龙现' },
+    { condition: (r) => r.transmissions.chuGen===r.transmissions.moGen, label:'首尾同' }
+  ]
+};
+
+function detectQuestionType(q) {
+  if (!q) return null;
+  const text = q.trim();
+  let best = null, bestScore = 0;
+  for (const [key, type] of Object.entries(QUESTION_TYPES)) {
+    let score = 0;
+    for (const kw of type.keywords) {
+      if (text.includes(kw)) score++;
+    }
+    if (score > bestScore) { bestScore = score; best = { ...type, key }; }
+  }
+  return bestScore >= 1 ? best : null;
+}
+
+function calculateFortune(r, qType) {
+  const t = r.transmissions;
+  const scoreMap = FORTUNE_RULES.chuScore;
+  const moMap = FORTUNE_RULES.moScore;
+
+  let score = (scoreMap[t.chuGen]||0) * 1.5 + (moMap[t.moGen]||0) * 1.0 + (scoreMap[t.zhongGen]||0) * 0.5;
+  
+  // 特殊格局加成
+  const patterns = [];
+  for (const pat of FORTUNE_RULES.specialPatterns) {
+    if (pat.condition(r)) { patterns.push(pat.label); score += 1.5; }
+  }
+
+  // 类型加成
+  if (qType) {
+    const caiGens = ['青龙','太常','六合','贵人'];
+    const guanGens = ['青龙','贵人','太阴','六合'];
+    const hunGens = ['六合','天后','太阴','青龙'];
+    const bingGens = ['太阴','天后','贵人','青龙'];
+    const shiGens = ['玄武','螣蛇'];
+    const chuGens = ['青龙','六合','太常'];
+    
+    const favorMap = { cai:caiGens, guan:guanGens, hun:hunGens, bing:bingGens, shi:shiGens, chu:chuGens };
+    const favorable = favorMap[qType.key]||[];
+    
+    if (favorable.includes(t.chuGen)) score += 2;
+    if (favorable.includes(t.moGen)) score += 1;
+    if (favorable.includes(t.zhongGen)) score += 0.5;
+    if (favorable.includes('白虎')&&qType.key!=='bing') score -= 2;
+  }
+
+  // 三传本身吉祥
+  if (t.chuGen==='贵人'&&t.moGen==='贵人') score += 2;
+  if (t.chuGen==='青龙'&&t.moGen==='青龙') score += 1.5;
+
+  let level, symbol, resultText, tags;
+  if (score >= 5) {
+    level = '大吉'; symbol = '✦'; resultText = '卦象极吉，大有可为之象';
+    tags = [{cls:'tag-jia',text:'贵人扶持'},{cls:'tag-jia',text:'青龙守门'},{cls:'tag-jia',text:'事半功倍'}];
+  } else if (score >= 2) {
+    level = '吉'; symbol = '◆'; resultText = '卦象偏吉，稳步进取可成';
+    tags = [{cls:'tag-jia',text:'吉象'},{cls:'tag-yibanci',text:'谨慎行事'}];
+  } else if (score >= -1) {
+    level = '平'; symbol = '◇'; resultText = '卦象平稳，机遇与阻碍并存';
+    tags = [{cls:'tag-ping',text:'吉凶未定'},{cls:'tag-ping',text:'随机应变'}];
+  } else if (score >= -4) {
+    level = '凶'; symbol = '▲'; resultText = '卦象有阻，须防小人或变故';
+    tags = [{cls:'tag-xiong',text:'有阻'},{cls:'tag-xiong',text:'谨言慎行'}];
+  } else {
+    level = '大凶'; symbol = '✕'; resultText = '卦象多舛，宜静待时机勿妄动';
+    tags = [{cls:'tag-xiong',text:'多有阻碍'},{cls:'tag-xiong',text:'静守为上'}];
+  }
+
+  if (patterns.length > 0) {
+    tags.unshift({cls:'tag-yibanci', text:patterns.join('+')});
+  }
+
+  return { score, level, symbol, resultText, tags };
+}
+
+function generateQuestionAdvice(r, qType, fortune) {
+  if (!qType) return '';
+
+  const t = r.transmissions;
+  const chuGen = t.chuGen;
+  const zhongGen = t.zhongGen;
+  const moGen = t.moGen;
+  
+  // 根据三传生成建议
+  let advice = '';
+  const typeAdvices = {
+    cai: {
+      chu: chuGen==='青龙'?'初见财星，有进财之兆':chuGen==='玄武'?'财星受困，须防破耗':'财势尚在酝酿之中',
+      zhong: zhongGen==='青龙'?'中段财运亨通':zhongGen==='白虎'?'谨防中途变故':zhongGen==='六合'?'宜合作求财':'过程平稳',
+      mo: moGen==='青龙'?'结局财入库':moGen==='天空'?'结果尚有变数':'宜保守看待'
+    },
+    guan: {
+      chu: chuGen==='青龙'?'机遇已现，积极把握':chuGen==='贵人'?'贵人相助在即':chuGen==='白虎'?'恐有竞争压力':'开局尚可',
+      zhong: zhongGen==='六合'?'合作推进有利':zhongGen==='勾陈'?'中途或有拖延':'过程有进展',
+      mo: moGen==='青龙'?'事业终得升迁':moGen==='贵人'?'结果有人扶持':'宜等待时机'
+    },
+    hun: {
+      chu: chuGen==='六合'?'感情缘分已动':chuGen==='天后'?'情感之事浮现':chuGen==='玄武'?'情海有暗流':'感情尚在酝酿',
+      zhong: zhongGen==='太阴'?'过程多含蓄暗合':zhongGen==='朱雀'?'或现口舌摩擦':'情感有所变化',
+      mo: moGen==='六合'?'姻缘可成':moGen==='天后'?'得庇护而和谐':moGen==='白虎'?'须防感情变故':'结局尚需观察'
+    },
+    bing: {
+      chu: chuGen==='太阴'?'病情有转机':chuGen==='天后'?'得贵人照拂':'病情尚需观察',
+      zhong: zhongGen==='青龙'?'医治过程顺利':zhongGen==='白虎'?'中途或有加重':'疗程平稳',
+      mo: moGen==='青龙'?'终得康复':moGen==='太阴'?'暗中渐愈':'宜耐心调养'
+    },
+    shi: {
+      chu: chuGen==='玄武'?'失物为玄武所盗或所藏':'失物信息隐晦',
+      zhong: zhongGen==='六合'?'有中间人可寻':'寻物过程曲折',
+      mo: moGen==='六合'?'物可复得':moGen==='天空'?'难寻':'希望尚存'
+    },
+    chu: {
+      chu: chuGen==='六合'?'出行顺利':chuGen==='白虎'?'途中恐有险阻':chuGen==='天空'?'行程或有变数':'出行方向已定',
+      zhong: zhongGen==='青龙'?'一路顺风':zhongGen==='勾陈'?'中途或有延滞':'路途平稳',
+      mo: moGen==='青龙'?'抵达目的地吉':moGen==='天空'?'结局难料':'出行无大碍'
+    }
+  };
+
+  const adv = typeAdvices[qType.key];
+  if (adv) {
+    advice = `
+<p><strong>一事一断：</strong></p>
+<p>◆ <span class="highlight">初传 ${t.chu}（${chuGen}）</span>：${adv.chu}</p>
+<p>◆ <span class="highlight">中传 ${t.zhong}（${zhongGen}）</span>：${adv.zhong}</p>
+<p>◆ <span class="highlight">末传 ${t.mo}（${moGen}）</span>：${adv.mo}</p>`;
+  }
+  return advice;
+}
+
+// ============================================================
+// 渲染
+// ============================================================
+
+let result = null;
+let currentQuestion = '';
+
+function useNow() {
+  const now = new Date();
+  document.getElementById('inputYear').value = now.getFullYear();
+  document.getElementById('inputMonth').value = now.getMonth() + 1;
+  document.getElementById('inputDay').value = now.getDate();
+  const h = now.getHours();
+  document.getElementById('inputHour').value = Math.floor((h+1)/2)%12;
+}
+
+function divine() {
+  const y = parseInt(document.getElementById('inputYear').value);
+  const m = parseInt(document.getElementById('inputMonth').value);
+  const d = parseInt(document.getElementById('inputDay').value);
+  const hb = parseInt(document.getElementById('inputHour').value);
+  if (!y||!m||!d) { alert('请填写完整日期'); return; }
+
+  currentQuestion = document.getElementById('inputQuestion').value.trim();
+  result = daLiuRenCalculate(y, m, d, hb);
+  renderAll(result);
+}
+
+function renderAll(r) {
+  renderPillars(r);
+  renderHeavenEarth(r);
+  renderLessons(r);
+  renderTransmissions(r);
+  renderGenerals(r);
+  renderFortune(r);
+  renderInterpretation(r);
+
+  // Show fortune card
+  document.getElementById('fortuneCard').style.display = 'block';
+}
+
+function renderPillars(r) {
+  const fp = r.fourPillars;
+  document.getElementById('pillarsArea').innerHTML = `
+    <div class="four-pillars">
+      <div class="pillar">
+        <div class="pillar-label">年柱</div>
+        <div class="pillar-value">${CSTEM[fp.year.stem]}${BRANCH[fp.year.branch]}</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-label">月柱</div>
+        <div class="pillar-value">${CSTEM[fp.month.stem]}${BRANCH[fp.month.branch]}</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-label">日柱</div>
+        <div class="pillar-value" style="color:#f0d878">${CSTEM[fp.day.stem]}${BRANCH[fp.day.branch]}</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-label">时柱</div>
+        <div class="pillar-value">${CSTEM[fp.hour.stem]}${BRANCH[fp.hour.branch]}</div>
+      </div>
+    </div>
+    <div style="text-align:center;color:#6a5a48;font-size:0.83rem;margin-top:-6px">
+      月将 <span style="color:#d4a853">${r.moonGen.name}</span> · ${r.moonGen.from}后（${BRANCH[r.moonGen.branch]}宫）
+    </div>
+  `;
+}
+
+function renderHeavenEarth(r) {
+  const canvas = document.getElementById('heavenEarthCanvas');
+  const ctx = canvas.getContext('2d');
+  const W=420, H=420, cx=W/2, cy=H/2;
+  const R=180, R2=130, R3=78, R4=36;
+
+  ctx.clearRect(0,0,W,H);
+
+  const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,R+20);
+  grad.addColorStop(0,'#2a1e14'); grad.addColorStop(0.6,'#1e1610'); grad.addColorStop(1,'#0f0a06');
+  ctx.beginPath(); ctx.arc(cx,cy,R+20,0,Math.PI*2);
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.strokeStyle='#4a3826'; ctx.lineWidth=2; ctx.stroke();
+
+  [[R,'#5a4a38'],[R2,'#6a5a48'],[R3,'#4a3a28'],[R4,'#3d2e1e']].forEach(([r2,col])=>{
+    ctx.beginPath(); ctx.arc(cx,cy,r2,0,Math.PI*2);
+    ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.stroke();
+  });
+
+  ctx.font='14px "Noto Serif SC",serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for (let i=0; i<12; i++) {
+    const a=(i*30-90)*Math.PI/180;
+    ctx.fillStyle='#8a7a68';
+    ctx.fillText(BRANCH[i], cx+(R-20)*Math.cos(a), cy+(R-20)*Math.sin(a));
+  }
+
+  ctx.font='16px "Ma Shan Zheng",cursive';
+  for (let i=0; i<12; i++) {
+    const hb=r.heavenMap[i];
+    if (hb===undefined) continue;
+    const a=(i*30-90)*Math.PI/180;
+    ctx.fillStyle='#d4a853';
+    ctx.fillText(BRANCH[hb], cx+(R2-20)*Math.cos(a), cy+(R2-20)*Math.sin(a));
+  }
+
+  ctx.font='11px "Noto Serif SC",serif';
+  ctx.fillStyle='#6a5a48';
+  ctx.fillText('地盘(地)', cx-55, cy-R-25);
+  ctx.fillText('天盘(天)', cx+55, cy-R-25);
+  ctx.font='12px "Noto Serif SC",serif';
+  ctx.fillStyle='#4a3826';
+  ctx.fillText(r.moonGen.name, cx, cy+10);
+
+  ctx.font='16px serif';
+  ctx.fillStyle='rgba(180,120,40,0.12)';
+  ctx.fillText('☰',15,25); ctx.fillText('☷',W-30,25);
+  ctx.fillText('☲',15,H-18); ctx.fillText('☵',W-30,H-18);
+}
+
+function renderLessons(r) {
+  const area = document.getElementById('lessonsArea');
+  let html='<div class="lessons-grid">';
+  r.lessons.forEach((l,idx)=>{
+    const cls=l.ke?'have-k':'no-k';
+    const txt=l.ke||'无克';
+    html+=`<div class="lesson-cell">
+      <div class="lesson-header">${l.label}</div>
+      <div class="lesson-body">
+        <span class="branch-above">${BRANCH[l.upper]}</span>
+        <span class="pair-label">上神 ${ELEM_BRANCH[l.upper]}</span>
+        <div style="margin:3px 0;border-top:1px solid #2a221c;width:80%"></div>
+        <span class="branch-below">${BRANCH[l.lower]}</span>
+        <span class="pair-label">${idx===0?'干':idx===2?'支':''} ${ELEM_BRANCH[l.lower]}</span>
+        <span class="lesson-k ${cls}">${txt}</span>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  area.innerHTML=html;
+}
+
+function renderTransmissions(r) {
+  const t=r.transmissions;
+  const area=document.getElementById('transmissionsArea');
+  const items=[
+    {order:'初传', branch:t.chu, gen:t.chuGen, cls:'primary'},
+    {order:'中传', branch:t.zhong, gen:t.zhongGen, cls:''},
+    {order:'末传', branch:t.mo, gen:t.moGen, cls:''}
+  ];
+  let html=`<div style="font-size:0.78rem;color:#6a5a48;margin-bottom:8px;text-align:center">起课法：${t.method}</div>`;
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
+  items.forEach(item=>{
+    html+=`<div class="transmission-cell ${item.cls}">
+      <div class="trans-order">${item.order}</div>
+      <div class="trans-branch">${item.branch}</div>
+      <div class="trans-general">${item.gen||''}</div>
+    </div>`;
+  });
+  html+='</div>';
+  area.innerHTML=html;
+}
+
+function renderGenerals(r) {
+  const area=document.getElementById('generalsArea');
+  const g=r.generals;
+  const dir=g.shun?'顺行':'逆行';
+  let html=`<div style="font-size:0.78rem;color:#6a5a48;margin-bottom:10px">贵人在「${BRANCH[g.guiRenEarth]}」宫 · ${dir}布将</div>`;
+  html+='<table class="generals-table"><thead><tr><th>地</th><th>肖</th><th>天盘</th><th>天将</th><th>五行</th></tr></thead><tbody>';
+  g.list.forEach(item=>{
+    const col=item.general==='贵人'?'#f0d878':item.general==='白虎'?'#c05040':item.general==='青龙'?'#50a050':'#c4b898';
+    html+=`<tr>
+      <td>${BRANCH[item.branch]}</td><td>${BRANCH_ANIMALS[item.branch]}</td>
+      <td style="color:#d4a853">${BRANCH[item.heaven]}</td>
+      <td style="color:${col}">${item.general}</td>
+      <td style="color:#8a7a68">${ELEM_BRANCH[item.branch]}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  area.innerHTML=html;
+}
+
+function renderFortune(r) {
+  const qType = detectQuestionType(currentQuestion);
+  const fortune = calculateFortune(r, qType);
+  
+  const sym = document.getElementById('fortuneSymbol');
+  const res = document.getElementById('fortuneResult');
+  const tag = document.getElementById('fortuneTags');
+  
+  sym.textContent = fortune.symbol;
+  sym.style.color = fortune.level==='大吉'||fortune.level==='吉'?'#d4a853':
+                    fortune.level==='平'?'#a09078':
+                    '#c05030';
+
+  res.textContent = `${fortune.level} · ${fortune.resultText}`;
+
+  let tagsHtml = '';
+  fortune.tags.forEach(t => {
+    tagsHtml += `<span class="fortune-tag ${t.cls}">${t.text}</span>`;
+  });
+  if (qType) tagsHtml += `<span class="fortune-tag tag-jia">${qType.label}</span>`;
+  tag.innerHTML = tagsHtml;
+}
+
+function renderInterpretation(r) {
+  const area = document.getElementById('interpretationArea');
+  const t = r.transmissions;
+  const g = r.generals;
+  const fp = r.fourPillars;
+
+  const qType = detectQuestionType(currentQuestion);
+  const fortune = calculateFortune(r, qType);
+  const qAdvice = generateQuestionAdvice(r, qType, fortune);
+
+  // 五行分析
+  const elems = [ELEM_BRANCH[r.dayStemLodge], ELEM_BRANCH[t.chuIdx], ELEM_BRANCH[t.zhongIdx], ELEM_BRANCH[t.moIdx]];
+  const elemCount = {};
+  elems.forEach(e => elemCount[e] = (elemCount[e]||0)+1);
+  const maxElem = Object.entries(elemCount).sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
+
+  const genDesc = (gen) => GENERAL_DESC[gen]||'';
+
+  let qSection = '';
+  if (currentQuestion) {
+    qSection = `
+<hr class="section-divider">
+<p>◆ <strong>针对您的问题：</strong><span class="highlight">「${currentQuestion}」</span></p>
+${qType ? `<p>系统识别为<span class="highlight">【${qType.label}】</span>类问题，以下为针对性解读：</p>${qAdvice}` : '<p>系统未能精确识别问题类型，以下提供通例性解读。</p>'}
+<p>综合本课三传 ${t.chuGen}→${t.zhongGen}→${t.moGen} 之象：</p>
+<p>初传${t.chuGen}主事之<span class="highlight">发机</span>，${genDesc(t.chuGen)}</p>
+<p>中传${t.zhongGen}主事之<span class="highlight">变化</span>，${genDesc(t.zhongGen)}</p>
+<p>末传${t.moGen}主事之<span class="highlight">归结</span>，${genDesc(t.moGen)}</p>
+<p>三传之中，<span class="highlight">${maxElem}气</span>最盛，当旺之方可借势而动。</p>`;
+  }
+
+  area.innerHTML = `
+    <p>今日占得大六壬课象：</p>
+    <p>四柱：<span class="highlight">${CSTEM[fp.year.stem]}${BRANCH[fp.year.branch]}</span>年
+           <span class="highlight">${CSTEM[fp.month.stem]}${BRANCH[fp.month.branch]}</span>月
+           <span class="highlight">${CSTEM[fp.day.stem]}${BRANCH[fp.day.branch]}</span>日
+           <span class="highlight">${CSTEM[fp.hour.stem]}${BRANCH[fp.hour.branch]}</span>时</p>
+    <p>月将临<span class="highlight">${r.moonGen.name}</span>，天地盘旋转，神机暗藏。</p>
+    <div class="kan-sep">◆ ◇ ◆</div>
+    <p>四课以<span class="highlight">${t.method}</span>定局，三传为：<span class="highlight">${t.chu}</span>（${t.chuGen}）
+       → <span class="highlight">${t.zhong}</span>（${t.zhongGen}）
+       → <span class="highlight">${t.mo}</span>（${t.moGen}）。</p>
+    <p>日干<span class="highlight">${CSTEM[fp.day.stem]}</span>上神见<span class="highlight">${g.gan?.general||'—'}</span>，
+       日支<span class="highlight">${BRANCH[fp.day.branch]}</span>上神见<span class="highlight">${g.zhi?.general||'—'}</span>，
+       天地人三才之象已备。</p>
+    ${qSection}
+    <div class="kan-sep">◆ ◇ ◆</div>
+    <p style="font-size:0.82rem;color:#6a5a48;text-indent:0;">
+      附注：本页面六壬算法为简化演示版本，供兴趣了解与娱乐参考。
+      六壬之学浩瀚精深，完整解卦需结合占者身份、事情原委、方位、
+      神煞、行年等多维因素，此处解读仅供一得之见，不可作为重大决策之唯一依据。
+    </p>
+  `;
+}
+
+// Init
+useNow();
+</script>
+</body>
+</html>
