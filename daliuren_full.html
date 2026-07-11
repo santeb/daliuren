@@ -719,13 +719,15 @@ function calc(y,m,d,hb){
     var ym=YIMA[dayBr];
     if(ym===chu||ym===zhang||ym===mo) ss.push({n:'驿马入传',d:'主动、出行、变动，马星发用'});
   }
-  
+  var yima=YIMA[dayBr];
+
   // 桃花（子卯相刑为无礼之刑，但卯为桃花之首）
   // 正统桃花：申子辰桃花酉，寅午戌桃花卯，巳酉丑桃花午，亥卯未桃花子
   var TAOHUA={0:9,4:9,8:9,2:3,6:3,10:3,9:6,1:6,5:6,11:0,3:0,7:0};
   if(TAOHUA[dayBr]===chu||TAOHUA[dayBr]===zhang||TAOHUA[dayBr]===mo){
     ss.push({n:'桃花入传',d:'主感情、姻缘、异性缘'});
   }
+  var taohua=TAOHUA[dayBr];
   
   // 三合局
   var sanhe=null;
@@ -788,21 +790,22 @@ function calc(y,m,d,hb){
     wx:wx,
     grBr:grBr,grHeaven:grHeaven,shun:shun,
     dayElem:ELEM_S[dsb.stem],dayBrElem:dayBrElem,
-    csMap:csMap,csChangsheng:csChangsheng
+    csMap:csMap,csChangsheng:csChangsheng,
+    yima:yima,taohua:taohua
   };
 }
 
 // ─── 问题识别 ─────────────────────────────────────────────
 var QTYPES={
-  cai:{kw:['财','钱','财运','收入','奖金','投资','股票','生意','买卖','盈利','工资','加薪'],l:'财运'},
-  guan:{kw:['官','工作','升职','晋升','事业','求职','跳槽','面试','辞职'],l:'事业'},
-  hun:{kw:['婚','感情','恋爱','对象','桃花','分手','复合','婚姻','他','她','姻缘'],l:'感情'},
-  bing:{kw:['病','健康','身体','医院','手术','怀孕','生育'],l:'健康'},
-  song:{kw:['讼','官司','诉讼','纠纷','法律','起诉'],l:'诉讼'},
-  shi:{kw:['失物','丢失','遗失','找','钥匙','证件','钱包','手机'],l:'失物'},
-  chu:{kw:['出行','出门','远行','旅行','旅游','出差','飞机','火车','搬家'],l:'出行'},
-  xue:{kw:['考试','学习','升学','学业','答辩','考研'],l:'学业'},
-  tao:{kw:['桃花','异性','追求','表白','暗恋','脱单'],l:'桃花'}
+  cai:{kw:['财','钱','财运','收入','奖金','投资','股票','生意','买卖','盈利','工资','加薪','基金','理财','债务','借钱','贷款','财运'],l:'财运'},
+  guan:{kw:['工作','升职','晋升','事业','求职','跳槽','面试','辞职','上司','老板','同事','职场','事业运','前途'],l:'事业'},
+  hun:{kw:['婚','感情','恋爱','对象','分手','复合','婚姻','姻缘','异性缘','暧昧','争吵','和好','挽回'],l:'感情'},
+  bing:{kw:['病','健康','身体','医院','手术','怀孕','生育','体质','不舒服','调理'],l:'健康'},
+  song:{kw:['讼','官司','诉讼','纠纷','法律','起诉','调解','仲裁','判','法官'],l:'诉讼'},
+  shi:{kw:['失物','丢失','遗失','找东西','钥匙','证件','钱包','手机','东西','掉了'],l:'失物'},
+  chu:{kw:['出行','出门','远行','旅行','旅游','出差','飞机','火车','搬家','迁居','动'],l:'出行'},
+  xue:{kw:['考试','学习','升学','学业','答辩','考研','留学','考学','成绩'],l:'学业'},
+  tao:{kw:['桃花','异性','追求','表白','暗恋','脱单','相亲','介绍对象'],l:'桃花'}
 };
 
 function detectQ(q){
@@ -1869,16 +1872,61 @@ function renderInterp(r,q,ft){
     // 特殊格局
     '<hr class="dv">'+
     '<p><strong>◆ 特殊格局：</strong></p>'+
-    '<p style="font-size:.8rem;color:var(--dim);line-height:1.7">'+
-    (r.chu===r.zhang&&r.zhang===r.mo?'<span style="color:var(--gold2)">三传归一</span>：初、中、末皆同，事无变化，从头至尾一致。主事专一，但亦主无转机。':'')+
-    (r.chu===r.mo&&r.chu!==r.zhang?'<span style="color:var(--gold2)">首尾相同</span>：初末相同，事有回旋，终归原点。':'')+
-    (chuJ===moJ&&chuJ!==''?'<span style="color:var(--gold2)">首尾天将同</span>：天将首尾呼应，事有始有终。':'')+
-    (chuJ==='贵人'&&moJ==='贵人'?'<span style="color:var(--green)">双贵人</span>：贵人首尾相应，大吉之象。':'')+
-    (chuJ==='白虎'&&moJ==='白虎'?'<span style="color:var(--red)">双虎</span>：凶象重重，须防大灾。':'')+
-    (r.chuElem===r.dayElem?'<span style="color:var(--green)">初传扶日</span>：初传五行与日干相同，有助力。':'')+
-    (KE[r.chuElem]===r.dayElem?'<span style="color:var(--red)">初传克日</span>：初传五行克日干，有耗损。':'')+
-    (SHENG[r.chuElem]===r.dayElem?'<span style="color:var(--green)">初传生日</span>：初传五行生日干，有滋养。':'')+
-    '</p>'+
+    '<p style="font-size:.8rem;color:var(--dim);line-height:1.7">';
+  var pats=[];
+  // 三传归一
+  if(r.chu===r.zhang&&r.zhang===r.mo) pats.push({t:'三传归一',c:'var(--gold2)',d:'初、中、末三传相同，事无变化，从头至尾一致。主专一，亦主无转机。'});
+  // 首尾同
+  else if(r.chu===r.mo&&r.chu!==r.zhang) pats.push({t:'首尾相同',c:'var(--gold2)',d:'初末相同，事有回旋，终归原点，须防循环往复。'});
+  // 初传克日
+  if(KE[chuE]===r.dayElem) pats.push({t:'初传克日',c:'var(--red)',d:'初传克日干，有耗损、压力，来自外部阻碍。'});
+  // 初传生日
+  if(SHENG[chuE]===r.dayElem) pats.push({t:'初传生日',c:'var(--green)',d:'初传生日干，外来滋养，有助力。'});
+  // 初传与日同五行
+  if(chuE===r.dayElem) pats.push({t:'初传扶日',c:'var(--green)',d:'初传五行与日干相同，本气相扶。'});
+  // 日干生初传
+  if(SHENG[r.dayElem]===chuE) pats.push({t:'日干生初传',c:'var(--orange)',d:'日干生初传，自身付出，有消耗但亦主慷慨。'});
+  // 日干克初传
+  if(KE[r.dayElem]===chuE) pats.push({t:'日干克初传',c:'var(--orange)',d:'日干克初传，可主动掌控局面，耗力但不被动。'});
+  // 初传与日支同
+  if(r.chu===r.dayBr) pats.push({t:'初传临日支',c:'var(--gold2)',d:'初传临支，事与本地、本身相关，亲力亲为。'});
+  // 天将首尾同
+  if(chuJ&&chuJ===moJ&&chuJ!==zhongJ) pats.push({t:'首尾天将同',c:'var(--gold2)',d:'天将首尾呼应，事有始有终，善始善终之象。'});
+  // 双贵人
+  if(chuJ==='贵人'&&moJ==='贵人') pats.push({t:'双贵拱照',c:'var(--green)',d:'贵人临初末，大吉之象，多有贵人相助。'});
+  // 双虎
+  if(chuJ==='白虎'&&moJ==='白虎') pats.push({t:'双虎并临',c:'var(--red)',d:'白虎临初末，凶象重重，须防大灾大患。'});
+  // 初传白虎
+  if(chuJ==='白虎') pats.push({t:'白虎发用',c:'var(--red)',d:'白虎为初传，事发突然，须防意外伤害。'});
+  // 初传贵人
+  if(chuJ==='贵人') pats.push({t:'贵人发用',c:'var(--green)',d:'贵人为初传，开局得助，宜积极行动。'});
+  // 初传青龙
+  if(chuJ==='青龙') pats.push({t:'青龙发用',c:'var(--green)',d:'青龙为初传，吉祥如意，财喜临门。'});
+  // 初传玄武
+  if(chuJ==='玄武') pats.push({t:'玄武发用',c:'var(--blue)',d:'玄武为初传，主暗昧、盗匪、暧昧不明之事。'});
+  // 三传三合
+  function mod12(a,b){var d=((a-b)%12+12)%12;return Math.min(d,12-d);}
+  if(mod12(r.chu,r.zhang)===4&&mod12(r.zhang,r.mo)===4) pats.push({t:'三传三合局',c:'var(--gold2)',d:'三传成三合之势，事情蓄力，待时而发。'});
+  // 末传生日
+  if(SHENG[moE]===r.dayElem) pats.push({t:'末传生日',c:'var(--green)',d:'末传生日干，结果有滋养，大吉收尾。'});
+  // 末传克日
+  if(KE[moE]===r.dayElem) pats.push({t:'末传克日',c:'var(--red)',d:'末传克日干，结果耗损，需防后患。'});
+  // 初末地支同宫
+  if(r.chu===r.mo&&r.zhang!==r.chu) pats.push({t:'循环课',c:'var(--gold2)',d:'天盘循环，首尾同宫，事反复循环。'});
+  // 德神发用
+  if(r.deBr===r.chu) pats.push({t:'德神发用',c:'var(--green)',d:'德神居初传，天赐之吉，能化解凶险。'});
+  // 禄神发用
+  if(r.luBr===r.chu) pats.push({t:'禄神发用',c:'var(--orange)',d:'禄神居初传，财禄临门，主得利。'});
+  // 初传见驿马
+  if(r.yima===r.chu) pats.push({t:'驿马发用',c:'var(--orange)',d:'驿马为初传，事速动，须立即行动。'});
+  // 初传见桃花
+  if(r.taohua===r.chu) pats.push({t:'桃花发用',c:'color:#e879f9',d:'桃花为初传，感情事动，异性缘活跃。'});
+  // 无特殊格局
+  if(pats.length===0) pats.push({t:'普通课象',c:'var(--dim)',d:'本课无特殊格局，应以五行生克、天将含义及三传关系综合判断。'});
+  for(var pi=0;pi<pats.length;pi++){
+    html+='<span style="color:'+pats[pi].c+'">【'+pats[pi].t+'】</span> '+pats[pi].d+' ';
+  }
+  html+='</p>'+
     
     qSection+
     
