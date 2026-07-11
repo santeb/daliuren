@@ -142,6 +142,31 @@ select.ipt option{background:var(--bg)}
         <textarea class="txar" id="iq" placeholder="例如：明日出门办事顺利吗？最近求职能否成功？与某人的感情发展如何？"></textarea>
       </div>
     </div>
+    <!-- 终身命盘开关 + 导出/TTS按钮 -->
+    <div class="row" style="margin-top:10px;margin-bottom:0;align-items:center">
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;flex-shrink:0">
+        <input type="checkbox" id="cbMingpan" style="accent-color:var(--gold);width:15px;height:15px">
+        <span style="font-size:.78rem;color:var(--gold2);letter-spacing:.05em">&#9800; 终身命盘</span>
+      </label>
+      <div id="mingpanFields" style="display:none;flex:1;flex-direction:row;gap:8px;flex-wrap:wrap;align-items:center">
+        <div class="cg"><lbl style="font-size:.65rem">出生年</lbl><input class="ipt" type="number" id="iby" value="1990" min="1900" max="2100" style="padding:4px 6px;font-size:.78rem"></div>
+        <div class="cg"><lbl style="font-size:.65rem">月</lbl><input class="ipt" type="number" id="ibm" value="1" min="1" max="12" style="padding:4px 6px;font-size:.78rem"></div>
+        <div class="cg"><lbl style="font-size:.65rem">日</lbl><input class="ipt" type="number" id="ibd" value="1" min="1" max="31" style="padding:4px 6px;font-size:.78rem"></div>
+        <div class="cg"><lbl style="font-size:.65rem">时</lbl>
+          <select class="ipt" id="ibh" style="padding:4px 6px;font-size:.72rem">
+            <option value="0">子</option><option value="1">丑</option><option value="2">寅</option>
+            <option value="3">卯</option><option value="4">辰</option><option value="5">巳</option>
+            <option value="6">午</option><option value="7">未</option><option value="8">申</option>
+            <option value="9">酉</option><option value="10">戌</option><option value="11">亥</option>
+          </select>
+        </div>
+        <div id="mingpanResult" style="font-size:.72rem;color:var(--dim)"></div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn2" id="btnExport" title="导出JSON">&#8595; 导出</button>
+        <button class="btn2" id="btnTTS" title="语音播报">&#9834; 播报</button>
+      </div>
+    </div>
   </div>
 
   <div class="fc" id="fcEl">
@@ -161,6 +186,11 @@ select.ipt option{background:var(--bg)}
     <div class="cd">
       <div class="ct">&#9776; 天地盘</div>
       <div class="hewp"><canvas id="cvs" width="440" height="440"></canvas></div>
+      <div style="display:flex;justify-content:center;gap:14px;margin-top:6px;flex-wrap:wrap">
+        <span style="font-size:.68rem;color:var(--dim)"><span style="color:var(--gold2)">●</span> 内环：地盘（固定）</span>
+        <span style="font-size:.68rem;color:var(--dim)"><span style="color:#d4a853">●</span> 中环：天盘神将</span>
+        <span style="font-size:.68rem;color:var(--dim)"><span style="color:#e879f9">●</span> 外圈红圈：空亡地支</span>
+      </div>
     </div>
     <div class="cd">
       <div class="ct">&#9824; 四课 &middot; 三传</div>
@@ -774,7 +804,32 @@ function calc(y,m,d,hb){
   }
   // 找日干长生所在
   var csChangsheng=csOrder[0];
-  
+
+  // ═══ 空亡计算 ═══
+  // 每旬10天，12地支中必有2个空亡
+  // xun序号：0=甲子旬，1=甲寅旬，2=甲辰旬，3=甲午旬，4=甲申旬，5=甲戌旬
+  var kvmXun=Math.floor(dsb.stem/10);
+  var kv1=(kvmXun*2+10)%12;  // 第一个空亡地支
+  var kv2=(kv1+1)%12;        // 第二个空亡地支
+  var kvmWang=[kv1,kv2];
+
+  // ═══ 六亲分析 ═══
+  // 日干为自身，按地支五行与日干五行生克定六亲
+  var dayElem=ELEM_S[dsb.stem];
+  var liuQinMap={};
+  for(var lq=0;lq<12;lq++){
+    var be=ELEM[lq];
+    if(be===dayElem) liuQinMap[lq]='比肩';
+    else if(KE[be]===dayElem) liuQinMap[lq]='劫财';
+    else if(SHENG[be]===dayElem) liuQinMap[lq]='食神';
+    else if(KE[dayElem]===be) liuQinMap[lq]='正财';
+    else if(SHENG[dayElem]===be) liuQinMap[lq]='偏财';
+    else if(dayElem===KE[be]) liuQinMap[lq]='正官';
+    else if(dayElem===SHENG[be]) liuQinMap[lq]='正印';
+    else if(dayElem===SHENG[KE[be]]) liuQinMap[lq]='偏印';
+    else liuQinMap[lq]='伤官';
+  }
+
   return{
     ysb:ysb,msb:msb,dsb:dsb,hsb:hsb,
     yj:yj,
@@ -791,21 +846,24 @@ function calc(y,m,d,hb){
     grBr:grBr,grHeaven:grHeaven,shun:shun,
     dayElem:ELEM_S[dsb.stem],dayBrElem:dayBrElem,
     csMap:csMap,csChangsheng:csChangsheng,
-    yima:yima,taohua:taohua
+    yima:yima,taohua:taohua,
+    kvmWang:kvmWang,kv1:kv1,kv2:kv2,
+    liuQinMap:liuQinMap
   };
 }
 
 // ─── 问题识别 ─────────────────────────────────────────────
 var QTYPES={
   cai:{kw:['财','钱','财运','收入','奖金','投资','股票','生意','买卖','盈利','工资','加薪','基金','理财','债务','借钱','贷款','财运'],l:'财运'},
-  guan:{kw:['工作','升职','晋升','事业','求职','跳槽','面试','辞职','上司','老板','同事','职场','事业运','前途'],l:'事业'},
+  guan:{kw:['工作','升职','晋升','事业','求职','跳槽','面试','辞职','上司','老板','同事','职场','事业运','前途','贵人相助','靠山'],l:'事业'},
   hun:{kw:['婚','感情','恋爱','对象','分手','复合','婚姻','姻缘','异性缘','暧昧','争吵','和好','挽回'],l:'感情'},
   bing:{kw:['病','健康','身体','医院','手术','怀孕','生育','体质','不舒服','调理'],l:'健康'},
   song:{kw:['讼','官司','诉讼','纠纷','法律','起诉','调解','仲裁','判','法官'],l:'诉讼'},
   shi:{kw:['失物','丢失','遗失','找东西','钥匙','证件','钱包','手机','东西','掉了'],l:'失物'},
   chu:{kw:['出行','出门','远行','旅行','旅游','出差','飞机','火车','搬家','迁居','动'],l:'出行'},
   xue:{kw:['考试','学习','升学','学业','答辩','考研','留学','考学','成绩'],l:'学业'},
-  tao:{kw:['桃花','异性','追求','表白','暗恋','脱单','相亲','介绍对象'],l:'桃花'}
+  tao:{kw:['桃花','异性','追求','表白','暗恋','脱单','相亲','介绍对象'],l:'桃花'},
+  gui:{kw:['贵人','助力','帮忙','帮助','提携','扶持','靠山','有无人帮','有没有人','能否遇到','能不能遇到'],l:'人际关系'}
 };
 
 function detectQ(q){
@@ -845,7 +903,8 @@ function fortune(r,qtype){
   if(qtype){
     var favor={cai:['青龙','太常','六合'],guan:['青龙','贵人','太阴'],
                hun:['六合','天后','太阴'],bing:['太阴','天后','青龙'],
-               shi:['玄武','螣蛇'],chu:['青龙','六合']};
+               shi:['玄武','螣蛇'],chu:['青龙','六合'],
+               gui:['贵人','青龙','太阴','太常','六合']};
     var fav=favor[qtype.key]||[];
     if(fav.indexOf(chuJ)>=0) score+=2;
     if(fav.indexOf(moJ)>=0) score+=1;
@@ -866,6 +925,152 @@ function fortune(r,qtype){
   if(pats.length>0) tags.unshift({c:'tg-y',t:pats.join('+')});
   if(qtype) tags.push({c:'tg-j',t:qtype.l});
   return{score:score,level:level,sym:sym,text:text,tags:tags};
+}
+
+// ─── 用神选取 ─────────────────────────────────────────────────────
+// 用神是断事关键焦点，不同问题取不同神将
+function getYongshen(r,qtype){
+  var stem=r.dsb.stem;
+  var dayElem=ELEM_S[stem];
+  var lessons=r.lessons;
+
+  // 日干上神（干上神）：最直接反映日主状态
+  var ganShang=lessons[0].u;   // 第一课干上神
+  var ganXia=lessons[0].l;       // 日支
+  var zhiShang=lessons[2].u;    // 第三课支上神
+
+  // 日禄：俸禄之神
+  var LU_STEM={0:4,1:5,2:6,3:7,4:8,5:9,6:0,7:1,8:2,9:3};
+  var luBr=LU_STEM[stem];
+
+  // 驿马：行动之神
+  var yima=r.yima;
+
+  // 桃花：感情之神
+  var taohua=r.taohua;
+
+  // 各问题类型用神
+  var info={};
+  if(qtype&&qtype.key==='cai'){
+    info={label:'财气（求财）',key:'cai',desc:'以日禄青龙为用神，若禄或青龙入传则财旺；见玄武天空则财难聚。',focus:[luBr,yima]};
+  }
+  else if(qtype&&qtype.key==='hun'){
+    info={label:'姻缘（感情）',key:'hun',desc:'以干上神与六合为用神，看感情走向；青龙天后主吉利，玄武白虎主波折。',focus:[ganShang,zhiShang]};
+  }
+  else if(qtype&&qtype.key==='guan'){
+    info={label:'官禄（事业）',key:'guan',desc:'以官鬼与青龙为用神，正官入传则事业顺遂；见劫财则竞争压力大。',focus:[r.dayLodge,luBr]};
+  }
+  else if(qtype&&qtype.key==='chu'){
+    info={label:'行旅（出行）',key:'chu',desc:'以日马为用神，驿马发用则动；螣蛇有惊，白虎有险，青龙顺畅。',focus:[yima]};
+  }
+  else if(qtype&&qtype.key==='shi'){
+    info={label:'失物（寻物）',key:'shi',desc:'以玄武螣蛇为焦点，玄武为贼，螣蛇为虚惊；六合见物可寻。',focus:[zhiShang]};
+  }
+  else if(qtype&&qtype.key==='bing'){
+    info={label:'疾厄（健康）',key:'bing',desc:'以日干身宫为用神，白虎临身则病重，太阴临身则暗疾。',focus:[ganShang,ganXia]};
+  }
+  else if(qtype&&qtype.key==='gui'){
+    info={label:'人缘（贵人）',key:'gui',desc:'以贵人和太阴青龙为用神；贵人入传则有人相助，玄武天空防小人。',focus:[ganShang]};
+  }
+  else if(qtype&&qtype.key==='xue'){
+    info={label:'学业（考学）',key:'xue',desc:'以朱雀文书为用神，青龙贵人主金榜题名，天空主落空。',focus:[ganShang]};
+  }
+  else if(qtype&&qtype.key==='song'){
+    info={label:'诉讼（官非）',key:'song',desc:'以勾陈玄武为用神，勾陈主纠缠，玄武主暗昧；白虎临则事态严重。',focus:[zhiShang]};
+  }
+  else{
+    info={label:'通用（总断）',key:'other',desc:'以三传与干上神综合论断，观其生克冲合以定吉凶。',focus:[ganShang]};
+  }
+
+  // 检查用神是否在空亡中
+  var kvms=info.focus.map(function(b){return r.kvmWang.indexOf(b)>=0;});
+  var hasKvm=kvms.indexOf(true)>=0;
+  if(hasKvm) info.desc+='（注：用神临空亡，事有落空之象，逢冲方验）';
+
+  return info;
+}
+
+// ─── 应期判断 ─────────────────────────────────────────────────────
+// 三传之墓、冲、合为应期；旺相之月为应期
+function getYingqi(r){
+  var chu=r.chu,zhang=r.zhang,mo=r.mo;
+  var BRCH=['正','二','三','四','五','六','七','八','九','十','冬','腊'];
+
+  // 地支对应月份
+  var brToMonth={0:2,1:3,2:4,3:5,4:6,5:7,6:8,7:9,8:10,9:11,10:12,11:1};
+
+  // 检查是否相冲（对宫）
+  function isChong(a,b){return mod(a-b,6)===0&&a!==b;}
+  // 检查是否相合
+  function isHe(a,b){
+    var heMap={0:[2,6],2:[0,8],4:[7,11],7:[4,10],8:[2,10],10:[7,8]};
+    for(var k in heMap)if(parseInt(k)===a&&heMap[k].indexOf(b)>=0)return true;
+    return false;
+  }
+  // 检查是否三合
+  function isSanhe(a,b){
+    var sh={0:[2,8],2:[0,10],4:[10,6],6:[4,10],7:[9,3],8:[0,10],10:[2,8]};
+    for(var k in sh)if(parseInt(k)===a&&sh[k].indexOf(b)>=0)return true;
+    return false;
+  }
+  // 检查三传自身是否墓（被克最重）
+  function isMu(br){
+    var e=ELEM[br];
+    return KE[KE[KE[KE[KE[e]]]]]===e;
+  }
+
+  var result=[];
+  var mChu=brToMonth[chu],mZhong=brToMonth[zhang],mMo=brToMonth[mo];
+
+  // 近中远三期
+  result.push({t:'近',d:'初传 '+BRAN[chu]+'（'+mChu+'月前后）',pri:1});
+  result.push({t:'中',d:'中传 '+BRAN[zhang]+'（'+mZhong+'月前后）',pri:2});
+  result.push({t:'远',d:'末传 '+BRAN[mo]+'（'+mMo+'月前后）',pri:3});
+
+  // 冲应期
+  var chongList=[];
+  [chu,zhang,mo].forEach(function(br){
+    for(var i=0;i<12;i++)if(isChong(br,i)&&chongList.indexOf(i)<0)chongList.push(i);
+  });
+  if(chongList.length>0){
+    chongList.forEach(function(b){
+      result.push({t:'冲',d:BRAN[b]+'月冲应（'+brToMonth[b]+'月前后）',pri:4});
+    });
+  }
+
+  // 合应期
+  var heList=[];
+  [chu,zhang,mo].forEach(function(br){
+    for(var i=0;i<12;i++)if(isHe(br,i)&&heList.indexOf(i)<0&&chongList.indexOf(i)<0)heList.push(i);
+  });
+  if(heList.length>0){
+    heList.forEach(function(b){
+      result.push({t:'合',d:BRAN[b]+'月合应（'+brToMonth[b]+'月前后）',pri:5});
+    });
+  }
+
+  // 长生帝旺之月
+  var dayElem=ELEM_S[r.dsb.stem];
+  var dwMap={'木':4,'火':6,'土':5,'金':8,'水':11};  // 帝旺月（节气）
+  var csMap={'木':2,'火':4,'土':5,'金':7,'水':0};    // 长生月
+  if(dwMap[dayElem]) result.push({t:'旺',d:dayElem+'气当旺之月（'+dwMap[dayElem]+'月）',pri:6});
+  if(csMap[dayElem]) result.push({t:'生',d:dayElem+'气长生之月（'+csMap[dayElem]+'月）',pri:7});
+
+  // 按优先级排序
+  result.sort(function(a,b){return a.pri-b.pri;});
+
+  // 方位（基于三传地支方位）
+  var dirs={0:'正北',1:'东北',2:'正东',3:'东南',4:'正南',5:'西南',6:'正西',7:'西北',8:'北偏东',9:'东偏南',10:'南偏西',11:'西偏北'};
+  var locList=[chu,zhang,mo].map(function(b){return dirs[b];});
+  // 去除重复
+  var uniqLoc=[];for(var ui=0;ui<locList.length;ui++)if(uniqLoc.indexOf(locList[ui])<0)uniqLoc.push(locList[ui]);
+
+  return{times:result.slice(0,6),directions:uniqLoc};
+}
+
+// ─── 空亡检查辅助 ─────────────────────────────────────────────────
+function isKongWang(br,r){
+  return r.kvmWang.indexOf(br)>=0;
 }
 
 // ─── 一事一断详细解读 ─────────────────────────────────────────────
@@ -1406,6 +1611,22 @@ function genAdvice(r,qtype){
     }
     html+='</p>';
     
+    // 驿马状况
+    var yimaBr=r.yima;
+    var yimaJ=r.generals[yimaBr]?r.generals[yimaBr].jiang:'';
+    html+='<p><strong>【驿马 · '+BRAN[yimaBr]+'（'+yimaJ+'）】</strong>：';
+    if(yimaBr===chu||yimaBr===zhang||yimaBr===mo){
+      html+='<span style="color:var(--orange)">驿马入传，速动之象，宜立即出行或加速进程。</span>';
+    } else {
+      html+='驿马不在三传，动意不强，可从容安排。';
+    }
+    html+='</p>';
+    // 天气预兆（基于三传地支五行与月令关系）
+    var MOON_WEATHER={'木':'多风','火':'晴热','土':'阴燥','金':'干燥','水':'多雨'};
+    var moonElem='土';
+    var mx=0;for(var mi=0;mi<[chu,zhang,mo,dayBr,dayLodge].length;mi++){var me=ELEM[[chu,zhang,mo,dayBr,dayLodge][mi]];if(me)moonElem=me;}
+    html+='<p style="font-size:.78rem;color:var(--dim)">出行期间天气预兆：<span style="color:var(--gold2)">'+MOON_WEATHER[moonElem]+'</span>（三传主导五行）</p>';
+    // 综合建议
     html+='<p><strong>【综合出行建议】</strong></p>';
     if(chuJ==='六合'||chuJ==='青龙'||moJ==='青龙'){
       html+='<span style="color:var(--green)">六合或青龙入传，出行大吉，宜出发。</span>';
@@ -1413,12 +1634,18 @@ function genAdvice(r,qtype){
     else if(chuJ==='白虎'||moJ==='白虎'){
       html+='<span style="color:var(--red)">白虎入传，出行有险，宜推迟或谨慎。</span>';
     }
+    else if(chuJ==='螣蛇'){
+      html+='<span style="color:var(--orange)">螣蛇临出行，须防路途有惊有变，随机应变。</span>';
+    }
+    else if(chuJ==='玄武'){
+      html+='<span style="color:var(--blue)">玄武临出行，防行李遗失或遭窃，贵重物品妥善保管。</span>';
+    }
     else{
       html+='出行运势平稳，可按时出发。';
     }
     html+='</p>';
   }
-  
+
   // ── 诉讼类 ──
   else if(qtype.key==='song'){
     html+='<p><strong>【诉讼判断要点】</strong></p>';
@@ -1508,7 +1735,75 @@ function genAdvice(r,qtype){
     }
     html+='</p>';
   }
-  
+
+  // ── 人际关系/贵人相助类 ──
+  else if(qtype.key==='gui'){
+    html+='<p><strong>【人际关系·贵人相助判断要点】</strong></p>';
+    html+='<p>贵人相助首看三传是否见贵人、青龙、太阴；忌玄武、天空（主小人）。初传为事之起点，即贵人缘起；中传为过程，末传为结果。</p>';
+
+    html+='<p><strong>◆ 初传 '+BRAN[chu]+'（'+chuJ+'·'+chuE+'）—— 缘分之始</strong></p>';
+    if(chuJ==='贵人'){
+      html+='<span style="color:var(--green)">贵人临初传，开局即得助力！近期有望遇到能提携、帮助您的贵人，宜主动社交、表达诚意。</span>';
+    }
+    else if(chuJ==='青龙'||chuJ==='太阴'||chuJ==='太常'){
+      html+='<span style="color:var(--green)">'+chuJ+'临初传，虽非贵人本人，但有吉祥助力暗中相助，人际关系良好。</span>';
+    }
+    else if(chuJ==='玄武'||chuJ==='天空'){
+      html+='<span style="color:var(--red)">'+chuJ+'临初传，须防遇人不淑或背后有小人在暗中作梗，合作须谨慎。</span>';
+    }
+    else if(chuJ==='螣蛇'||chuJ==='勾陈'){
+      html+='<span style="color:var(--orange)">'+chuJ+'临初传，人际有纠结缠绕之感，可能遇到表面帮助实则牵绊之人，当谨慎辨识。</span>';
+    }
+    else{
+      html+=chuJ+'临初传，人际缘分平平，需主动创造机会。';
+    }
+    html+='</p>';
+
+    html+='<p><strong>◆ 中传 '+BRAN[zhang]+'（'+zhongJ+'·'+zhangE+'）—— 关系发展</strong></p>';
+    if(zhongJ==='贵人'){
+      html+='<span style="color:var(--green)">中传见贵人，人际发展中有重要助力介入，事半功倍。</span>';
+    }
+    else if(zhongJ==='六合'||zhongJ==='太阴'){
+      html+='<span style="color:var(--green)">'+zhongJ+'临中传，关系向融洽、合作方向发展，贵人缘渐入佳境。</span>';
+    }
+    else if(zhongJ==='玄武'){
+      html+='<span style="color:var(--red)">玄武临中传，关系中有暗昧、隐瞒或暗中利益牵扯，须留意。</span>';
+    }
+    else{
+      html+=zhongJ+'临中传，人际发展平稳。';
+    }
+    html+='</p>';
+
+    html+='<p><strong>◆ 末传 '+BRAN[mo]+'（'+moJ+'·'+moE+'）—— 结果预断</strong></p>';
+    if(moJ==='贵人'||moJ==='青龙'||moJ==='太阴'){
+      html+='<span style="color:var(--green)">末传得'+moJ+'相助，结果有贵人收尾，大吉！贵人运从始至终贯穿，得善果。</span>';
+    }
+    else if(moJ==='六合'){
+      html+='<span style="color:var(--green)">六合临末传，人际圆满，得合作伙伴或朋友之助，结果和合吉利。</span>';
+    }
+    else if(moJ==='玄武'||moJ==='白虎'){
+      html+='<span style="color:var(--red)">'+moJ+'临末传，人际结果有损，可能遇小人或关系破裂，须及时止损。</span>';
+    }
+    else{
+      html+=moJ+'临末传，结果需综合全局判断，无明显吉凶偏向。';
+    }
+    html+='</p>';
+
+    // 综合建议
+    if(chuJ==='贵人'||zhongJ==='贵人'||moJ==='贵人'){
+      html+='<p style="color:var(--green)"><strong>◆ 综合论断：</strong>三传见贵人，整体贵人运旺盛，宜积极社交、主动寻求合作机会，近期有贵人现身的强烈信号。</p>';
+    }
+    else if((chuJ==='玄武'||chuJ==='天空')&&(moJ==='玄武'||moJ==='天空')){
+      html+='<p style="color:var(--red)"><strong>◆ 综合论断：</strong>初末见阴害之神，贵人运欠佳，须防小人作祟，合作前宜多考察对方底细，勿轻信口头承诺。</p>';
+    }
+    else if(chuJ==='青龙'||zhongJ==='青龙'||moJ==='青龙'||chuJ==='太阴'||zhongJ==='太阴'||moJ==='太阴'){
+      html+='<p style="color:var(--green)"><strong>◆ 综合论断：</strong>有吉祥之神眷顾，虽非直接贵人，但暗中有助，人际缘分不错，宜广结善缘。</p>';
+    }
+    else{
+      html+='<p style="color:var(--orange)"><strong>◆ 综合论断：</strong>贵人运一般，无明显吉凶信号。机遇需要自己主动争取，同时注意防范表面友好实则利用之人。</p>';
+    }
+  }
+
   // 其他类型
   else{
     html+='<p><strong>◆ 初传 '+BRAN[chu]+'（'+chuJ+'）</strong>：'+(TJ_DESC[chuJ]||'—')+'</p>';
@@ -1556,6 +1851,7 @@ function renderAll(r,q,ft){
 }
 
 function renderPillars(r){
+  var kv1=r.kvmWang[0],kv2=r.kvmWang[1];
   var el=document.getElementById('plEl');
   el.innerHTML=
     '<div class="pls">'+
@@ -1563,10 +1859,12 @@ function renderPillars(r){
     '<div class="pl"><div class="pl-l">月柱</div><div class="pl-v">'+STEM[r.msb.stem]+BRAN[r.msb.branch]+'</div></div>'+
     '<div class="pl"><div class="pl-l">日柱 <span style="font-size:.6rem;color:#6a5a48">(占时)</span></div><div class="pl-v pl-v-y">'+STEM[r.dsb.stem]+BRAN[r.dsb.branch]+'</div></div>'+
     '<div class="pl"><div class="pl-l">时柱</div><div class="pl-v">'+STEM[r.hsb.stem]+BRAN[r.hsb.branch]+'</div></div>'+
+    '<div class="pl"><div class="pl-l">空亡</div><div class="pl-v" style="color:var(--red);font-size:1.1rem">'+BRAN[kv1]+' '+BRAN[kv2]+'</div></div>'+
     '</div>'+
     '<div style="text-align:center;color:var(--faint);font-size:.78rem">'+
     '月将 <span style="color:var(--gold2)">'+r.yj.name+'</span> · '+r.yj.zhong+'后（'+BRAN[r.yj.branch]+'宫）'+
     '&nbsp;&middot;&nbsp; 起课法 <span style="color:var(--gold2)">'+r.zongmen+'</span>'+
+    '&nbsp;&middot;&nbsp; <span style="color:var(--dim)">空亡示事难成，逢冲则验</span>'+
     '</div>';
 }
 
@@ -1592,8 +1890,16 @@ function renderHeavenEarth(r){
   ctx.textAlign='center';ctx.textBaseline='middle';
   for(var i=0;i<12;i++){
     var a=(i*30-90)*Math.PI/180;
+    var bx=cx+(R-18)*Math.cos(a),by=cy+(R-18)*Math.sin(a);
+    // 空亡标记
+    if(r.kvmWang.indexOf(i)>=0){
+      ctx.beginPath();ctx.arc(bx,by,14,0,Math.PI*2);
+      ctx.strokeStyle='rgba(200,80,48,.55)';ctx.lineWidth=1.5;ctx.stroke();
+      ctx.font='bold 7px serif';ctx.fillStyle='rgba(200,80,48,.7)';
+      ctx.fillText('空',bx,by+3);
+    }
     ctx.font='13px serif';ctx.fillStyle='#7a6a58';
-    ctx.fillText(BRAN[i],cx+(R-18)*Math.cos(a),cy+(R-18)*Math.sin(a));
+    ctx.fillText(BRAN[i],bx,by);
     ctx.font='10px serif';ctx.fillStyle=elemColor(ELEM[i]);
     ctx.fillText(ELEM[i],cx+(R-32)*Math.cos(a),cy+(R-32)*Math.sin(a));
   }
@@ -1713,6 +2019,10 @@ function renderInterp(r,q,ft){
   var zhongJ=r.generals[r.zhang]?r.generals[r.zhang].jiang:'';
   var moJ=r.generals[r.mo]?r.generals[r.mo].jiang:'';
   var ganJ=r.generals[r.dayLodge]?r.generals[r.dayLodge].jiang:'';
+  var zhiJ=r.generals[r.dayBr]?r.generals[r.dayBr].jiang:'';
+  var chuE=r.chuElem||ELEM[r.chu]||'土';
+  var zhangE=r.zhangElem||ELEM[r.zhang]||'土';
+  var moE=r.moElem||ELEM[r.mo]||'土';
   var zhiJ=r.generals[r.dayBr]?r.generals[r.dayBr].jiang:'';
   
   // 五行属性
@@ -1868,69 +2178,80 @@ function renderInterp(r,q,ft){
     '<p>日干 <span class="hl">'+STEM[r.dsb.stem]+'</span> 寄宫 '+BRAN[r.dayLodge]+'，干上神见 <span class="hl">'+ganJ+'</span>，'+
     '日支 <span class="hl">'+BRAN[r.dayBr]+'</span> 上神见 <span class="hl">'+zhiJ+'</span>。</p>'+
     '<p>'+ganTip+'。</p>'+
-    
+
+    // ═══ 用神选取 ═══
+    (function(){
+      var yshen=getYongshen(r,qtype);
+      var focusStr=yshcn.focus.map(function(b){return BRAN[b];}).join('、');
+      return'<hr class="dv">'+'<p><strong>◆ 用神选取：</strong></p>'+'<p>本课用神为 <span class="hl">【'+yshcn.label+'】</span>。<span style="font-size:.82rem;color:var(--dim)">'+yshcn.desc+'</span></p>'+
+      '<p>关键神将：<span class="hl">'+focusStr+'</span>。'+(yshcn.desc.indexOf('注：')>=0?'<span style="color:var(--red);font-size:.78rem"> 用神临空亡，事有落空之象，逢冲方验！</span>':'')+'</p>';
+    })()+
+
+    // ═══ 六亲分析 ═══
+    '<hr class="dv">'+'<p><strong>◆ 六亲分析（日干 '+STEM[r.dsb.stem]+'）：</strong></p>'+'<p style="font-size:.8rem;color:var(--dim);line-height:1.7">六亲以日干为我，按五行生克定亲疏。三传临不同六亲，显示事中各方力量。</p>'+
+    (function(){
+      var lq=r.liuQinMap;
+      var chuLq=lq[r.chu],zhangLq=lq[r.zhang],moLq=lq[r.mo];
+      var rows=[
+        {l:'初传 '+BRAN[r.chu],lq:chuLq,e:r.chuElem},
+        {l:'中传 '+BRAN[r.zhang],lq:zhangLq,e:r.zhangElem},
+        {l:'末传 '+BRAN[r.mo],lq:moLq,e:r.moElem},
+        {l:'日支 '+BRAN[r.dayBr],lq:lq[r.dayBr],e:r.dayBrElem},
+        {l:'德神 '+BRAN[r.deBr],lq:lq[r.deBr],e:ELEM[r.deBr]},
+        {l:'禄神 '+BRAN[r.luBr],lq:lq[r.luBr],e:ELEM[r.luBr]}
+      ];
+      var h='<div style="overflow-x:auto"><table class="gtbl" style="min-width:420px"><tr><th>位置</th><th>六亲</th><th>五行</th><th>吉凶提示</th></tr>';
+      for(var ri=0;ri<rows.length;ri++){
+        var rw=rows[ri];
+        var jx=(rw.lq==='正财'||rw.lq==='偏财'||rw.lq==='正官'||rw.lq==='正印'||rw.lq==='比肩')?'color:var(--green)':
+                (rw.lq==='劫财'||rw.lq==='七杀'||rw.lq==='伤官')?'color:var(--red)':'color:var(--dim)';
+        var jxTip=(rw.lq==='正官'?'事业官运':rw.lq==='正财'?'钱财姻缘':rw.lq==='偏财'?'意外横财':rw.lq==='正印'?'文书长辈':rw.lq==='偏印'?'次级庇护':rw.lq==='比肩'?'同辈助力':rw.lq==='劫财'?'竞争破耗':rw.lq==='伤官'?'才华表达':rw.lq==='食神'?'福气食禄':'一般关系');
+        h+='<tr><td>'+rw.l+'</td><td style="'+jx+'">'+rw.lq+'</td><td>'+rw.e+'</td><td style="font-size:.72rem;color:var(--dim)">'+jxTip+'</td></tr>';
+      }
+      h+='</table></div>';
+      return h;
+    })()+
+
+    // ═══ 应期判断 ═══
+    (function(){
+      var yq=getYingqi(r);
+      var timeStr=yq.times.map(function(t){return'<span class="ss-tg" style="cursor:default">'+t.t+'：'+t.d.replace(/'/,'&apos;')+'</span>';}).join(' ');
+      var dirStr=yq.directions.map(function(d){return'<span class="ss-tg" style="background:rgba(64,128,192,.1);border-color:rgba(64,128,192,.3);color:#6090c0">'+d+'</span>';}).join(' ');
+      return'<hr class="dv">'+'<p><strong>◆ 应期判断：</strong></p>'+
+        '<p style="font-size:.8rem;color:var(--dim)">应期即事情应验之时；方位即事人所在/行动方向。以三传地支为时间轴，结合冲合生克判断。</p>'+
+        '<p><strong>时间应期：</strong></p>'+'<div class="ss-tags">'+timeStr+'</div>'+
+        '<p style="margin-top:6px"><strong>行动方位：</strong>'+dirStr+'</p>';
+    })()+
+
     // 特殊格局
     '<hr class="dv">'+
     '<p><strong>◆ 特殊格局：</strong></p>'+
-    '<p style="font-size:.8rem;color:var(--dim);line-height:1.7">';
-  var pats=[];
-  // 三传归一
-  if(r.chu===r.zhang&&r.zhang===r.mo) pats.push({t:'三传归一',c:'var(--gold2)',d:'初、中、末三传相同，事无变化，从头至尾一致。主专一，亦主无转机。'});
-  // 首尾同
-  else if(r.chu===r.mo&&r.chu!==r.zhang) pats.push({t:'首尾相同',c:'var(--gold2)',d:'初末相同，事有回旋，终归原点，须防循环往复。'});
-  // 初传克日
-  if(KE[chuE]===r.dayElem) pats.push({t:'初传克日',c:'var(--red)',d:'初传克日干，有耗损、压力，来自外部阻碍。'});
-  // 初传生日
-  if(SHENG[chuE]===r.dayElem) pats.push({t:'初传生日',c:'var(--green)',d:'初传生日干，外来滋养，有助力。'});
-  // 初传与日同五行
-  if(chuE===r.dayElem) pats.push({t:'初传扶日',c:'var(--green)',d:'初传五行与日干相同，本气相扶。'});
-  // 日干生初传
-  if(SHENG[r.dayElem]===chuE) pats.push({t:'日干生初传',c:'var(--orange)',d:'日干生初传，自身付出，有消耗但亦主慷慨。'});
-  // 日干克初传
-  if(KE[r.dayElem]===chuE) pats.push({t:'日干克初传',c:'var(--orange)',d:'日干克初传，可主动掌控局面，耗力但不被动。'});
-  // 初传与日支同
-  if(r.chu===r.dayBr) pats.push({t:'初传临日支',c:'var(--gold2)',d:'初传临支，事与本地、本身相关，亲力亲为。'});
-  // 天将首尾同
-  if(chuJ&&chuJ===moJ&&chuJ!==zhongJ) pats.push({t:'首尾天将同',c:'var(--gold2)',d:'天将首尾呼应，事有始有终，善始善终之象。'});
-  // 双贵人
-  if(chuJ==='贵人'&&moJ==='贵人') pats.push({t:'双贵拱照',c:'var(--green)',d:'贵人临初末，大吉之象，多有贵人相助。'});
-  // 双虎
-  if(chuJ==='白虎'&&moJ==='白虎') pats.push({t:'双虎并临',c:'var(--red)',d:'白虎临初末，凶象重重，须防大灾大患。'});
-  // 初传白虎
-  if(chuJ==='白虎') pats.push({t:'白虎发用',c:'var(--red)',d:'白虎为初传，事发突然，须防意外伤害。'});
-  // 初传贵人
-  if(chuJ==='贵人') pats.push({t:'贵人发用',c:'var(--green)',d:'贵人为初传，开局得助，宜积极行动。'});
-  // 初传青龙
-  if(chuJ==='青龙') pats.push({t:'青龙发用',c:'var(--green)',d:'青龙为初传，吉祥如意，财喜临门。'});
-  // 初传玄武
-  if(chuJ==='玄武') pats.push({t:'玄武发用',c:'var(--blue)',d:'玄武为初传，主暗昧、盗匪、暧昧不明之事。'});
-  // 三传三合
-  function mod12(a,b){var d=((a-b)%12+12)%12;return Math.min(d,12-d);}
-  if(mod12(r.chu,r.zhang)===4&&mod12(r.zhang,r.mo)===4) pats.push({t:'三传三合局',c:'var(--gold2)',d:'三传成三合之势，事情蓄力，待时而发。'});
-  // 末传生日
-  if(SHENG[moE]===r.dayElem) pats.push({t:'末传生日',c:'var(--green)',d:'末传生日干，结果有滋养，大吉收尾。'});
-  // 末传克日
-  if(KE[moE]===r.dayElem) pats.push({t:'末传克日',c:'var(--red)',d:'末传克日干，结果耗损，需防后患。'});
-  // 初末地支同宫
-  if(r.chu===r.mo&&r.zhang!==r.chu) pats.push({t:'循环课',c:'var(--gold2)',d:'天盘循环，首尾同宫，事反复循环。'});
-  // 德神发用
-  if(r.deBr===r.chu) pats.push({t:'德神发用',c:'var(--green)',d:'德神居初传，天赐之吉，能化解凶险。'});
-  // 禄神发用
-  if(r.luBr===r.chu) pats.push({t:'禄神发用',c:'var(--orange)',d:'禄神居初传，财禄临门，主得利。'});
-  // 初传见驿马
-  if(r.yima===r.chu) pats.push({t:'驿马发用',c:'var(--orange)',d:'驿马为初传，事速动，须立即行动。'});
-  // 初传见桃花
-  if(r.taohua===r.chu) pats.push({t:'桃花发用',c:'color:#e879f9',d:'桃花为初传，感情事动，异性缘活跃。'});
-  // 无特殊格局
-  if(pats.length===0) pats.push({t:'普通课象',c:'var(--dim)',d:'本课无特殊格局，应以五行生克、天将含义及三传关系综合判断。'});
-  for(var pi=0;pi<pats.length;pi++){
-    html+='<span style="color:'+pats[pi].c+'">【'+pats[pi].t+'】</span> '+pats[pi].d+' ';
-  }
-  html+='</p>'+
-    
+    '<p style="font-size:.8rem;color:var(--dim);line-height:1.7">'+
+    (r.chu===r.zhang&&r.zhang===r.mo?'<span style="color:var(--gold2)">【三传归一】</span>初、中、末三传相同，事无变化，从头至尾一致。主专一，亦主无转机。 ':
+     r.chu===r.mo&&r.chu!==r.zhang?'<span style="color:var(--gold2)">【首尾相同】</span>初末相同，事有回旋，终归原点，须防循环往复。 ':'')+
+    (KE[chuE]===r.dayElem?'<span style="color:var(--red)">【初传克日】</span>初传克日干，有耗损、压力，来自外部阻碍。 ':'')+
+    (SHENG[chuE]===r.dayElem?'<span style="color:var(--green)">【初传生日】</span>初传生日干，外来滋养，有助力。 ':'')+
+    (chuE===r.dayElem?'<span style="color:var(--green)">【初传扶日】</span>初传五行与日干相同，本气相扶。 ':'')+
+    (SHENG[r.dayElem]===chuE?'<span style="color:var(--orange)">【日干生初传】</span>日干生初传，自身付出，有消耗但亦主慷慨。 ':'')+
+    (KE[r.dayElem]===chuE?'<span style="color:var(--orange)">【日干克初传】</span>日干克初传，可主动掌控局面，耗力但不被动。 ':'')+
+    (r.chu===r.dayBr?'<span style="color:var(--gold2)">【初传临日支】</span>初传临支，事与本地、本身相关，亲力亲为。 ':'')+
+    (chuJ&&chuJ===moJ&&chuJ!==zhongJ?'<span style="color:var(--gold2)">【首尾天将同】</span>天将首尾呼应，事有始有终，善始善终之象。 ':'')+
+    (chuJ==='贵人'&&moJ==='贵人'?'<span style="color:var(--green)">【双贵拱照】</span>贵人临初末，大吉之象，多有贵人相助。 ':'')+
+    (chuJ==='白虎'&&moJ==='白虎'?'<span style="color:var(--red)">【双虎并临】</span>白虎临初末，凶象重重，须防大灾大患。 ':'')+
+    (chuJ==='白虎'?'<span style="color:var(--red)">【白虎发用】</span>白虎为初传，事发突然，须防意外伤害。 ':'')+
+    (chuJ==='贵人'?'<span style="color:var(--green)">【贵人发用】</span>贵人为初传，开局得助，宜积极行动。 ':'')+
+    (chuJ==='青龙'?'<span style="color:var(--green)">【青龙发用】</span>青龙为初传，吉祥如意，财喜临门。 ':'')+
+    (chuJ==='玄武'?'<span style="color:var(--blue)">【玄武发用】</span>玄武为初传，主暗昧、盗匪、暧昧不明之事。 ':'')+
+    ((function(a,b){var d=((a-b)%12+12)%12;return Math.min(d,12-d);})(r.chu,r.zhang)===4&&(function(a,b){var d=((a-b)%12+12)%12;return Math.min(d,12-d);})(r.zhang,r.mo)===4?'<span style="color:var(--gold2)">【三传三合局】</span>三传成三合之势，事情蓄力，待时而发。 ':'')+
+    (SHENG[moE]===r.dayElem?'<span style="color:var(--green)">【末传生日】</span>末传生日干，结果有滋养，大吉收尾。 ':'')+
+    (KE[moE]===r.dayElem?'<span style="color:var(--red)">【末传克日】</span>末传克日干，结果耗损，需防后患。 ':'')+
+    (r.chu===r.mo&&r.zhang!==r.chu?'<span style="color:var(--gold2)">【循环课】</span>天盘循环，首尾同宫，事反复循环。 ':'')+
+    (r.deBr===r.chu?'<span style="color:var(--green)">【德神发用】</span>德神居初传，天赐之吉，能化解凶险。 ':'')+
+    (r.luBr===r.chu?'<span style="color:var(--orange)">【禄神发用】</span>禄神居初传，财禄临门，主得利。 ':'')+
+    (r.yima===r.chu?'<span style="color:var(--orange)">【驿马发用】</span>驿马为初传，事速动，须立即行动。 ':'')+
+    (r.taohua===r.chu?'<span style="color:#e879f9">【桃花发用】</span>桃花为初传，感情事动，异性缘活跃。 ':'')+
+    '</p>'+
     qSection+
-    
-    // 附注
     '<div class="sep">◆ ◇ ◆</div>'+
     '<p style="font-size:.78rem;color:var(--faint);text-indent:0;line-height:1.8">'+
     '附注：本页面为六壬算法教学演示版，融合九宗门起传、月将节气定位、贵人顺逆排将、十二天将、神煞、长生十二宫、德禄等核心要素。'+
@@ -1958,7 +2279,12 @@ function divine(){
   r.question=q;
   r.qtype=detectQ(q);
   r.fortune=fortune(r,r.qtype);
+  // 缓存结果供导出/命盘/TTS使用
+  window._lastR=r;
+  window._lastFT=r.fortune;
   renderAll(r,q,r.fortune);
+  // 若开启了终身命盘则立即更新
+  if(document.getElementById('cbMingpan').checked) updateMingpan(r);
 }
 
 function useNow(){
@@ -1974,6 +2300,88 @@ document.getElementById('btnDivine').addEventListener('click',function(){
   try{ divine(); }catch(e){ console.error(e); alert('出错：'+e.message); }
 });
 document.getElementById('btnNow').addEventListener('click',useNow);
+
+// ── 终身命盘 toggle ──
+document.getElementById('cbMingpan').addEventListener('change',function(){
+  var fields=document.getElementById('mingpanFields');
+  var result=document.getElementById('mingpanResult');
+  if(this.checked){
+    fields.style.display='flex';
+    // 若已有结果则立即计算
+    if(window._lastR){
+      updateMingpan(window._lastR);
+    }
+  } else {
+    fields.style.display='none';
+    result.textContent='';
+  }
+});
+
+// ── 终身命盘结果更新 ──
+function updateMingpan(r){
+  var result=document.getElementById('mingpanResult');
+  if(!document.getElementById('cbMingpan').checked){return;}
+  var by=parseInt(document.getElementById('iby').value)||1990;
+  var bm=parseInt(document.getElementById('ibm').value)||1;
+  var bd=parseInt(document.getElementById('ibd').value)||1;
+  try{
+    var bJDN=Math.floor(jdn(by,bm,bd));
+    var dsb=daySB(by,bm,bd);
+    var bStem=STEM[dsb.stem],bBran=BRAN[dsb.branch];
+    var bAge=(parseInt(document.getElementById('iy').value)||2026)-by;
+    var bGen=r.generals[dsb.branch]?r.generals[dsb.branch].jiang:'-';
+    result.innerHTML='命宫：<span style="color:var(--gold2)">'+bStem+bBran+'</span>　当前岁数：<span style="color:var(--gold2)">'+bAge+'岁</span>　命宫主神：<span style="color:var(--gold2)">'+bGen+'</span>';
+  }catch(e){result.textContent='命盘计算出错';}
+}
+
+// ── JSON 导出 ──
+document.getElementById('btnExport').addEventListener('click',function(){
+  var r=window._lastR,q=document.getElementById('iq').value;
+  if(!r){alert('请先起课');return;}
+  var ft=fortune(r,q);
+  var exp={
+    meta:{date:new Date().toISOString(),question:q,version:'daliuren_full_v2'},
+    pillars:{year:STEM[r.ysb.stem]+BRAN[r.ysb.branch],month:STEM[r.msb.stem]+BRAN[r.msb.branch],day:STEM[r.dsb.stem]+BRAN[r.dsb.branch],hour:STEM[r.hsb.stem]+BRAN[r.hsb.branch]},
+    yueJiang:r.yj,
+    zongMen:r.zongmen,
+    kongWang:[BRAN[r.kvmWang[0]],BRAN[r.kvmWang[1]]],
+    lessons:r.lessons,
+    chuan:{chu:BRAN[r.chu],zhang:BRAN[r.zhang],mo:BRAN[r.mo],chuJiang:r.generals[r.chu]?r.generals[r.chu].jiang:'',zhangJiang:r.generals[r.zhang]?r.generals[r.zhang].jiang:'',moJiang:r.generals[r.mo]?r.generals[r.mo].jiang:''},
+    generals:r.generals,
+    shafa:r.ss.map(function(s){return s.n;}),
+    fortune:ft,
+    advice:ft.text
+  };
+  var blob=new Blob([JSON.stringify(exp,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='daliuren_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+});
+
+// ── TTS 播报 ──
+document.getElementById('btnTTS').addEventListener('click',function(){
+  var ft=window._lastFT;
+  if(!ft){alert('请先起课');return;}
+  var text='大六壬占卜结果：综合判断为'+ft.level+'。'
+    +(ft.tags&&ft.tags.length?'核心标签：'+ft.tags.map(function(t){return t.t;}).join('，')+'.':'')
+    +ft.text;
+  // 使用 render_ui 提示用户确认，或者直接用 tts 工具
+  var el=document.getElementById('fcRslt');
+  if(el) el.innerHTML+=' <span style="font-size:.7rem;color:var(--dim)">（语音播报中…）</span>';
+  // 通过按钮点击触发语音
+  if(typeof tts!=='undefined'){tts({text:text});}
+  else{window._ttsText=text;alert('TTS正在准备中，请稍候再次点击「播报」');}
+});
+
+// ── 终身命盘 出生日期联动重算 ──
+['iby','ibm','ibd','ibh'].forEach(function(id){
+  document.getElementById(id).addEventListener('change',function(){
+    if(window._lastR&&document.getElementById('cbMingpan').checked) updateMingpan(window._lastR);
+  });
+});
+
+// ── divine 完成后自动更新终身命盘 ──
+var _origDivine=typeof divine!=='undefined'?divine:null;
 
 // 初始化
 useNow();
