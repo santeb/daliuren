@@ -2181,7 +2181,7 @@ function renderInterp(r,q,ft){
 
     // ═══ 用神选取 ═══
     (function(){
-      var yshen=getYongshen(r,qtype);
+      var yshen=getYongshen(r,r.qtype);
       var focusStr=yshcn.focus.map(function(b){return BRAN[b];}).join('、');
       return'<hr class="dv">'+'<p><strong>◆ 用神选取：</strong></p>'+'<p>本课用神为 <span class="hl">【'+yshcn.label+'】</span>。<span style="font-size:.82rem;color:var(--dim)">'+yshcn.desc+'</span></p>'+
       '<p>关键神将：<span class="hl">'+focusStr+'</span>。'+(yshcn.desc.indexOf('注：')>=0?'<span style="color:var(--red);font-size:.78rem"> 用神临空亡，事有落空之象，逢冲方验！</span>':'')+'</p>';
