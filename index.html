@@ -1872,65 +1872,32 @@ function renderInterp(r,q,ft){
     // 特殊格局
     '<hr class="dv">'+
     '<p><strong>◆ 特殊格局：</strong></p>'+
-    '<p style="font-size:.8rem;color:var(--dim);line-height:1.7">';
-  var pats=[];
-  // 三传归一
-  if(r.chu===r.zhang&&r.zhang===r.mo) pats.push({t:'三传归一',c:'var(--gold2)',d:'初、中、末三传相同，事无变化，从头至尾一致。主专一，亦主无转机。'});
-  // 首尾同
-  else if(r.chu===r.mo&&r.chu!==r.zhang) pats.push({t:'首尾相同',c:'var(--gold2)',d:'初末相同，事有回旋，终归原点，须防循环往复。'});
-  // 初传克日
-  if(KE[chuE]===r.dayElem) pats.push({t:'初传克日',c:'var(--red)',d:'初传克日干，有耗损、压力，来自外部阻碍。'});
-  // 初传生日
-  if(SHENG[chuE]===r.dayElem) pats.push({t:'初传生日',c:'var(--green)',d:'初传生日干，外来滋养，有助力。'});
-  // 初传与日同五行
-  if(chuE===r.dayElem) pats.push({t:'初传扶日',c:'var(--green)',d:'初传五行与日干相同，本气相扶。'});
-  // 日干生初传
-  if(SHENG[r.dayElem]===chuE) pats.push({t:'日干生初传',c:'var(--orange)',d:'日干生初传，自身付出，有消耗但亦主慷慨。'});
-  // 日干克初传
-  if(KE[r.dayElem]===chuE) pats.push({t:'日干克初传',c:'var(--orange)',d:'日干克初传，可主动掌控局面，耗力但不被动。'});
-  // 初传与日支同
-  if(r.chu===r.dayBr) pats.push({t:'初传临日支',c:'var(--gold2)',d:'初传临支，事与本地、本身相关，亲力亲为。'});
-  // 天将首尾同
-  if(chuJ&&chuJ===moJ&&chuJ!==zhongJ) pats.push({t:'首尾天将同',c:'var(--gold2)',d:'天将首尾呼应，事有始有终，善始善终之象。'});
-  // 双贵人
-  if(chuJ==='贵人'&&moJ==='贵人') pats.push({t:'双贵拱照',c:'var(--green)',d:'贵人临初末，大吉之象，多有贵人相助。'});
-  // 双虎
-  if(chuJ==='白虎'&&moJ==='白虎') pats.push({t:'双虎并临',c:'var(--red)',d:'白虎临初末，凶象重重，须防大灾大患。'});
-  // 初传白虎
-  if(chuJ==='白虎') pats.push({t:'白虎发用',c:'var(--red)',d:'白虎为初传，事发突然，须防意外伤害。'});
-  // 初传贵人
-  if(chuJ==='贵人') pats.push({t:'贵人发用',c:'var(--green)',d:'贵人为初传，开局得助，宜积极行动。'});
-  // 初传青龙
-  if(chuJ==='青龙') pats.push({t:'青龙发用',c:'var(--green)',d:'青龙为初传，吉祥如意，财喜临门。'});
-  // 初传玄武
-  if(chuJ==='玄武') pats.push({t:'玄武发用',c:'var(--blue)',d:'玄武为初传，主暗昧、盗匪、暧昧不明之事。'});
-  // 三传三合
-  function mod12(a,b){var d=((a-b)%12+12)%12;return Math.min(d,12-d);}
-  if(mod12(r.chu,r.zhang)===4&&mod12(r.zhang,r.mo)===4) pats.push({t:'三传三合局',c:'var(--gold2)',d:'三传成三合之势，事情蓄力，待时而发。'});
-  // 末传生日
-  if(SHENG[moE]===r.dayElem) pats.push({t:'末传生日',c:'var(--green)',d:'末传生日干，结果有滋养，大吉收尾。'});
-  // 末传克日
-  if(KE[moE]===r.dayElem) pats.push({t:'末传克日',c:'var(--red)',d:'末传克日干，结果耗损，需防后患。'});
-  // 初末地支同宫
-  if(r.chu===r.mo&&r.zhang!==r.chu) pats.push({t:'循环课',c:'var(--gold2)',d:'天盘循环，首尾同宫，事反复循环。'});
-  // 德神发用
-  if(r.deBr===r.chu) pats.push({t:'德神发用',c:'var(--green)',d:'德神居初传，天赐之吉，能化解凶险。'});
-  // 禄神发用
-  if(r.luBr===r.chu) pats.push({t:'禄神发用',c:'var(--orange)',d:'禄神居初传，财禄临门，主得利。'});
-  // 初传见驿马
-  if(r.yima===r.chu) pats.push({t:'驿马发用',c:'var(--orange)',d:'驿马为初传，事速动，须立即行动。'});
-  // 初传见桃花
-  if(r.taohua===r.chu) pats.push({t:'桃花发用',c:'color:#e879f9',d:'桃花为初传，感情事动，异性缘活跃。'});
-  // 无特殊格局
-  if(pats.length===0) pats.push({t:'普通课象',c:'var(--dim)',d:'本课无特殊格局，应以五行生克、天将含义及三传关系综合判断。'});
-  for(var pi=0;pi<pats.length;pi++){
-    html+='<span style="color:'+pats[pi].c+'">【'+pats[pi].t+'】</span> '+pats[pi].d+' ';
-  }
-  html+='</p>'+
-    
+    '<p style="font-size:.8rem;color:var(--dim);line-height:1.7">'+
+    (r.chu===r.zhang&&r.zhang===r.mo?'<span style="color:var(--gold2)">【三传归一】</span>初、中、末三传相同，事无变化，从头至尾一致。主专一，亦主无转机。 ':
+     r.chu===r.mo&&r.chu!==r.zhang?'<span style="color:var(--gold2)">【首尾相同】</span>初末相同，事有回旋，终归原点，须防循环往复。 ':'')+
+    (KE[chuE]===r.dayElem?'<span style="color:var(--red)">【初传克日】</span>初传克日干，有耗损、压力，来自外部阻碍。 ':'')+
+    (SHENG[chuE]===r.dayElem?'<span style="color:var(--green)">【初传生日】</span>初传生日干，外来滋养，有助力。 ':'')+
+    (chuE===r.dayElem?'<span style="color:var(--green)">【初传扶日】</span>初传五行与日干相同，本气相扶。 ':'')+
+    (SHENG[r.dayElem]===chuE?'<span style="color:var(--orange)">【日干生初传】</span>日干生初传，自身付出，有消耗但亦主慷慨。 ':'')+
+    (KE[r.dayElem]===chuE?'<span style="color:var(--orange)">【日干克初传】</span>日干克初传，可主动掌控局面，耗力但不被动。 ':'')+
+    (r.chu===r.dayBr?'<span style="color:var(--gold2)">【初传临日支】</span>初传临支，事与本地、本身相关，亲力亲为。 ':'')+
+    (chuJ&&chuJ===moJ&&chuJ!==zhongJ?'<span style="color:var(--gold2)">【首尾天将同】</span>天将首尾呼应，事有始有终，善始善终之象。 ':'')+
+    (chuJ==='贵人'&&moJ==='贵人'?'<span style="color:var(--green)">【双贵拱照】</span>贵人临初末，大吉之象，多有贵人相助。 ':'')+
+    (chuJ==='白虎'&&moJ==='白虎'?'<span style="color:var(--red)">【双虎并临】</span>白虎临初末，凶象重重，须防大灾大患。 ':'')+
+    (chuJ==='白虎'?'<span style="color:var(--red)">【白虎发用】</span>白虎为初传，事发突然，须防意外伤害。 ':'')+
+    (chuJ==='贵人'?'<span style="color:var(--green)">【贵人发用】</span>贵人为初传，开局得助，宜积极行动。 ':'')+
+    (chuJ==='青龙'?'<span style="color:var(--green)">【青龙发用】</span>青龙为初传，吉祥如意，财喜临门。 ':'')+
+    (chuJ==='玄武'?'<span style="color:var(--blue)">【玄武发用】</span>玄武为初传，主暗昧、盗匪、暧昧不明之事。 ':'')+
+    ((function(a,b){var d=((a-b)%12+12)%12;return Math.min(d,12-d);})(r.chu,r.zhang)===4&&(function(a,b){var d=((a-b)%12+12)%12;return Math.min(d,12-d);})(r.zhang,r.mo)===4?'<span style="color:var(--gold2)">【三传三合局】</span>三传成三合之势，事情蓄力，待时而发。 ':'')+
+    (SHENG[moE]===r.dayElem?'<span style="color:var(--green)">【末传生日】</span>末传生日干，结果有滋养，大吉收尾。 ':'')+
+    (KE[moE]===r.dayElem?'<span style="color:var(--red)">【末传克日】</span>末传克日干，结果耗损，需防后患。 ':'')+
+    (r.chu===r.mo&&r.zhang!==r.chu?'<span style="color:var(--gold2)">【循环课】</span>天盘循环，首尾同宫，事反复循环。 ':'')+
+    (r.deBr===r.chu?'<span style="color:var(--green)">【德神发用】</span>德神居初传，天赐之吉，能化解凶险。 ':'')+
+    (r.luBr===r.chu?'<span style="color:var(--orange)">【禄神发用】</span>禄神居初传，财禄临门，主得利。 ':'')+
+    (r.yima===r.chu?'<span style="color:var(--orange)">【驿马发用】</span>驿马为初传，事速动，须立即行动。 ':'')+
+    (r.taohua===r.chu?'<span style="color:#e879f9">【桃花发用】</span>桃花为初传，感情事动，异性缘活跃。 ':'')+
+    '</p>'+
     qSection+
-    
-    // 附注
     '<div class="sep">◆ ◇ ◆</div>'+
     '<p style="font-size:.78rem;color:var(--faint);text-indent:0;line-height:1.8">'+
     '附注：本页面为六壬算法教学演示版，融合九宗门起传、月将节气定位、贵人顺逆排将、十二天将、神煞、长生十二宫、德禄等核心要素。'+
