@@ -1220,6 +1220,114 @@ function genAdvice(r,qtype){
     }
     html+='<p style="margin-top:10px;color:var(--dim);font-size:.78rem">建议：求财需脚踏实地，占卦仅供参考，最终还需看个人努力和时机。</p>';
     html+='</div></div>';
+
+    // ═══ 财运五大维度深化分析 ═══
+    html+='<div style="margin:14px 0;padding:14px;background:rgba(180,120,40,.06);border-radius:8px;border:1px solid rgba(180,120,40,.2)">';
+    html+='<p style="font-weight:600;margin-bottom:10px;color:var(--gold2)">【财运五维深度分析】</p>';
+    html+='<div style="font-size:.83rem;line-height:1.85">';
+
+    // 维度1：求财时机
+    html+='<p style="font-weight:600;margin-top:6px">① 求财时机：';
+    var csc=isKongWang(r.chu,r)?'空':'实',zsc=isKongWang(r.zhang,r)?'空':'实',msc=isKongWang(r.mo,r)?'空':'实';
+    html+='<span style="color:var(--dim);font-weight:400">初'+csc+'·中'+zsc+'·末'+msc+'</span></p>';
+    if(csc==='空'&&zsc==='实'){
+      html+='<p>初传空亡，主开始时机未到，须耐心等待；中传实，有实质进展，逢冲月（'+BRAN[(r.zhang+6)%12]+'月）方为进财之时。</p>';
+    } else if(csc==='空'&&msc==='空'){
+      html+='<p>三传两空，财运虚耗之象，不宜大额投入，防破财空忙。</p>';
+    } else if(csc==='实'&&msc==='空'){
+      html+='<p>首实尾空，财来而难聚，得财后需防盗、防骗，及时落袋为安。</p>';
+    } else if(csc==='实'&&zsc==='实'&&msc==='实'){
+      html+='<p>三传皆实，三步皆有实质，财运持续，宜稳中求进。</p>';
+    } else {
+      html+='<p>时机状态正常，财运随大运而行，宜把握时机。</p>';
+    }
+
+    // 维度2：五行财气流向
+    html+='<p style="font-weight:600;margin-top:8px">② 财气五行流向：</p>';
+    var stemElem=ELEM_S[r.dsb.stem];
+    var cElem=ELEM[r.chu],zElem=ELEM[r.zhang],mElem=ELEM[r.mo];
+    html+='<p>日干'+STEM[r.dsb.stem]+'（'+stemElem+'），三传：'+cElem+'→'+zElem+'→'+mElem+'</p>';
+    var shengStem=(SHENG[cElem]===stemElem)?'生':'克',shengZ=(SHENG[zElem]===stemElem)?'生':'克',shengM=(SHENG[mElem]===stemElem)?'生':'克';
+    var sc=(SHENG[cElem]===stemElem?'生助日干，大吉':SHENG[stemElem]===cElem?'日干生传，耗泄':'克日干，损耗');
+    var sz=(SHENG[zElem]===stemElem?'生助日干，大吉':SHENG[stemElem]===zElem?'日干生传，耗泄':'克日干，损耗');
+    var sm=(SHENG[mElem]===stemElem?'生助日干，大吉':SHENG[stemElem]===mElem?'日干生传，耗泄':'克日干，损耗');
+    html+='<p style="font-size:.78rem">初传'+cElem+'<'+sc+'>；中传'+zElem+'<'+sz+'>；末传'+mElem+'<'+sm+'>。</p>';
+    var cnt=([sc,sz,sm].filter(function(v){return v.indexOf('大吉')>=0||v.indexOf('生助')>=0;})).length;
+    if(cnt>=2) html+='<p style="color:var(--green)">整体财气得势，财运旺盛，宜进取求财。</p>';
+    else if(cnt===1) html+='<p style="color:var(--dim)">财气一般，吉凶参半，宜守成稳健。</p>';
+    else html+='<p style="color:var(--red)">财气受制，求财费力，防耗损透支。</p>';
+
+    // 维度3：禄神状态
+    html+='<p style="font-weight:600;margin-top:8px">③ 禄神 '+BRAN[r.luBr]+'（俸禄）状态：</p>';
+    var luInTr=[r.chu,r.zhang,r.mo].indexOf(r.luBr)>=0;
+    var luInKw=isKongWang(r.luBr,r);
+    if(luInKw) html+='<p>禄神临空亡，主俸禄落空，有职无薪或收入不如预期之象。</p>';
+    else if(luInTr) html+='<p>禄神入传，俸禄有根，财禄可期，宜脚踏实地求稳定收入。</p>';
+    else html+='<p>禄神不在三传，俸禄之力稍弱，须靠自身能力额外生财。</p>';
+
+    // 维度4：驿马/桃花
+    html+='<p style="font-weight:600;margin-top:8px">④ 驿马 '+BRAN[r.yima]+' / 桃花 '+BRAN[r.taohua]+' 状况：</p>';
+    var ymInTr=[r.chu,r.zhang,r.mo].indexOf(r.yima)>=0;
+    var thInTr=[r.chu,r.zhang,r.mo].indexOf(r.taohua)>=0;
+    if(ymInTr) html+='<p style="color:var(--orange)">驿马入传：财动之象，宜主动出击、出差贸易、外向求财。</p>';
+    else html+='<p>驿马不在三传：财不宜大动，守成为上。</p>';
+    if(thInTr) html+='<p style="color:#e879f9">桃花入传：财运与感情/娱乐相关，可能靠人脉、酒席、异性缘获利，亦主"财色相随"。</p>';
+
+    // 维度5：特殊格局助断
+    html+='<p style="font-weight:600;margin-top:8px">⑤ 特殊格局助断：</p>';
+    if(r.chu===r.zhang&&r.zhang===r.mo){
+      html+='<p>三传归一：财运专一，同路发展；亦主财路固定，缺乏变化。</p>';
+    } else if(r.chu===r.mo){
+      html+='<p>首尾相同：财来去同路，须防循环往复，得财后易散去。</p>';
+    } else if(r.deBr===r.luBr){
+      html+='<p>德禄相聚：吉上吉，财运有德有禄，可得意外之喜。</p>';
+    } else if(chuJ==='青龙'&&zhongJ==='青龙'&&moJ==='青龙'){
+      html+='<p>三传皆青龙：大吉之极，财星三重，三传皆财，宜全力进取！</p>';
+    } else if(chuJ==='白虎'||chuJ==='玄武'||chuJ==='天空'){
+      html+='<p>初传见凶将，防破财之兆，详见上方初传详解。</p>';
+    } else {
+      html+='<p>无特殊格局，以三传天将五行综合论断即可。</p>';
+    }
+    html+='</div></div>';
+
+    // ═══ 化解建议 ═══
+    (function(){
+      var risks=[];
+      if(chuJ==='玄武') risks.push({j:'破财',s:'防被盗、被骗、避免投机理财，可将大额资金转为定存或购置固定资产保值。'});
+      if(chuJ==='白虎') risks.push({j:'耗损',s:'防意外支出、避免冒险投资，可提前做好预算、留有余钱应急。'});
+      if(chuJ==='天空') risks.push({j:'落空',s:'防虚假信息、不轻信高收益承诺，投资前务必核实项目真实性。'});
+      if(chuJ==='勾陈') risks.push({j:'阻滞',s:'防债务纠纷、合同纠纷，签合同前务必仔细审阅条款。'});
+      if(isKongWang(r.chu,r)) risks.push({j:'空忙',s:'时机未到，勿急于行动，可做准备工作，待逢冲之月再动。'});
+      if(luInKw) risks.push({j:'禄空',s:'收入可能打折，宜拓展副业或技能，避免单一收入来源。'});
+      if(risks.length===0) return'';
+      var h='<div style="margin:14px 0;padding:14px;background:rgba(200,80,48,.07);border-radius:8px;border:1px solid rgba(200,80,48,.2)">';
+      h+='<p style="font-weight:600;margin-bottom:8px;color:var(--red)">【财运化解与趋吉建议】</p>';
+      for(var ri=0;ri<risks.length;ri++){
+        h+='<p style="font-size:.82rem;margin-bottom:5px"><span style="color:var(--red)">▸ '+risks[ri].j+'风险：</span>'+risks[ri].s+'</p>';
+      }
+      h+='<p style="font-size:.78rem;color:var(--dim);margin-top:6px">化解核心原则：凶将临身则避其锋芒，吉将临身则乘势而上。空亡之支逢冲方验；凶将之支宜静不宜动。</p>';
+      h+='</div>';
+      return h;
+    })()+
+
+    // 投资方向建议
+    (function(){
+      var dirs=[];
+      if(chuJ==='青龙'||chuJ==='六合') dirs.push({d:'合作/合伙',n:'宜与可靠之人合伙，共担风险。'});
+      if(chuJ==='太常') dirs.push({d:'餐饮/销售',n:'饮食宴请之财，宜做销售、餐饮、服务行业。'});
+      if(chuJ==='太阴'||zhongJ==='太阴') dirs.push({d:'暗财/副业',n:'暗中获利之象，宜做副业、投资、兼职。'});
+      if(chuJ==='玄武') dirs.push({d:'规避风险',n:'防投机、防被骗，宜守不宜攻，远离高风险理财。'});
+      if([chu,zhang,mo].indexOf(r.yima)>=0) dirs.push({d:'主动出击',n:'驿马入传，宜出差、贸易、外向求财。'});
+      if([chu,zhang,mo].indexOf(r.taohua)>=0) dirs.push({d:'人脉变现',n:'桃花入传，宜借人脉、酒席、社交场合获利。'});
+      if(dirs.length===0) return'';
+      var h='<div style="margin:14px 0;padding:14px;background:rgba(74,138,74,.07);border-radius:8px;border:1px solid rgba(74,138,74,.2)">';
+      h+='<p style="font-weight:600;margin-bottom:8px;color:var(--green)">【求财方向与行动建议】</p>';
+      for(var di=0;di<dirs.length;di++){
+        h+='<p style="font-size:.82rem;margin-bottom:5px"><span style="color:var(--gold2)">▸ '+dirs[di].d+'：</span>'+dirs[di].n+'</p>';
+      }
+      h+='</div>';
+      return h;
+    })();
   }
   
   // ── 事业类 ──
@@ -1443,9 +1551,125 @@ function genAdvice(r,qtype){
     }
     html+='<p style="margin-top:10px;color:var(--dim);font-size:.78rem">建议：感情之事需双方真诚相待，占卦仅供参考，最终还需看个人努力和缘分。</p>';
     html+='</div></div>';
+
+    // ═══ 感情五维深度分析 ═══
+    html+='<div style="margin:14px 0;padding:14px;background:rgba(180,120,40,.06);border-radius:8px;border:1px solid rgba(180,120,40,.2)">';
+    html+='<p style="font-weight:600;margin-bottom:10px;color:var(--gold2)">【感情五维深度分析】</p>';
+    html+='<div style="font-size:.83rem;line-height:1.85">';
+
+    // 维度1：干上神与支上神关系
+    var ganShang=lessons[0].u;
+    var ganShangJ=r.generals[ganShang]?r.generals[ganShang].jiang:'-';
+    var zhiShang=lessons[2].u;
+    var zhiShangJ=r.generals[zhiShang]?r.generals[zhiShang].jiang:'-';
+    html+='<p style="font-weight:600">① 干上神 vs 支上神关系：</p>';
+    html+='<p>干上神 '+BRAN[ganShang]+'（'+ganShangJ+'）——代表本人/求测人状态</p>';
+    html+='<p>支上神 '+BRAN[zhiShang]+'（'+zhiShangJ+'）——代表对方/事之状态</p>';
+    var gsElem=ELEM[ganShang],zsElem=ELEM[zhiShang];
+    if(SHENG[gsElem]===zsElem) html+='<p>干生支：我方主动付出，感情由我方推动。</p>';
+    else if(SHENG[zsElem]===gsElem) html+='<p>支生干：对方主动，感情由对方推动，我方处于被动接受状态。</p>';
+    else if(KE[gsElem]===zsElem) html+='<p>干克支：我方主导，感情由我方掌控，须防强势给对方压力。</p>';
+    else if(KE[zsElem]===gsElem) html+='<p>支克干：对方主导，我方处于被动，感情由对方掌控。</p>';
+    else html+='<p>干支比和：双方关系平等，感情较为平衡稳定。</p>';
+
+    // 维度2：三传走势与感情走向
+    html+='<p style="font-weight:600;margin-top:10px">② 感情走势（三传）：</p>';
+    var chuLove=chuJ,zhangLove=zhongJ,moLove=moJ;
+    if(chuLove==='六合'||chuLove==='天后'||chuLove==='太阴'||chuLove==='青龙'){
+      html+='<p>初传 '+chuLove+'：感情有良好起点，开局顺利。</p>';
+    } else if(chuLove==='玄武'||chuLove==='白虎'){
+      html+='<p>初传 '+chuLove+'：感情起点有问题（暗昧/冲突），开局需要谨慎。</p>';
+    } else {
+      html+='<p>初传 '+chuLove+'：感情起点一般，随其自然发展。</p>';
+    }
+    if(zhangLove==='六合'||zhangLove==='天后'){
+      html+='<p>中传 '+zhangLove+'：感情中期发展良好，有深入可能。</p>';
+    } else if(zhangLove==='勾陈'||zhangLove==='白虎'){
+      html+='<p>中传 '+zhangLove+'：感情中期遇阻或有矛盾，需要耐心经营。</p>';
+    } else {
+      html+='<p>中传 '+zhangLove+'：感情中期发展平稳。</p>';
+    }
+    if(moLove==='六合'||moLove==='天后'||moLove==='青龙'){
+      html+='<p>末传 '+moLove+'：感情结局圆满，大吉之象！</p>';
+    } else if(moLove==='玄武'||moLove==='天空'){
+      html+='<p>末传 '+moLove+'：感情结局不明或落空，需有心理准备。</p>';
+    } else {
+      html+='<p>末传 '+moLove+'：感情结局平稳，无大吉凶。</p>';
+    }
+
+    // 维度3：桃花/驿马/阴差
+    html+='<p style="font-weight:600;margin-top:10px">③ 桃花/驿马分析：</p>';
+    var thBr=r.taohua,ymBr=r.yima;
+    var thInTr=[chu,zhang,mo].indexOf(thBr)>=0;
+    var ymInTr=[chu,zhang,mo].indexOf(ymBr)>=0;
+    html+='<p>桃花 '+BRAN[thBr]+' '+(thInTr?'<span style="color:#e879f9">【入传】</span>感情/魅力因素活跃，异性缘旺，防烂桃花或感情用事。':'不在三传，感情因素一般。')+'</p>';
+    html+='<p>驿马 '+BRAN[ymBr]+' '+(ymInTr?'<span style="color:var(--orange)">【入传】</span>感情有变动之象，可能是异地恋、离别重逢或感情迁移。':'不在三传，感情相对稳定。')+'</p>';
+
+    // 维度4：空亡的影响
+    html+='<p style="font-weight:600;margin-top:10px">④ 空亡对感情的影响：</p>';
+    var cKv=isKongWang(chu,r),zKv=isKongWang(zhang,r),mKv=isKongWang(mo,r);
+    if(cKv) html+='<p>初传 '+BRAN[chu]+' 空亡：感情开始时缺乏实质，或对方态度不明确，"落花有意流水无情"之象。逢冲月方有实质进展。</p>';
+    if(zKv) html+='<p>中传 '+BRAN[zhang]+' 空亡：感情发展中段有虚化之象，防中途生变或停滞不前。</p>';
+    if(mKv) html+='<p>末传 '+BRAN[mo]+' 空亡：感情结局有落空之象，可能无果或结果与预期不符。</p>';
+    if(!cKv&&!zKv&&!mKv) html+='<p>三传均不临空亡，感情发展有实质基础，非空中楼阁。</p>';
+
+    // 维度5：格局深度
+    html+='<p style="font-weight:600;margin-top:10px">⑤ 感情格局深度判断：</p>';
+    if(chu===zhang&&zhang===mo){
+      html+='<p>三传归一：感情专注专一，同一状态贯穿始终；亦主感情僵化，缺乏进展。</p>';
+    } else if(chu===mo&&chu!==zhang){
+      html+='<p>首尾相同：感情起点与终点相似，有"回到原点"之象，或复合之兆。</p>';
+    } else if(chuJ==='六合'&&zhongJ==='六合'&&moJ==='六合'){
+      html+='<p>三传皆六合：感情三步皆和合，大吉之极，缘分深厚，必成姻缘之象。</p>';
+    } else if(chuJ==='玄武'&&moJ==='玄武'){
+      html+='<p>首尾皆玄武：感情暗昧重重，第三者介入风险高，须防欺骗与隐瞒。</p>';
+    } else if(chuJ==='白虎'&&moJ==='白虎'){
+      html+='<p>首尾皆白虎：感情冲突刑克贯穿始终，须防分手或重大矛盾。</p>';
+    } else if(chuJ==='朱雀'&&moJ==='朱雀'){
+      html+='<p>首尾皆朱雀：感情口舌是非贯穿始末，沟通不畅，须防误会升级。</p>';
+    } else if(ganShang===zhiShang){
+      html+='<p>干上神=支上神：我与对方状态相同，感情同心之象。</p>';
+    } else if(KE[gsElem]===zsElem||KE[zsElem]===gsElem){
+      html+='<p>干支相克：感情中有主导权之争，须防强势一方造成矛盾。</p>';
+    } else {
+      html+='<p>无特殊格局，以三传天将综合论断即可。</p>';
+    }
+    html+='</div></div>';
+
+    // ═══ 感情化解建议 ═══
+    (function(){
+      var issues=[];
+      if(chuJ==='玄武'||zhongJ==='玄武') issues.push({j:'第三者介入',s:'仔细了解对方背景，防隐瞒欺骗；如已婚，防婚外情。'});
+      if(chuJ==='白虎'||zhongJ==='白虎') issues.push({j:'冲突刑克',s:'防激烈争吵或肢体冲突，遇事冷静沟通，可寻求长辈调解。'});
+      if(chuJ==='朱雀') issues.push({j:'口舌是非',s:'防误会升级，重要事宜以文字确认，避免电话/口头冲突。'});
+      if(chuJ==='天空') issues.push({j:'感情不实',s:'防"镜花水月"，核实对方真实意图，勿轻信承诺。'});
+      if(chuJ==='勾陈') issues.push({j:'阻滞牵绊',s:'可能有旧情未了或债务纠纷，需先理清再推进感情。'});
+      if(cKv) issues.push({j:'感情虚化',s:'开始时机未到，勿急于表白或确认关系，等待逢冲之月。'});
+      if(thInTr&&chuJ==='玄武') issues.push({j:'烂桃花',s:'桃花逢玄武，感情中有欺骗成分，勿被外表迷惑，务必核实身份。'});
+      if(issues.length===0) return'';
+      var h='<div style="margin:14px 0;padding:14px;background:rgba(200,80,48,.07);border-radius:8px;border:1px solid rgba(200,80,48,.2)">';
+      h+='<p style="font-weight:600;margin-bottom:8px;color:var(--red)">【感情化解与趋吉建议】</p>';
+      for(var ri=0;ri<issues.length;ri++){
+        h+='<p style="font-size:.82rem;margin-bottom:5px"><span style="color:var(--red)">▸ '+issues[ri].j+'：</span>'+issues[ri].s+'</p>';
+      }
+      h+='<p style="font-size:.78rem;color:var(--dim);margin-top:6px">化解核心：凶将临身则静心观察，吉将临身则乘势而上；空亡逢冲方验；感情之事尤忌冲动决定。</p>';
+      h+='</div>';
+      return h;
+    })()+
+
+    // 复合/暗恋/明恋/婚姻判断
+    (function(){
+      var judge='';
+      if(chuJ==='玄武'&&zhongJ!=='玄武'&&moJ!=='玄武') judge='<p>此卦有暗恋之象（玄武在初），对方态度不明。</p>';
+      if(chuJ==='六合'&&moJ==='青龙') judge='<p>此卦有婚嫁之兆（六合→青龙），宜推进婚姻。</p>';
+      if(chuJ==='白虎'&&moJ==='天空') judge='<p>此卦有分手/分离之兆（白虎→天空），须有心理准备。</p>';
+      if(chuJ==='白虎'&&moJ==='青龙') judge='<p>此卦有先难后易之象（白虎→青龙），经历波折后终有转机，勿轻言放弃。</p>';
+      if(ganShang===zhiShang) judge+='<p>干上神=支上神：我与对方状态同步，感情同心之象。</p>';
+      if([chu,zhang,mo].indexOf(r.taohua)>=0) judge+='<p>桃花入传，异性缘活跃，感情事有外部因素参与。</p>';
+      if(judge) return'<div style="margin:14px 0;padding:14px;background:rgba(74,138,74,.07);border-radius:8px;border:1px solid rgba(74,138,74,.2)">'+'<p style="font-weight:600;margin-bottom:8px;color:var(--green)">【感情专项判断】</p>'+judge+'</div>';
+      return'';
+    })();
   }
-  
-  // ── 健康类 ──
   else if(qtype.key==='bing'){
     html+='<p><strong>【健康判断要点】</strong></p>';
     html+='<p>健康首看太阴、天后、青龙（主吉庆康复）。白虎主血光手术，勾陈主疾病缠绵，螣蛇主虚惊。</p>';
