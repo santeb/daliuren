@@ -1847,7 +1847,7 @@ function genAdvice(r,qtype){
     // 天气预兆（基于三传地支五行与月令关系）
     var MOON_WEATHER={'木':'多风','火':'晴热','土':'阴燥','金':'干燥','水':'多雨'};
     var moonElem='土';
-    var mx=0;for(var mi=0;mi<[chu,zhang,mo,dayBr,dayLodge].length;mi++){var me=ELEM[[chu,zhang,mo,dayBr,dayLodge][mi]];if(me)moonElem=me;}
+    var mx=0;for(var mi=0;mi<[chu,zhang,mo,r.dayBr,r.dayLodge].length;mi++){var me=ELEM[[chu,zhang,mo,r.dayBr,r.dayLodge][mi]];if(me)moonElem=me;}
     html+='<p style="font-size:.78rem;color:var(--dim)">出行期间天气预兆：<span style="color:var(--gold2)">'+MOON_WEATHER[moonElem]+'</span>（三传主导五行）</p>';
     // 综合建议
     html+='<p><strong>【综合出行建议】</strong></p>';
