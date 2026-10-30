@@ -1,0 +1,19 @@
+name: 回归测试
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 算法回归测试
+        run: node test.js
+      - name: DOM 冒烟测试
+        run: node smoke.js

@@ -1,0 +1,407 @@
+/**
+ * 大六壬算法回归测试
+ * 运行：node test.js
+ * 直接从 index.html 里抽取 <script> 执行，测试的就是页面真正跑的那份代码。
+ * （仓库只保留 index.html 一份页面，daliuren.html 为废弃旧版，不再同步。）
+ */
+const fs = require('fs');
+const vm = require('vm');
+const path = require('path');
+
+// ─── 极简 DOM 桩，让页面脚本能在 node 里跑起来 ───
+function stub() {
+  const f = function () { return stub(); };
+  return new Proxy(f, {
+    get(t, k) {
+      if (k === 'value' || k === 'innerHTML' || k === 'textContent') return '';
+      if (k === 'checked') return false;
+      if (k === 'length') return 0;
+      if (typeof k === 'symbol') return undefined;
+      return stub();
+    },
+    set() { return true; },
+    apply() { return stub(); },
+    construct() { return stub(); }
+  });
+}
+
+const HTML = path.join(__dirname, 'index.html');
+const code = fs.readFileSync(HTML, 'utf8').match(/<script>([\s\S]*?)<\/script>/);
+if (!code) { console.error('未能在 index.html 中找到 <script>'); process.exit(1); }
+const ctx = vm.createContext({ document: stub(), window: stub(), console });
+vm.runInContext(code[1], ctx);
+const DLR = ctx.DLR;
+if (!DLR) { console.error('脚本未导出 DLR，无法测试'); process.exit(1); }
+
+const { STEM, BRAN, calc, daySB, hourSB, monthSB, yearSB, getYueJiang, jqTime, afterJQ,
+        ELEM, LU_BR, DE_LU, CHANGSHENG_ORDER, mod } = DLR;
+
+let pass = 0, fail = 0, warn = 0;
+const failures = [];
+function group(name) { console.log('\n── ' + name); }
+function ok(cond, name, detail) {
+  if (cond) { pass++; }
+  else { fail++; failures.push(name + (detail ? ' → ' + detail : '')); console.log('   ✗ ' + name + (detail ? '  ' + detail : '')); }
+}
+function note(msg) { warn++; console.log('   ! ' + msg); }
+function sb(s, b) { return STEM[s] + BRAN[b]; }
+
+// ───────────────────────────────────────────────
+group('1. 日柱（儒略日推算，对照独立实现）');
+{
+  const baseIdx = 54, anchor = Date.UTC(2000, 0, 1);   // 2000-01-01 = 戊午
+  let bad = 0, n = 0;
+  for (let y = 2018; y <= 2028; y++) {
+    for (let m = 1; m <= 12; m++) {
+      for (const d of [1, 9, 17, 25]) {
+        const r = daySB(y, m, d);
+        const days = Math.round((Date.UTC(y, m - 1, d) - anchor) / 86400000);
+        const exp = mod(baseIdx + days, 60);
+        n++; if (r.idx !== exp) bad++;
+      }
+    }
+  }
+  ok(bad === 0, `日柱 ${n} 个日期全部正确`, `${bad} 处不符`);
+  ok(sb(daySB(2000, 1, 1).stem, daySB(2000, 1, 1).branch) === '戊午', '2000-01-01 = 戊午');
+  ok(sb(daySB(2026, 10, 31).stem, daySB(2026, 10, 31).branch) === '戊寅', '2026-10-31 = 戊寅');
+}
+
+group('2. 年柱 / 月柱');
+{
+  ok(sb(yearSB(2026).stem, yearSB(2026).branch) === '丙午', '2026 = 丙午');
+  ok(sb(yearSB(2024).stem, yearSB(2024).branch) === '甲辰', '2024 = 甲辰');
+  // 五虎遁：丙辛之岁寻庚起 → 丙年寅月庚寅
+  const m1 = monthSB(2026, 1);
+  ok(sb(m1.stem, m1.branch) === '庚寅', '丙午年正月 = 庚寅', sb(m1.stem, m1.branch));
+  // 甲己之年丙作首 → 甲辰年寅月丙寅
+  const m2 = monthSB(2024, 1);
+  ok(sb(m2.stem, m2.branch) === '丙寅', '甲辰年正月 = 丙寅', sb(m2.stem, m2.branch));
+}
+
+group('3. 时柱（五鼠遁 120 组）');
+{
+  const START = [0, 2, 4, 6, 8];   // 甲己甲、乙庚丙、丙辛戊、丁壬庚、戊癸壬
+  let bad = 0;
+  for (let ds = 0; ds < 10; ds++) for (let hb = 0; hb < 12; hb++) {
+    const exp = mod(START[mod(ds, 5)] + hb, 10);
+    if (hourSB(ds, hb).stem !== exp) bad++;
+  }
+  ok(bad === 0, '时干 120 组全部正确', `${bad} 处不符`);
+  ok(sb(hourSB(0, 0).stem, 0) === '甲子', '甲日子时 = 甲子');
+  ok(sb(hourSB(0, 2).stem, 2) === '丙寅', '甲日寅时 = 丙寅');
+  ok(sb(hourSB(4, 0).stem, 0) === '壬子', '戊日子时 = 壬子');
+  ok(sb(hourSB(9, 11).stem, 11) === '癸亥', '癸日亥时 = 癸亥');
+}
+
+group('4. 月将换将（中气分界）');
+{
+  const cases = [
+    [1, 15, '大吉'], [1, 25, '神后'], [4, 1, '河魁'], [7, 1, '小吉'],
+    [10, 31, '太冲'], [12, 25, '大吉'], [9, 1, '太乙']
+  ];
+  let bad = 0;
+  for (const [m, d, name] of cases) {
+    const yj = getYueJiang(2026, m, d, 12);
+    if (yj.name !== name) { bad++; console.log(`   2026-${m}/${d} 期望 ${name} 实得 ${yj.name}`); }
+  }
+  ok(bad === 0, '月将换将 7 个抽查点全部正确');
+  // 交节当天按时刻分界：2026 冬至 12/22 04:51（北京时），前后月将不同
+  ok(getYueJiang(2026, 12, 22, 2).name === '功曹', '2026-12-22 02:00（冬至前）= 功曹（寅将）', getYueJiang(2026, 12, 22, 2).name);
+  ok(getYueJiang(2026, 12, 22, 6).name === '大吉', '2026-12-22 06:00（冬至后）= 大吉（丑将）', getYueJiang(2026, 12, 22, 6).name);
+}
+
+group('5. 天盘（月将加时，全年 × 12 时辰）');
+{
+  let bad1 = 0, bad2 = 0, n = 0, vuyin = 0, fanyin = 0;
+  for (let m = 1; m <= 12; m++) {
+    for (let d = 1; d <= 28; d++) {
+      for (let hb = 0; hb < 12; hb++) {
+        const r = calc(2026, m, d, hb);
+        const moon = r.yj.branch;
+        n++;
+        if (r.heavenMap[hb] !== moon) bad1++;                       // 月将必须落在占时位
+        for (let j = 0; j < 12; j++) {
+          if (r.heavenMap[j] !== mod(j + moon - hb, 12)) { bad2++; break; }
+        }
+        if (moon === hb) vuyin++;
+        if (mod(moon - hb, 12) === 6) fanyin++;
+      }
+    }
+  }
+  ok(bad1 === 0, `天盘：月将落占时位（${n} 局）`, `${bad1} 局不符`);
+  ok(bad2 === 0, '天盘：整盘与标准公式一致', `${bad2} 局不符`);
+  console.log(`   （其中伏吟 ${vuyin} 局、反吟 ${fanyin} 局）`);
+}
+
+group('6. 空亡（60 甲子逐日）');
+{
+  const STD = [[10, 11], [8, 9], [6, 7], [4, 5], [2, 3], [0, 1]];  // 甲子旬→甲寅旬
+  let bad = 0;
+  for (let idx = 0; idx < 60; idx++) {
+    const dsb = daySB(2026, 1, 1 + idx);
+    const r = calc(2026, 1, 1 + idx, 6);
+    const exp = STD[Math.floor(dsb.idx / 10)];
+    if (r.kvmWang[0] !== exp[0] || r.kvmWang[1] !== exp[1]) {
+      bad++; if (bad < 4) console.log(`   ${STEM[dsb.stem]}${BRAN[dsb.branch]}日 实得 ${BRAN[r.kvmWang[0]]}${BRAN[r.kvmWang[1]]} 应为 ${BRAN[exp[0]]}${BRAN[exp[1]]}`);
+    }
+  }
+  ok(bad === 0, '60 甲子空亡全部正确', `${bad} 处不符`);
+}
+
+group('7. 九宗门覆盖度（2026 全年 × 12 时辰）');
+{
+  const stat = {};
+  let bad = 0, n = 0;
+  for (let m = 1; m <= 12; m++) for (let d = 1; d <= 28; d++) for (let hb = 0; hb < 12; hb++) {
+    const r = calc(2026, m, d, hb); n++;
+    stat[r.zongmen] = (stat[r.zongmen] || 0) + 1;
+    if (!r.zongmen || r.chu === undefined || r.zhang === undefined || r.mo === undefined) bad++;
+    if ([r.chu, r.zhang, r.mo].some(x => !(x >= 0 && x <= 11))) bad++;
+  }
+  ok(bad === 0, `三传全部合法（${n} 局）`, `${bad} 局异常`);
+  console.log('   课体分布：' + Object.keys(stat).sort().map(k => `${k} ${stat[k]}`).join('  |  '));
+  for (const k of ['贼克法', '比用法', '伏吟法', '反吟法']) {
+    ok((stat[k] || 0) > 0, `课体「${k}」可达（不再是死代码）`, '0 局');
+  }
+  for (const k of ['涉害法', '遥克法', '昴星法', '别责法', '八专法']) {
+    if ((stat[k] || 0) === 0) note(`课体「${k}」在 2026 年样本中未出现（样本有限，非必然错误）`);
+  }
+}
+
+group('8. 天将排布');
+{
+  let bad = 0, dup = 0, n = 0;
+  for (let m = 1; m <= 12; m += 3) for (let d = 1; d <= 28; d += 9) for (let hb = 0; hb < 12; hb++) {
+    const r = calc(2026, m, d, hb); n++;
+    if (!r.generals[r.grBr] || r.generals[r.grBr].jiang !== '贵人') bad++;
+    const seen = {};
+    for (let j = 0; j < 12; j++) { const g = r.generals[j].jiang; if (seen[g]) dup++; seen[g] = 1; }
+  }
+  ok(bad === 0, `贵人落在贵人位（${n} 局）`, `${bad} 局不符`);
+  ok(dup === 0, '十二天将无重复', `${dup} 处重复`);
+}
+
+group('9. 六亲（以甲日、乙日抽查）');
+{
+  // 甲（阳木）：寅比肩 卯劫财 辰偏财 丑正财 午食神 巳伤官 子偏印 亥正印 申七杀 酉正官
+  // 同我者比劫 / 生我者印 / 我克者财 / 我生者食伤 / 克我者官杀；同阴阳为正、异阴阳为偏
+  const rJia = calc(2026, 1, 1, 6);   // 取一课，只要日干为甲
+  let found = null;
+  for (let idx = 0; idx < 60 && !found; idx++) { const t = daySB(2026, 1, 1 + idx); if (t.stem === 0) found = 1 + idx; }
+  const rA = calc(2026, 1, found, 6);
+  const L = rA.liuQinMap;
+  ok(L[2] === '比肩', '甲日见寅 = 比肩', L[2]);
+  ok(L[3] === '劫财', '甲日见卯 = 劫财', L[3]);
+  ok(L[4] === '偏财', '甲日见辰 = 偏财', L[4]);
+  ok(L[1] === '正财', '甲日见丑 = 正财', L[1]);
+  ok(L[6] === '食神', '甲日见午 = 食神', L[6]);
+  ok(L[5] === '伤官', '甲日见巳 = 伤官', L[5]);
+  ok(L[0] === '偏印', '甲日见子 = 偏印', L[0]);
+  ok(L[11] === '正印', '甲日见亥 = 正印', L[11]);
+  ok(L[8] === '七杀', '甲日见申 = 七杀', L[8]);
+  ok(L[9] === '正官', '甲日见酉 = 正官', L[9]);
+}
+
+group('10. 长生十二宫 / 禄神 / 德神');
+{
+  const CS = CHANGSHENG_ORDER;
+  ok(CS['甲'][0] === 11, '甲木长生在亥');
+  ok(CS['丙'][0] === 2, '丙火长生在寅');
+  ok(CS['戊'][0] === 2, '戊土长生在寅');
+  ok(CS['庚'][0] === 8, '庚金长生在巳');
+  ok(CS['壬'][0] === 8, '壬水长生在申');
+  ok(CS['乙'][0] === 8, '乙木长生在午');
+  ok(CS['丁'][0] === 11, '丁火长生在酉');
+  ok(CS['癸'][0] === 3, '癸水长生在卯');
+  ok(LU_BR[0] === 2 && LU_BR[1] === 3, '甲禄寅、乙禄卯');
+  ok(LU_BR[3] === 6 && LU_BR[7] === 9, '丁禄午、辛禄酉');
+  ok(LU_BR[9] === 0, '癸禄子');
+  ok(DE_LU[0] === 2 && DE_LU[1] === 8, '甲德寅、乙德申');
+}
+
+group('11. 古籍课例（三传逐字比对）');
+{
+  // 课例出处：
+  //  ①《大六壬指南》重审课：二月春分后甲子日，戌将寅时 → 三传 戌午寅（四课 戌甲/午戌/申子/辰申）
+  //  ②《六壬直指》元首课：五月丁丑日，申将子时     → 三传 巳丑酉（四课 卯丁/亥卯/酉丑/巳酉）
+  //  ③《大六壬揭密》重审课：丙戌日，子将酉时       → 三传 申亥寅（四课 丙申/申亥/戌丑/丑辰）
+  //  ④《大六壬揭密》比用课：八月壬辰日，辰将巳时   → 三传 戌酉申（四课 壬戌/戌酉/辰卯/卯寅）
+  // 取用通则：「凡取克为用，不论上克下、下克上，皆取上一字」
+  const CASES = [
+    { s: 0, b: 0, jiang: 10, hb: 2, exp: '戌午寅', src: '甲子日 戌将寅时（重审）' },
+    { s: 3, b: 1, jiang: 8, hb: 0, exp: '巳丑酉', src: '丁丑日 申将子时（元首）' },
+    { s: 2, b: 10, jiang: 0, hb: 9, exp: '申亥寅', src: '丙戌日 子将酉时（重审）' },
+    { s: 8, b: 4, jiang: 4, hb: 5, exp: '戌酉申', src: '壬辰日 辰将巳时（比用）' }
+  ];
+  for (const C of CASES) {
+    let hit = null;
+    for (let y = 2015; y <= 2045 && !hit; y++) {
+      for (let m = 1; m <= 12 && !hit; m++) {
+        for (let d = 1; d <= 28; d++) {
+          const t = daySB(y, m, d);
+          if (t.stem === C.s && t.branch === C.b && getYueJiang(y, m, d, 12).branch === C.jiang) { hit = [y, m, d]; break; }
+        }
+      }
+    }
+    if (!hit) { note(`未找到课例样本「${C.src}」，跳过`); continue; }
+    const r = calc(hit[0], hit[1], hit[2], C.hb);
+    const got = BRAN[r.chu] + BRAN[r.zhang] + BRAN[r.mo];
+    ok(got === C.exp, `${C.src} → ${C.exp}（${r.zongmen}）`, got + ` @${hit.join('-')}`);
+  }
+}
+
+group('12. 解读层不抛异常（曾因 genAdvice 内裸用 lessons 导致感情类必崩）');
+{
+  const { genAdvice, getYongshen, getYingqi, isKongWang, QTYPES } = DLR;
+  const keys = Object.keys(QTYPES || {});
+  ok(keys.length > 0, `问题类型已导出（${keys.length} 种）`, 'QTYPES 为空');
+  let bad = 0, n = 0;
+  const sample = [];
+  for (let m = 1; m <= 12; m += 2) for (const d of [3, 14, 25]) sample.push([2026, m, d, (m + d) % 12]);
+  for (const qk of keys) {
+    const qtype = { key: qk, l: QTYPES[qk].l };
+    for (const [y, m, d, hb] of sample) {
+      const r = calc(y, m, d, hb); n++;
+      try {
+        genAdvice(r, qtype);
+        getYongshen(r, qtype);
+        getYingqi(r);
+        isKongWang(r.chu, r);
+      } catch (e) {
+        bad++; if (bad < 4) console.log(`   ${qk} @${y}-${m}-${d} 时${hb}: ${e.message}`);
+      }
+    }
+  }
+  ok(bad === 0, `解读层 ${n} 组（${keys.length} 类问题 × ${sample.length} 课）无异常`, `${bad} 处抛错`);
+}
+
+group('13. 节气表（1900–2100）与年柱/月柱交节');
+{
+  const { JQ_TABLE, JQ_NAME } = DLR;
+  // 已知值（北京时间，对照权威历书）
+  const known = [[2026, '立春', 2, 4, 4], [2026, '春分', 3, 20, 22], [2026, '夏至', 6, 21, 16],
+                 [2026, '秋分', 9, 23, 8], [2024, '立春', 2, 4, 16], [2025, '立春', 2, 3, 22]];
+  let bad = 0;
+  for (const [y, name, m, d, h] of known) {
+    const t = jqTime(y, JQ_NAME.indexOf(name));
+    if (t.m !== m || t.d !== d || t.h !== h) { bad++; console.log(`   ${y} ${name} 期望 ${m}/${d} ${h}时 实得 ${t.m}/${t.d} ${t.h}时`); }
+  }
+  ok(bad === 0, `节气时刻 ${known.length} 个抽查点精确（含时分）`, `${bad} 处不符`);
+
+  const ys = Object.keys(JQ_TABLE);
+  ok(ys.length === 201, `节气表覆盖 1900–2100 共 ${ys.length} 年`, '年份数不符');
+  ok(ys.every(k => JQ_TABLE[k].length === 24 && JQ_TABLE[k].every(v => v >= 0)), '每年 24 个节气且无缺失');
+
+  // 交节时刻分界
+  ok(!afterJQ(2026, 2, 2, 4, 3, 0), '2026-02-04 03:00 未交立春');
+  ok(afterJQ(2026, 2, 2, 4, 5, 0), '2026-02-04 05:00 已交立春');
+  // 年柱以立春分界
+  ok(sb(yearSB(2026, 2, 3, 12).stem, yearSB(2026, 2, 3, 12).branch) === '乙巳', '2026-02-03（立春前）年柱 = 乙巳', sb(yearSB(2026, 2, 3, 12).stem, yearSB(2026, 2, 3, 12).branch));
+  ok(sb(yearSB(2026, 2, 4, 12).stem, yearSB(2026, 2, 4, 12).branch) === '丙午', '2026-02-04（立春后）年柱 = 丙午', sb(yearSB(2026, 2, 4, 12).stem, yearSB(2026, 2, 4, 12).branch));
+  ok(sb(yearSB(2026, 1, 1, 12).stem, yearSB(2026, 1, 1, 12).branch) === '乙巳', '2026-01-01 年柱 = 乙巳（仍属上一年）', sb(yearSB(2026, 1, 1, 12).stem, yearSB(2026, 1, 1, 12).branch));
+  // 月柱以节分界
+  ok(sb(monthSB(2026, 2, 3, 12).stem, monthSB(2026, 2, 3, 12).branch) === '丁丑', '2026-02-03（立春前）月柱 = 丁丑', sb(monthSB(2026, 2, 3, 12).stem, monthSB(2026, 2, 3, 12).branch));
+  ok(sb(monthSB(2026, 2, 4, 12).stem, monthSB(2026, 2, 4, 12).branch) === '庚寅', '2026-02-04（立春后）月柱 = 庚寅', sb(monthSB(2026, 2, 4, 12).stem, monthSB(2026, 2, 4, 12).branch));
+  ok(sb(monthSB(2026, 1, 1, 12).stem, monthSB(2026, 1, 1, 12).branch) === '丙子', '2026-01-01（小寒前）月柱 = 丙子', sb(monthSB(2026, 1, 1, 12).stem, monthSB(2026, 1, 1, 12).branch));
+  ok(sb(monthSB(2026, 6, 15, 12).stem, monthSB(2026, 6, 15, 12).branch) === '甲午', '2026-06-15（芒种后）月柱 = 甲午', sb(monthSB(2026, 6, 15, 12).stem, monthSB(2026, 6, 15, 12).branch));
+}
+
+group('14. 手动指定月将（兜底开关）');
+{
+  const [y, m, d, hb] = [2026, 6, 15, 6];
+  const auto = calc(y, m, d, hb);
+  ok(auto.yjManual === false, '未指定时走节气自动推定', String(auto.yjManual));
+  let bad = 0, diff = 0;
+  for (let br = 0; br < 12; br++) {
+    const r = calc(y, m, d, hb, { yueJiang: br });
+    if (r.yjManual !== true) bad++;
+    if (r.yj.branch !== br) bad++;                       // 月将生效
+    if (r.heavenMap[hb] !== br) bad++;                   // 天盘同步（月将落占时位）
+    if (br !== auto.yj.branch && (r.chu !== auto.chu || r.zhang !== auto.zhang)) diff++;
+  }
+  ok(bad === 0, '12 种手动月将均生效且天盘同步', `${bad} 处不符`);
+  ok(diff >= 10, `手动月将确实改变三传（${diff}/11 与自动不同）`, '三传未随月将变化');
+  // 空字符串 / null 视为未指定
+  ok(calc(y, m, d, hb, { yueJiang: null }).yjManual === false, 'yueJiang=null 视为自动');
+  ok(calc(y, m, d, hb, { yueJiang: '' }).yjManual === false, "yueJiang='' 视为自动");
+}
+
+group('15. 真太阳时校正（经度差 + 时差方程）');
+{
+  const { trueSolar, eqOfTime, shiftYMD } = DLR;
+  const B = (br) => BRAN[br];
+
+  // ① 时差方程 E：真太阳 − 平太阳，全年 −14 ~ +16 分钟
+  let mn = 1e9, mx = -1e9;
+  for (let dnum = 0; dnum < 365; dnum++) {
+    const dt = new Date(Date.UTC(2026, 0, 1 + dnum));
+    const e = eqOfTime(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
+    mn = Math.min(mn, e); mx = Math.max(mx, e);
+  }
+  ok(mn > -16 && mn < -11, `时差方程全年最小值 ${mn.toFixed(1)} 分（应约 −14，2 月中旬）`, String(mn));
+  ok(mx > 14 && mx < 18, `时差方程全年最大值 ${mx.toFixed(1)} 分（应约 +16，11 月初）`, String(mx));
+  const spots = [[1, 1, -6, -1], [2, 15, -16, -11], [5, 15, 1, 6], [7, 26, -8, -4], [9, 1, -3, 4], [11, 3, 13, 17]];
+  let bad = 0;
+  for (const [m, d, lo, hi] of spots) {
+    const e = eqOfTime(2026, m, d);
+    if (!(e > lo && e < hi)) { bad++; console.log(`   E(2026-${m}-${d}) = ${e.toFixed(1)} 不在 (${lo},${hi})`); }
+  }
+  ok(bad === 0, `时差方程 ${spots.length} 个抽查点落在合理区间`, `${bad} 处越界`);
+
+  // ② 时辰映射：hb=k ⇔ 真太阳时落在 [2k−1, 2k+1) 点
+  bad = 0;
+  for (let mins = 0; mins < 1440; mins++) {
+    const hour = mins / 60;
+    const hb = Math.floor(((hour + 1) % 24 + 24) % 24 / 2);
+    const exp = BRAN.findIndex((_, k) => ((hour - (2 * k - 1)) % 24 + 24) % 24 < 2);
+    if (hb !== exp) bad++;
+  }
+  ok(bad === 0, '1440 分钟逐分核对时辰归属', `${bad} 分不符`);
+
+  // ③ 经度校正量：乌鲁木齐（87.62°E）距东经 120 为 −32.38°，即 −129.5 分钟（约 2 小时 10 分）
+  const wlmq = trueSolar(2026, 7, 10, 12, 0, 87.62);
+  ok(Math.abs(wlmq.dl - (87.62 - 120) * 4) < 0.1, `乌鲁木齐经度差 ${wlmq.dl} 分（应 ${((87.62 - 120) * 4).toFixed(1)}）`, String(wlmq.dl));
+  ok(B(wlmq.hb) === '巳', `乌鲁木齐 12:00 北京时 → 真太阳时约 10:00 → ${B(wlmq.hb)}时`, B(wlmq.hb));
+  ok(wlmq.dayOffset === 0, '该例不换日', String(wlmq.dayOffset));
+
+  // ④ 换日：喀什（75.99°E）凌晨 00:30 → 真太阳时约前一日 21:3x（亥时）
+  const ks = trueSolar(2026, 7, 10, 0, 30, 75.99);
+  ok(ks.dayOffset === -1 && ks.d === 9, `喀什 00:30 → 回到前一日 7/9（${ks.m}/${ks.d}）`, `${ks.m}/${ks.d}`);
+  ok(B(ks.hb) === '亥', `喀什 00:30 → ${B(ks.hb)}时`, B(ks.hb));
+
+  // ⑤ 晚子时归次日：北京 23:30 → 校正后仍 ≥23:00 → 日期进 1，时辰为子
+  const bj = trueSolar(2026, 7, 10, 23, 30, 116.41);
+  ok(bj.d === 11 && B(bj.hb) === '子', `北京 23:30 → 7/${bj.d} ${B(bj.hb)}时（晚子时归次日）`, `${bj.m}/${bj.d} ${B(bj.hb)}`);
+
+  // ⑥ 东经 120 且忽略时差时不应换时辰（仅校验 delta 构成 = 经度 + 时差）
+  const std = trueSolar(2026, 7, 10, 12, 0, 120);
+  ok(Math.abs(std.delta - std.eot) < 0.6, `东经 120° 时总校正量 ${std.delta} = 时差方程值 ${std.eot}`, `${std.delta} vs ${std.eot}`);
+
+  // ⑦ 日期加减跨月、跨年
+  ok(shiftYMD(2026, 1, 1, -1).join('-') === '2025-12-31', '跨年回退 2026-01-01 −1 天 = 2025-12-31', shiftYMD(2026, 1, 1, -1).join('-'));
+  ok(shiftYMD(2026, 3, 1, -1).join('-') === '2026-2-28', '跨月回退 2026-03-01 −1 天 = 2026-02-28', shiftYMD(2026, 3, 1, -1).join('-'));
+  ok(shiftYMD(2026, 12, 31, 1).join('-') === '2027-1-1', '跨年进位 2026-12-31 +1 天 = 2027-01-01', shiftYMD(2026, 12, 31, 1).join('-'));
+
+  // ⑧ 校正后确实影响起课结果（乌鲁木齐 vs 北京，同一北京时刻多数应不同）
+  let diff = 0;
+  for (let d = 1; d <= 28; d++) {
+    const a = calc(2026, 7, d, trueSolar(2026, 7, d, 14, 0, 116.41).hb);
+    const b = calc(2026, 7, d, trueSolar(2026, 7, d, 14, 0, 87.62).hb);
+    if (a.chu !== b.chu || a.zhang !== b.zhang) diff++;
+  }
+  ok(diff >= 25, `乌鲁木齐与北京同一时刻三传不同（${diff}/28 天）`, '差异过小，校正可能未生效');
+
+  // ⑨ calc 接受 solarHour（交节判定用真太阳时小时）
+  let err = 0;
+  for (let d = 1; d <= 28; d++) {
+    try { const ts = trueSolar(2026, 7, d, 8, 0, 91.14); calc(ts.y, ts.m, ts.d, ts.hb, { solarHour: ts.hour }); }
+    catch (e) { err++; }
+  }
+  ok(err === 0, 'calc 接受 solarHour 参数（拉萨样本 28 天无异常）', `${err} 处抛错`);
+}
+
+// ───────────────────────────────────────────────
+console.log('\n' + '='.repeat(52));
+console.log(`结果：${pass} 通过 / ${fail} 失败 / ${warn} 提示`);
+if (fail) { console.log('\n失败项：'); failures.forEach(f => console.log('  - ' + f)); process.exit(1); }
+console.log('全部通过 ✔');
