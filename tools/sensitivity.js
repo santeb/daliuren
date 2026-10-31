@@ -174,6 +174,33 @@ OUT.push('        查不出系统抽样的结构偏差——keti 被误报为 1.
   }
 }
 
+// ─── A3. 维度独立性：贡献度按「各维可加」分解，但若两维在算同一件事（同源），
+//         份额会被拆成两笔记账，掩盖真正的主导维度。ρ 明显偏离 0 就是信号。───
+OUT.push('');
+OUT.push('══ A3. 维度独立性：相关性矩阵 ρ（全样本）══');
+OUT.push('  用途：ρ 明显偏离 0 = 两个维度在算同一件事。阈值 |ρ| > 0.25 视为同源嫌疑。');
+{
+  const corr = (a, b) => cov(a, b) / (sdv(a) * sdv(b));
+  const V = {}; for (const k of keys) V[k] = FULL_ROWS.map(r => r[k] === undefined ? 0 : r[k]);
+  OUT.push('       ' + keys.map(k => k.slice(0, 6).padStart(8)).join(''));
+  for (const a of keys) OUT.push('    ' + a.slice(0, 6).padEnd(7) + keys.map(b => corr(V[a], V[b]).toFixed(2).padStart(8)).join(''));
+  let warned = 0;
+  for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) {
+    const r = corr(V[keys[i]], V[keys[j]]);
+    if (Math.abs(r) > 0.25) { OUT.push('  ⚠ ρ(' + keys[i] + ',' + keys[j] + ')=' + r.toFixed(2) + ' —— 同源嫌疑'); warned++; }
+  }
+  if (!warned) OUT.push('  （无 |ρ|>0.25 的组合）');
+  // 已知案例：qtype 的 qScore 直接查初/末传天将（源码 ⑦ 事类加成），与①天将同源
+  const jq = FULL_ROWS.map(r => (r.jiang || 0) + (r.qtype || 0));
+  const tot = FULL_ROWS.map(r => r.sum), vT = cov(tot, tot);
+  OUT.push('  已知案例：qtype 的 qScore 直接查初/末传天将（源码 ⑦ 事类加成），与①同源。');
+  OUT.push('    合并为「天将系」(jiang+qtype)：' + (cov(jq, tot) / vT * 100).toFixed(1) +
+    '%（= jiang ' + (contrib.jiang * 100).toFixed(1) + '% + qtype ' + (contrib.qtype * 100).toFixed(1) + '%）');
+  OUT.push('    → 天将的真实话语权高于单独看 jiang 的 ' + (contrib.jiang * 100).toFixed(1) + '%。');
+  OUT.push('    当初的「降权」只缩量级、没解掉同源。要提升其他维度话语权应先解重复，');
+  OUT.push('    光调权重无效——Σ份额≡100%，调权重是零和，只是把拍数换个地方拍。');
+}
+
 // ─── B. 扰动 ───
 function rnd(d) { return (Math.random() * 2 - 1) * d; }
 // 乘性+加性混合，保证 0 值项（朱雀）也能被扰动
