@@ -142,6 +142,38 @@ OUT.push('  σ 是怎么来的：σ_dim ≈ σ(分值表) × ||权重向量|| �
 OUT.push('  再经样本中各状态的实际出现频率修正。sMap σ=1.963、天将权重模=1.755 → 预测 3.45，实测 3.32。');
 OUT.push('  所以 σ 不是拟合出来的，是「分值表 + 权重」这两个自定输入的下游结果。');
 
+// ─── A2. 系统抽样稳健性：bootstrap 只覆盖「随机抽样」的误差，覆盖不了「每月固定几天」这类
+//         系统抽样的结构偏差。而 1.2% 那个错误正是后者。故保留多日期组对照。───
+OUT.push('');
+OUT.push('══ A2. 换日期组的稳健性（每组 12 月 × 3 天 × 12 时辰 = 432 局，事类轮转）══');
+OUT.push('  用途：检验结论是否依赖某一组特定日期。bootstrap 只反映随机抽样误差，');
+OUT.push('        查不出系统抽样的结构偏差——keti 被误报为 1.2% 就是这么来的。');
+{
+  const groups = [[5, 15, 25], [1, 11, 21], [8, 18, 28], [2, 12, 22], [7, 17, 27], [3, 13, 23]];
+  const res = [];
+  for (const days of groups) {
+    const S = []; let i = 0;
+    for (let m = 1; m <= 12; m++) for (const d of days) for (let h = 0; h < 12; h++) {
+      const r = DLR0.calc(2026, m, d, h);
+      const qk = QK[i % QK.length]; i++;
+      const ft = DLR0.fortune(r, { key: qk, l: DLR0.QTYPES[qk].l });
+      const row = { score: ft.score, sum: 0 };
+      for (const p of ft.parts) { row[p.k] = p.v; row.sum += p.v; }
+      S.push(row);
+    }
+    res.push({ days: days.join('/'), c: contribOf(S, 'sum') });
+  }
+  OUT.push('  ' + '日期组'.padEnd(12) + keys.map(k => k.padStart(9)).join(''));
+  for (const g of res) OUT.push('  ' + g.days.padEnd(12) + keys.map(k => ((g.c[k] * 100).toFixed(1) + '%').padStart(9)).join(''));
+  OUT.push('  ' + '全样本'.padEnd(12) + keys.map(k => ((contrib[k] * 100).toFixed(1) + '%').padStart(9)).join(''));
+  for (const k of keys) {
+    const vs = res.map(g => g.c[k] * 100);
+    const spread = Math.max(...vs) - Math.min(...vs);
+    if (spread > 3) OUT.push('  ⚠ ' + k + '：六组间极差 ' + spread.toFixed(1) + 'pp（' +
+      Math.min(...vs).toFixed(1) + '%~' + Math.max(...vs).toFixed(1) + '%）——小样本下该维估计不可信，以全样本为准');
+  }
+}
+
 // ─── B. 扰动 ───
 function rnd(d) { return (Math.random() * 2 - 1) * d; }
 // 乘性+加性混合，保证 0 值项（朱雀）也能被扰动
