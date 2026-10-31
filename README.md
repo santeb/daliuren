@@ -2,6 +2,8 @@
 
 基于中国传统六壬术的在线起课工具，支持完整的九宗门算法。
 
+![大六壬排盘界面](./assets/screenshot.png)
+
 ## 功能
 
 - 🌟 **四柱八字** — 年、月、日、时干支自动推算（儒略日法，非查表）
@@ -203,7 +205,7 @@ node smoke.js    # DOM 冒烟，真实走一遍起课流程
 
 节气表由 `gen_jieqi.js`（工作区根目录，依赖 `lunar-javascript`）生成后写入 HTML，需要重新生成时执行 `node gen_jieqi.js`。
 
-> `daliuren.html` 为早期简化版（算法不全），已废弃，保留仅供参考，请勿直接使用。
+> **历史版本说明**：此前仓库内还有 `daliuren.html`（早期简化版）与 `daliuren_full.html`。两者与 `index.html` 同源但已分叉，且存在天盘方向、空亡、时柱等错误，会给出错误排盘，现已删除。`index.html` 是唯一受支持的版本。
 
 ## License
 
