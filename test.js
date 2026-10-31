@@ -34,7 +34,8 @@ const DLR = ctx.DLR;
 if (!DLR) { console.error('脚本未导出 DLR，无法测试'); process.exit(1); }
 
 const { STEM, BRAN, calc, daySB, hourSB, monthSB, yearSB, getYueJiang, jqTime, afterJQ,
-        ELEM, LU_BR, DE_LU, CHANGSHENG_ORDER, mod } = DLR;
+        ELEM, ELEM_S, LU_BR, DE_LU, CHANGSHENG_ORDER, mod,
+        fortune, wxState, wxRel, WX_SCORE, FT_TH, getYongshen } = DLR;
 
 let pass = 0, fail = 0, warn = 0;
 const failures = [];
@@ -510,6 +511,125 @@ group('16. 九宗门古籍课例（《六壬粹言》《六壬大全·订讹》�
   ok(she === 82, `涉害三格合计 ${she} 课，恰合《粹言》53+26+3=82（涉害课总数守恒）`, String(she));
   ok((cnt['元首'] || 0) === 127,
     `元首 ${cnt['元首'] || 0} 课，与别本「一上克下名元首，计一百二十七」合（《粹言》则记 120）`, String(cnt['元首'] || 0));
+}
+
+group('17. 吉凶层：月令旺衰与三传生克（断法主干，非将神打分卡）');
+{
+  // ① 旺相休囚死以「月建」为令：当令者旺、令生者相、生令者休、克令者囚、令克者死
+  //    寅月（木令）：木旺 火相 水休 金囚 土死
+  ok(wxState(3, 2) === '旺', '寅月（木令）见卯 = 旺（当令者）', wxState(3, 2));
+  ok(wxState(6, 2) === '相', '寅月见午 = 相（令生者）', wxState(6, 2));
+  ok(wxState(0, 2) === '休', '寅月见子 = 休（生令者）', wxState(0, 2));
+  ok(wxState(8, 2) === '囚', '寅月见申 = 囚（克令者）', wxState(8, 2));
+  ok(wxState(4, 2) === '死', '寅月见辰 = 死（令克者）', wxState(4, 2));
+  //    酉月（金令）：金旺 水相 土休 火囚 木死
+  ok(wxState(9, 9) === '旺', '酉月（金令）见酉 = 旺', wxState(9, 9));
+  ok(wxState(11, 9) === '相', '酉月见亥 = 相', wxState(11, 9));
+  ok(wxState(2, 9) === '死', '酉月见寅 = 死（令克者）', wxState(2, 9));
+  ok(wxState(6, 9) === '囚', '酉月见午 = 囚（克令者）', wxState(6, 9));
+
+  // ② 五行关系方向：以 a 为主语
+  ok(wxRel('木', '火') === '生', '木 对 火 = 生（木生火）', wxRel('木', '火'));
+  ok(wxRel('火', '木') === '被生', '火 对 木 = 被生', wxRel('火', '木'));
+  ok(wxRel('水', '火') === '克', '水 对 火 = 克', wxRel('水', '火'));
+  ok(wxRel('火', '水') === '被克', '火 对 水 = 被克', wxRel('火', '水'));
+  ok(wxRel('木', '木') === '比', '木 对 木 = 比和', wxRel('木', '木'));
+
+  // ③ 月建必须真正进分：同一课只替换月建，吉凶分必变。
+  //    旧实现 fortune 完全不读月令，此断言在旧实现下必败——这是本次修复的核心。
+  //    坑：不要用 branch+6（六冲）来换令。丑未、辰戌对冲后五行同为土，
+  //    而公历季月恰好就是这四个土月，冲完等于没换，断言会假失败。
+  //    这里改为遍历全部 12 个月建。
+  let moonOK = 0, moonN = 0, wxVarMin = 99;
+  const wxOf = (ft) => ft.parts.find(p => p.k === 'wx').v;
+  for (const [y, m, d] of [[2026, 7, 10], [2026, 1, 15], [2026, 4, 20], [2026, 11, 5]]) {
+    const r = calc(y, m, d, 6);
+    const scores = new Set(), wxs = new Set();
+    for (let jb = 0; jb < 12; jb++) {
+      const r2 = Object.assign({}, r, { msb: { stem: r.msb.stem, branch: jb } });
+      const ft = fortune(r2, null);
+      scores.add(ft.score);
+      wxs.add(wxOf(ft));
+    }
+    moonN++;
+    if (scores.size >= 4 && wxs.size >= 4) moonOK++;
+    if (wxs.size < wxVarMin) wxVarMin = wxs.size;
+  }
+  ok(moonOK === moonN, `遍历 12 月建 → 吉凶分与旺衰分随之改变（${moonOK}/${moonN} 课）`, '月令未进分');
+
+  // ③b 木令（寅）与金令（酉）必须给出不同旺衰：月令方向性正确
+  {
+    const r = calc(2026, 7, 10, 6);
+    const at = (jb) => fortune(Object.assign({}, r, { msb: { stem: r.msb.stem, branch: jb } }), null);
+    const yin = at(2), you = at(9);   // 寅月木令 / 酉月金令
+    ok(JSON.stringify(yin.wx) !== JSON.stringify(you.wx),
+      '寅月（木令）与酉月（金令）旺衰判定不同',
+      JSON.stringify(yin.wx) + ' vs ' + JSON.stringify(you.wx));
+    // 初传属木则寅月当令为旺；同一支换到酉月金令下必为死
+    ok(WX_SCORE['旺'] > 0 && WX_SCORE['死'] < 0 && WX_SCORE['旺'] > WX_SCORE['囚'],
+      '旺相休囚死分值单调：旺 > 相 > 休 > 囚 > 死', JSON.stringify(WX_SCORE));
+  }
+
+  // ④ r.wx 与 wxState 同口径。渲染层曾误取「系统当前月份」，与起课月份无关
+  const rW = calc(2026, 7, 10, 6);
+  ok(rW.wx(rW.chu) === wxState(rW.chu, rW.msb.branch),
+    'r.wx 与 wxState 口径一致（均以月建为令，非系统当前月）',
+    rW.wx(rW.chu) + ' vs ' + wxState(rW.chu, rW.msb.branch));
+
+  // ⑤ 三传生克进分：初生末（有始有终）应高于末克初（首尾相克）
+  let fa = null, fb = null;
+  for (let m = 1; m <= 12 && !(fa && fb); m++) {
+    for (let d = 1; d <= 28; d++) {
+      const ft = fortune(calc(2026, m, d, 6), null);
+      if (ft.rel.chuMo === '生' && !fa) fa = ft;
+      if (ft.rel.chuMo === '被克' && !fb) fb = ft;
+    }
+  }
+  const skOf = (ft) => ft.parts.find(p => p.k === 'shengke').v;
+  ok(!!fa && !!fb, '样本中同时存在「初生末」与「末克初」两课');
+  if (fa && fb) {
+    ok(skOf(fa) > skOf(fb),
+      `初生末 生克分 ${skOf(fa)} > 末克初 生克分 ${skOf(fb)}（走向分正负相反）`);
+  }
+
+  // ⑥ 结构完整性 + 五档分布（阈值由 44352 局分布校准）
+  let bad = 0, tagBad = 0, n = 0;
+  const dist = { 大凶: 0, 凶: 0, 平: 0, 吉: 0, 大吉: 0 };
+  const QLIST = Object.keys(DLR.QTYPES).map(k => ({ key: k, l: DLR.QTYPES[k].l })).concat([null]);
+  for (let m = 1; m <= 12; m++) {
+    for (const d of [1, 8, 15, 22]) {
+      for (let hb = 0; hb < 12; hb++) {
+        const r = calc(2026, m, d, hb);
+        for (const q of QLIST) {
+          const ft = fortune(r, q); n++;
+          if (!isFinite(ft.score) || !ft.level || !ft.sym || typeof ft.text !== 'string') bad++;
+          if (!Array.isArray(ft.parts) || ft.parts.length < 5) bad++;
+          for (const t of ft.tags) if (!t || typeof t.t !== 'string' || typeof t.c !== 'string') tagBad++;
+          if (dist[ft.level] !== undefined) dist[ft.level]++;
+        }
+      }
+    }
+  }
+  ok(bad === 0, `fortune 结构与分项完整（${n} 局）`, `${bad} 处异常`);
+  ok(tagBad === 0, 'tags 无 undefined 项（早先导出误传问题字符串，push 出 t:undefined）', `${tagBad} 处`);
+
+  const tot = Object.keys(dist).reduce((a, k) => a + dist[k], 0);
+  const pct = (k) => dist[k] / tot * 100;
+  ok(Object.keys(dist).every(k => dist[k] > 0), '吉凶五档全部可达',
+    JSON.stringify(dist));
+  const topPct = Math.max(pct('大吉'), pct('吉'), pct('平'), pct('凶'), pct('大凶'));
+  ok(pct('平') === topPct, `「平」占比最高（${pct('平').toFixed(1)}%），呈纺锤形`, Object.entries(dist).map(([k, v]) => `${k} ${(v / tot * 100).toFixed(1)}%`).join(' '));
+  ok(pct('大吉') > 1 && pct('大吉') < 20, `大吉 ${pct('大吉').toFixed(1)}%（校准目标 8%）`);
+  ok(pct('大凶') > 1 && pct('大凶') < 20, `大凶 ${pct('大凶').toFixed(1)}%（校准目标 8%）`);
+  console.log('   分布：' + Object.keys(dist).map(k => `${k} ${pct(k).toFixed(1)}%`).join('  '));
+
+  // ⑦ 用神与事类确实进分
+  const rY = calc(2026, 7, 10, 6);
+  const ftY = fortune(rY, { key: 'cai', l: '财运' });
+  ok(ftY.parts.some(p => p.k === 'yongshen'), '用神旺衰进分（财运类）');
+  ok(ftY.parts.some(p => p.k === 'qtype'), '事类加成进分');
+  ok(ftY.parts.some(p => p.k === 'kong'), '空亡进分（早先只作文案提示）');
+  ok(fortune(rY, null).parts.every(p => p.k !== 'yongshen'), '未提问时不计用神分');
 }
 
 // ───────────────────────────────────────────────

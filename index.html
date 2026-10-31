@@ -875,9 +875,9 @@ function calc(y,m,d,hb,opt){
   else if(dayBr===1||dayBr===5||dayBr===9) sanhe={n:'三合金局',d:'巳酉丑三合金，主决断、肃杀'};
   if(sanhe) ss.push(sanhe);
 
-  // 旺相休囚死
-  var MOON_ELEM=[null,'木','木','木','火','火','火','金','金','金','水','水','土'];
-  var mElem=MOON_ELEM[m]||'土';
+  // 旺相休囚死：以月建（msb.branch，已按节气分界）为令。
+  // 早先用公历月 MOON_ELEM[m] 近似，立春、交节前后 1~2 天会整档判错，故改为按月建取
+  var mElem=ELEM[msb.branch];
   function wx(b){
     var be=ELEM[b];
     if(be===mElem) return'旺';
@@ -972,52 +972,157 @@ function detectQ(q){
   return bs>=1?best:null;
 }
 
+// ─── 月令旺衰 / 五行生克关系 ──────────────────────────────
+// 以「月建」为令。月建已按节气分界（r.msb.branch），不可用公历月近似，
+// 否则交节前后 1~2 天会整档判错（如立春前仍属丑月，却按公历 2 月算成木令）。
+// 当令者旺、令生者相、生令者休、克令者囚、令克者死
+var WX_SCORE={'旺':2.0,'相':1.2,'休':0.2,'囚':-0.9,'死':-1.8};
+var XI_MAP={'木':'火','火':'土','土':'金','金':'水','水':'木'};
+function wxState(br,jianBr){
+  var be=ELEM[br],me=ELEM[jianBr];
+  if(be===me) return '旺';                  // 当令者旺
+  if(be===XI_MAP[me]) return '相';          // 令生者相
+  if(be===SHENG[me]) return '休';           // 生令者休（SHENG[X]=生X者）
+  if(be===KE[me]) return '死';              // 令克者死（KE[X]=X所克者）
+  return '囚';                               // 余者克令，为囚
+}
+// 五行关系，以 a 为主语：生=a生b，被生=b生a，克=a克b，被克=b克a
+function wxRel(a,b){
+  if(a===b) return '比';
+  if(SHENG[b]===a) return '生';
+  if(SHENG[a]===b) return '被生';
+  if(KE[a]===b) return '克';
+  if(KE[b]===a) return '被克';
+  return '无关';
+}
+
 // ─── 吉凶计算 ─────────────────────────────────────────────
+// 多维加权：天将 + 月令旺衰 + 三传生克 + 日干关系 + 空亡 + 用神 + 事类
+// 单看天将名（旧实现）等于把断法简化成打分卡；旺衰与生克才是断课的主干。
+// 阈值 FT_TH 由全样本 score 分布校准：2026 全年 × 12 时辰 × 11 种提问情形共 44352 局，
+// 取 P8/P30/P70/P92 四分位，得纺锤形 大凶8% 凶22% 平40% 吉22% 大吉8%。见 test.js 第 17 组。
+var FT_TH={dj:8.2,j:3.4,p:-2.0,x:-6.3};
 function fortune(r,qtype){
-  var t={chu:r.chu,zhang:r.zhang,mo:r.mo};
-  var chuJ=r.generals[t.chu]?r.generals[t.chu].jiang:'';
-  var zhongJ=r.generals[t.zhang]?r.generals[t.zhang].jiang:'';
-  var moJ=r.generals[t.mo]?r.generals[t.mo].jiang:'';
+  var chu=r.chu,zhang=r.zhang,mo=r.mo;
+  var g=r.generals||{};
+  var chuJ=(g[chu]&&g[chu].jiang)||'';
+  var zhongJ=(g[zhang]&&g[zhang].jiang)||'';
+  var moJ=(g[mo]&&g[mo].jiang)||'';
+  var jianBr=(r.msb&&typeof r.msb.branch==='number')?(r.msb.branch%12):0;
+  var dayE=r.dayElem||ELEM_S[r.dsb.stem];
+  var cE=ELEM[chu],zE=ELEM[zhang],mE=ELEM[mo];
+  var kv=r.kvmWang||[];
 
-  var sMap={};
-  sMap['贵人']=3;sMap['青龙']=3;sMap['六合']=2;sMap['太阴']=2;
-  sMap['太常']=1;sMap['天后']=1;sMap['朱雀']=0;sMap['螣蛇']=-1;
-  sMap['勾陈']=-1;sMap['玄武']=-2;sMap['天空']=-2;sMap['白虎']=-3;
+  var parts=[];
+  function add(k,v,label){ v=Math.round(v*1000)/1000; parts.push({k:k,v:v,label:label}); return v; }
+  var total=0,pat=[],tags=[];
 
-  var score=((sMap[chuJ]||0)*1.5)+((sMap[zhongJ]||0)*0.5)+((sMap[moJ]||0)*1.0);
+  // ① 将神：十二天将本身之吉凶。中传主过程，权重由 0.5 提到 0.8
+  var sMap={'贵人':3,'青龙':3,'六合':2,'太阴':2,'太常':1,'天后':1,
+            '朱雀':0,'螣蛇':-1,'勾陈':-1,'玄武':-2,'天空':-2,'白虎':-3};
+  total+=add('jiang',(sMap[chuJ]||0)*1.2+(sMap[zhongJ]||0)*0.8+(sMap[moJ]||0)*1.0,'十二天将');
 
-  var pats=[];
-  var allJ=[chuJ,zhongJ,moJ];
-  var cnt贵人=0;for(var ci=0;ci<allJ.length;ci++) if(allJ[ci]==='贵人') cnt贵人++;
-  if(cnt贵人>=2){pats.push('双贵');score+=2;}
-  if(chuJ===moJ&&chuJ!==''){pats.push('首尾同');score+=1.5;}
-  if(chuJ==='白虎'||moJ==='白虎'){pats.push('虎临');score-=1.5;}
+  // ② 月令旺衰：三传各支对月建。末传主结局，权重最高
+  var sC=wxState(chu,jianBr),sZ=wxState(zhang,jianBr),sM=wxState(mo,jianBr);
+  total+=add('wx',WX_SCORE[sC]*1.5+WX_SCORE[sZ]*0.8+WX_SCORE[sM]*1.2,'月令旺衰');
+  if(sM==='旺'||sM==='相') tags.push({c:'tg-j',t:'末传'+sM+'·结局有气'});
+  if(sM==='囚'||sM==='死') tags.push({c:'tg-x',t:'末传'+sM+'·结局无力'});
+  if(sC==='旺'||sC==='相') tags.push({c:'tg-j',t:'初传'+sC});
+  if(sC==='囚'||sC==='死') tags.push({c:'tg-x',t:'初传'+sC});
 
-  if(qtype){
+  // ③ 三传五行生克：初中、中末递进 + 初末走向（走向权重最大）
+  var SC_STEP={'生':0.7,'被生':0.5,'克':-0.7,'被克':-0.5,'比':0.2,'无关':0};
+  var SC_END={'生':1.4,'被生':0.9,'克':-0.9,'被克':-1.8,'比':0.3,'无关':0};
+  var relCZ=wxRel(cE,zE),relZM=wxRel(zE,mE),relCM=wxRel(cE,mE);
+  total+=add('shengke',SC_STEP[relCZ]+SC_STEP[relZM]+SC_END[relCM],'三传生克');
+  if(relCM==='生') tags.push({c:'tg-j',t:'初生末·有始有终'});
+  else if(relCM==='被克') tags.push({c:'tg-x',t:'末克初·首尾相克'});
+  else if(relCM==='克') tags.push({c:'tg-x',t:'初克末·先难后阻'});
+  else if(relCM==='被生') tags.push({c:'tg-j',t:'末生初·结局回护'});
+
+  // ④ 日干与三传：初传主发端，末传主结局
+  var GD_C={'生':1.2,'克':-1.3,'被生':-0.3,'被克':0.2,'比':0.1,'无关':0};
+  var GD_M={'生':1.5,'克':-1.6,'被生':-0.4,'被克':0.3,'比':0.1,'无关':0};
+  var rC=wxRel(cE,dayE),rM=wxRel(mE,dayE);
+  total+=add('gan',GD_C[rC]+GD_M[rM],'日干关系');
+  if(rC==='生') tags.push({c:'tg-j',t:'初传生日干'});
+  if(rC==='克') tags.push({c:'tg-x',t:'初传克日干'});
+  if(rM==='生') tags.push({c:'tg-j',t:'末传生日干·收尾吉'});
+  if(rM==='克') tags.push({c:'tg-x',t:'末传克日干·收尾损'});
+
+  // ⑤ 空亡：此前只作文案提示，未进分
+  var kScore=0;
+  if(kv.indexOf(chu)>=0){kScore+=-1.6;tags.push({c:'tg-x',t:'初传空亡'});}
+  if(kv.indexOf(zhang)>=0){kScore+=-0.6;}
+  if(kv.indexOf(mo)>=0){kScore+=-1.1;tags.push({c:'tg-x',t:'末传空亡'});}
+  total+=add('kong',kScore,'空亡');
+
+  // ⑥ 用神：月令旺衰 + 日干十二宫 + 空亡
+  if(qtype&&qtype.key){
+    var ys=getYongshen(r,qtype);
+    var fs=(ys&&ys.focus)||[];
+    var yScore=0;
+    if(fs.length){
+      var wsum=0;
+      for(var fi=0;fi<fs.length;fi++) wsum+=WX_SCORE[wxState(fs[fi],jianBr)];
+      yScore+=wsum/fs.length;
+      var yk=false;
+      for(var fj=0;fj<fs.length;fj++) if(kv.indexOf(fs[fj])>=0) yk=true;
+      if(yk){yScore+=-1.2;tags.push({c:'tg-x',t:'用神空亡'});}
+      var CS_SC={'长生':1.0,'沐浴':-0.2,'冠带':0.4,'临官':1.0,'帝旺':1.2,'衰':-0.4,
+                 '病':-0.9,'死':-1.3,'墓':-1.5,'绝':-1.7,'胎':0.2,'养':0.4};
+      var csMap=r.csMap||{},csSum=0,csN=0;
+      for(var fc2=0;fc2<fs.length;fc2++){
+        var st=csMap[fs[fc2]];
+        if(st&&CS_SC[st]!==undefined){csSum+=CS_SC[st];csN++;}
+      }
+      if(csN) yScore+=(csSum/csN)*0.5;
+    }
+    total+=add('yongshen',yScore,'用神旺衰');
+  }
+
+  // ⑦ 事类加成：降权，避免与①重复放大
+  if(qtype&&qtype.key){
     var favor={cai:['青龙','太常','六合'],guan:['青龙','贵人','太阴'],
                hun:['六合','天后','太阴'],bing:['太阴','天后','青龙'],
                shi:['玄武','螣蛇'],chu:['青龙','六合'],
                gui:['贵人','青龙','太阴','太常','六合']};
-    var fav=favor[qtype.key]||[];
-    if(fav.indexOf(chuJ)>=0) score+=2;
-    if(fav.indexOf(moJ)>=0) score+=1;
+    var fav=favor[qtype.key]||[],qScore=0;
+    if(fav.indexOf(chuJ)>=0) qScore+=1.5;
+    if(fav.indexOf(moJ)>=0) qScore+=0.8;
+    total+=add('qtype',qScore,'事类用神');
   }
 
-  var level,sym,text,tags=[];
-  if(score>=5){level='大吉';sym='✦';text='卦象极吉，大有可为之象';
-    tags=[{c:'tg-j',t:'贵人扶持'},{c:'tg-j',t:'事半功倍'},{c:'tg-j',t:'青龙守门'}];}
-  else if(score>=2){level='吉';sym='◆';text='卦象偏吉，稳步进取可成';
-    tags=[{c:'tg-j',t:'吉象'},{c:'tg-y',t:'谨慎行事'}];}
-  else if(score>=-1){level='平';sym='◇';text='卦象平稳，机遇与阻碍并存';
-    tags=[{c:'tg-p',t:'吉凶未定'},{c:'tg-p',t:'随机应变'}];}
-  else if(score>=-4){level='凶';sym='▲';text='卦象有阻，须防小人或变故';
-    tags=[{c:'tg-x',t:'有阻'},{c:'tg-x',t:'谨言慎行'}];}
-  else{level='大凶';sym='✕';text='卦象多舛，宜静待时机勿妄动';
-    tags=[{c:'tg-x',t:'多有阻碍'},{c:'tg-x',t:'静守为上'}];}
+  // 格局标签（不计分，仅供参照）
+  var allJ=[chuJ,zhongJ,moJ],cntGuiren=0;
+  for(var ci2=0;ci2<allJ.length;ci2++) if(allJ[ci2]==='贵人') cntGuiren++;
+  if(cntGuiren>=2) pat.push('双贵');
+  if(chuJ&&chuJ===moJ) pat.push('首尾同将');
+  if(chuJ==='白虎'||moJ==='白虎') pat.push('虎临');
 
-  if(pats.length>0) tags.unshift({c:'tg-y',t:pats.join('+')});
-  if(qtype) tags.push({c:'tg-j',t:qtype.l});
-  return{score:score,level:level,sym:sym,text:text,tags:tags};
+  var score=Math.round(total*100)/100;
+  var level,sym,text;
+  if(score>=FT_TH.dj){level='大吉';sym='✦';text='卦象极吉，大有可为之象';}
+  else if(score>=FT_TH.j){level='吉';sym='◆';text='卦象偏吉，稳步进取可成';}
+  else if(score>=FT_TH.p){level='平';sym='◇';text='卦象平稳，机遇与阻碍并存';}
+  else if(score>=FT_TH.x){level='凶';sym='▲';text='卦象有阻，须防小人或变故';}
+  else{level='大凶';sym='✕';text='卦象多舛，宜静待时机勿妄动';}
+
+  // 断语补出最主要的一条依据，避免五档套话完全一样
+  var top=null;
+  for(var pi=0;pi<parts.length;pi++){
+    if(parts[pi].v===0) continue;
+    if(!top||Math.abs(parts[pi].v)>Math.abs(top.v)) top=parts[pi];
+  }
+  if(top) text+='；'+top.label+(top.v>0?'有助':'不利')+'（'+(top.v>0?'+':'')+top.v.toFixed(1)+'）';
+
+  if(pat.length) tags.unshift({c:'tg-y',t:pat.join('+')});
+  if(qtype&&qtype.l) tags.push({c:'tg-j',t:qtype.l});
+  if(tags.length>7) tags=tags.slice(0,7);
+
+  return{score:score,level:level,sym:sym,text:text,tags:tags,parts:parts,jianBr:jianBr,
+         wx:{chu:sC,zhang:sZ,mo:sM},rel:{chuZhang:relCZ,zhangMo:relZM,chuMo:relCM},
+         ganRel:{chu:rC,mo:rM}};
 }
 
 // ─── 用神选取 ─────────────────────────────────────────────────────
@@ -2354,19 +2459,10 @@ function renderInterp(r,q,ft){
   var zhangE=ELEM[r.zhang]||'土';
   var moE=ELEM[r.mo]||'土';
   
-  // 旺相休囚死函数
-  function wx(b){
-    var MOON_ELEM=[null,'木','木','木','火','火','火','金','金','金','水','水','土'];
-    var m=new Date().getMonth()+1;
-    var mElem=MOON_ELEM[m]||'土';
-    var be=ELEM[b]||'土';
-    if(be===mElem) return'旺';
-    var xi={'木':'火','火':'土','土':'金','金':'水','水':'木'};
-    if(be===xi[mElem]) return'相';
-    if(be===SHENG[mElem]) return'休';
-    if(be===KE[mElem]) return'死';
-    return'囚';
-  }
+  // 旺相休囚死：统一取 r.wx（calc 内已按月建为令）。
+  // 早先此处用 new Date().getMonth()+1 取「系统当前月份」，与起课月份完全无关——
+  // 查 7 月的课而在 11 月打开，旺衰会按 11 月算，整段解读文字全错。
+  var wx=r.wx||function(b){return wxState(b,r.msb.branch);};
 
   var elemCounts={};
   var brs=[r.chu,r.zhang,r.mo,r.dayLodge,r.dayBr];
@@ -2754,7 +2850,8 @@ function updateMingpan(r){
 document.getElementById('btnExport').addEventListener('click',function(){
   var r=window._lastR,q=document.getElementById('iq').value;
   if(!r){alert('请先起课');return;}
-  var ft=fortune(r,q);
+  // 早先误传问题字符串 q，fortune 内部按 {key,l} 对象取用，导致事类加成静默丢失
+  var ft=fortune(r,r.qtype||detectQ(q));
   var exp={
     meta:{date:new Date().toISOString(),question:q,version:'daliuren_v3'},
     pillars:{year:STEM[r.ysb.stem]+BRAN[r.ysb.branch],month:STEM[r.msb.stem]+BRAN[r.msb.branch],day:STEM[r.dsb.stem]+BRAN[r.dsb.branch],hour:STEM[r.hsb.stem]+BRAN[r.hsb.branch]},
@@ -2813,6 +2910,7 @@ window.onerror=function(msg,url,line){
 globalThis.DLR={
   mod:mod,jdn:jdn,calc:calc,daySB:daySB,yearSB:yearSB,monthSB:monthSB,hourSB:hourSB,
   getYueJiang:getYueJiang,fortune:fortune,detectQ:detectQ,jqTime:jqTime,afterJQ:afterJQ,
+  wxState:wxState,wxRel:wxRel,WX_SCORE:WX_SCORE,FT_TH:FT_TH,
   trueSolar:trueSolar,eqOfTime:eqOfTime,dayOfYear:dayOfYear,shiftYMD:shiftYMD,
   JQ_TABLE:JQ_TABLE,JQ_NAME:JQ_NAME,JQ_MONTH:JQ_MONTH,JIEQI:JIEQI,
   genAdvice:genAdvice,getYongshen:getYongshen,getYingqi:getYingqi,isKongWang:isKongWang,
