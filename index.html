@@ -59,6 +59,15 @@ select.ipt option{background:var(--bg)}
 .tg-x{color:var(--red);border-color:rgba(200,80,48,.4);background:rgba(200,80,48,.08)}
 .tg-p{color:var(--dim);border-color:rgba(138,128,112,.3);background:rgba(138,128,112,.06)}
 .tg-y{color:#c89040;border-color:rgba(200,144,64,.4);background:rgba(200,144,64,.08)}
+/* 吉凶分项条：把 total = Σ parts 摊开给使用者看，避免只有一个「吉/凶」标签的黑箱感 */
+.fc-brk{margin-top:9px;border-top:1px solid var(--border);padding-top:7px}
+.fc-brk-h{font-size:.68rem;color:var(--faint);margin-bottom:5px;letter-spacing:.05em}
+.fc-brk-r{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.fc-brk-l{font-size:.68rem;color:var(--dim);width:5.4em;flex:none}
+.fc-brk-b{flex:1;height:6px;background:rgba(0,0,0,.35);border-radius:3px;position:relative}
+.fc-brk-b i{position:absolute;top:0;height:100%;border-radius:3px}
+.fc-brk-b u{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:rgba(180,120,40,.35)}
+.fc-brk-v{font-size:.68rem;width:2.9em;text-align:right;flex:none;font-variant-numeric:tabular-nums}
 .pls{display:flex;justify-content:center;gap:10px;padding:12px;flex-wrap:wrap}
 .pl{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;padding:7px 16px;text-align:center;min-width:85px}
 .pl-l{font-size:.68rem;color:var(--faint);margin-bottom:2px}
@@ -205,6 +214,7 @@ select.ipt option{background:var(--bg)}
         <div class="fc-lbl">综合判断</div>
         <div class="fc-rslt" id="fcRslt"></div>
         <div class="fc-tags" id="fcTags"></div>
+        <div class="fc-brk" id="fcBrk"></div>
       </div>
     </div>
   </div>
@@ -272,6 +282,13 @@ var ELEM={0:'水',1:'土',2:'木',3:'木',4:'土',5:'火',6:'火',7:'土',8:'金
 var ELEM_S={0:'木',1:'木',2:'火',3:'火',4:'土',5:'土',6:'金',7:'金',8:'水',9:'水'};
 var KE={'木':'土','土':'水','水':'火','火':'金','金':'木'};
 var SHENG={'木':'水','火':'木','土':'火','金':'土','水':'金'};
+// ⚠️ SHENG 与 KE 方向相反，是全表最容易写反的一处：
+//   SHENG[X] = 生 X 者（水生木 → SHENG['木']==='水'）
+//   KE[X]    = X 所克者（木克土 → KE['木']==='土'）
+// 故「a 生 b」要写 SHENG[b]===a（见 wxRel），「a 克 b」要写 KE[a]===b。
+// 2026-11-01 按此口径逐处复核，修正 6 处文案方向写反（财运财气流向、感情干支生克、
+// 三传生克、初/末传与日干）——此前一律按「SHENG[a]===b ⟺ a 生 b」的错误直觉写成，
+// 结果每条文字正好说反。改动前先想清楚主语是谁。
 // 十干寄宫（地支位 → 所寄天干，取「支→干」方向供涉害历数用）
 // 甲寄寅、乙寄辰、丙戊寄巳、丁己寄未、庚寄申、辛寄戌、壬寄亥、癸寄丑；子午卯酉四正无寄
 var LODGE_STEMS={1:[9],2:[0],4:[1],5:[2,4],7:[3,5],8:[6],10:[7],11:[8]};
@@ -941,7 +958,10 @@ function calc(y,m,d,hb,opt){
     csMap:csMap,csChangsheng:csChangsheng,
     yima:yima,taohua:taohua,
     kvmWang:kvmWang,kv1:kv1,kv2:kv2,
-    liuQinMap:liuQinMap
+    liuQinMap:liuQinMap,
+    // 课体判定所需（此前算了却没导出，导致 fortune/解读层无法识别伏吟反吟）
+    isFuYin:isFuYin,isFanYin:isFanYin,
+    moonBr:moonBr,hourBr:hb,yangDay:yangDay
   };
 }
 
@@ -996,13 +1016,89 @@ function wxRel(a,b){
   return '无关';
 }
 
+// ─── 课体格 ───
+// 收录原则：只取「定义无争议、可严格判定」者。铸印、斫轮、顾祖、涉三渊、龙德等
+// 需叠加日干或神将条件，且各家课经口径不一（如顾祖有「初为末之长生」与「三传逆行归本」
+// 两解），暂不收——宁可少，不可错认一格。
+// 吉凶定性出自《六壬大全·课体》一类通行说法：三合局主事有成就、连珠主渐进、
+// 伏吟主静守、反吟主反复。分数量级与「三传生克」「日干关系」两维对齐（σ≈1.0～1.3），
+// 只表「事之性质」而非绝对吉凶；三合局另按「局五行 vs 日干」加六亲分——
+// 六亲是客观定义（生我者印、我克者财、克我者官、我生者食、同我者比），不是我们拍的数。
+var KT_SANHE=[[11,3,7,'曲直'],[2,6,10,'炎上'],[8,0,4,'润下'],[5,9,1,'从革']];
+var KT_SANHE_E={'曲直':'木','炎上':'火','润下':'水','从革':'金'};
+var KT_TU=[1,4,7,10];                     // 辰戌丑未四土
+// 量级说明：首版取 ±0.6 量级，实测 σ 仅 0.35（天将 σ=3.32），对总分的方差占比不足 1%，
+// 等于加了等于没加。此处统一放大到与「三传生克」「日干关系」两维（σ≈1.25）齐平。
+// 放大的依据是量级对齐（可测），不是吉凶判断——各格之间的相对次序仍取自课经定性。
+var KT_SCORE={'曲直':1.8,'炎上':0.6,'稼穑':-0.3,'从革':-1.2,'润下':-0.6,
+              '进茹':1.5,'退茹':-0.9,'顺间':0.3,'逆间':-0.3,
+              '三传归一':-0.6,'伏吟':-0.9,'反吟':-1.5};
+// 局五行对日干之六亲吉凶：生我者吉、我克者为财、克我者为鬼（传统共识，非自定）
+var LQ5={'印':2.7,'比':0.9,'食':-0.6,'财':1.8,'官':-2.4};
+function liuqin5(ge,de){
+  if(ge===de) return '比';
+  if(SHENG[de]===ge) return '印';         // 生我者
+  if(KE[de]===ge) return '财';            // 我克者
+  if(SHENG[ge]===de) return '食';         // 我生者
+  return '官';                            // 克我者
+}
+function keti(r){
+  var c=r.chu,z=r.zhang,m=r.mo,out=[];
+  var isSame=(c===z&&z===m),isUniq=(c!==z&&z!==m&&c!==m);
+  if(isSame) out.push({name:'三传归一',note:'三传相同，事无变化，从头至尾一致；主专一，亦主无转机'});
+  if(isUniq){
+    for(var si=0;si<KT_SANHE.length;si++){
+      var gp=KT_SANHE[si];
+      if(gp.indexOf(c)>=0&&gp.indexOf(z)>=0&&gp.indexOf(m)>=0){
+        out.push({name:gp[3],note:'三传会成'+gp[3]+'局（'+KT_SANHE_E[gp[3]]+'）'}); break;
+      }
+    }
+    if(KT_TU.indexOf(c)>=0&&KT_TU.indexOf(z)>=0&&KT_TU.indexOf(m)>=0)
+      out.push({name:'稼穑',note:'三传皆土，主迟滞厚重，宜静守、利田宅'});
+  }
+  if(!isSame){
+    if(z===mod(c+1,12)&&m===mod(z+1,12))        out.push({name:'进茹',note:'三传顺连，事渐进，宜进取'});
+    else if(z===mod(c+11,12)&&m===mod(z+11,12)) out.push({name:'退茹',note:'三传逆连，事渐退，宜守不宜进'});
+    else if(z===mod(c+2,12)&&m===mod(z+2,12))   out.push({name:'顺间',note:'三传隔位顺行，事有隔阻而终进'});
+    else if(z===mod(c+10,12)&&m===mod(z+10,12)) out.push({name:'逆间',note:'三传隔位逆行，事多反复'});
+  }
+  if(r.isFuYin)  out.push({name:'伏吟',note:'月将临占时，主静，宜守不宜动'});
+  if(r.isFanYin) out.push({name:'反吟',note:'月将与占时相冲，主反复，去而复来'});
+  return out;
+}
+function ketiScore(r){
+  var ks=keti(r),s=0;
+  var de=r.dayElem||ELEM_S[r.dsb.stem];
+  for(var i=0;i<ks.length;i++){
+    s+=(KT_SCORE[ks[i].name]||0);
+    if(KT_SANHE_E[ks[i].name]){
+      ks[i].lq=liuqin5(KT_SANHE_E[ks[i].name],de);
+      s+=LQ5[ks[i].lq]*0.8;
+    }
+  }
+  return {list:ks,score:Math.round(s*1000)/1000};
+}
+
 // ─── 吉凶计算 ─────────────────────────────────────────────
 // 多维加权：天将 + 月令旺衰 + 三传生克 + 日干关系 + 空亡 + 用神 + 事类
 // 单看天将名（旧实现）等于把断法简化成打分卡；旺衰与生克才是断课的主干。
-// 阈值 FT_TH 由全样本 score 分布校准：2026 全年 × 12 时辰 × 11 种提问情形共 44352 局，
+// 阈值 FT_TH 由全样本 score 分布校准：2026 全年 365 天 × 12 时辰 × 10 种提问共 43800 局，
 // 取 P8/P30/P70/P92 四分位，得纺锤形 大凶8% 凶22% 平40% 吉22% 大吉8%。见 test.js 第 17 组。
-var FT_TH={dj:8.2,j:3.4,p:-2.0,x:-6.3};
+// 2026-11-01 重校：新增课体格维度后，分布左尾变长（P8 -6.3→-6.65）、右尾略升（P92 8.25→8.30）。
+// ⚠️ 任何触及维度权重或分值的改动，都必须用 tmp_cal.js 重跑 43800 局重校本阈值，否则五档比例会漂。
+var FT_TH={dj:8.3,j:3.4,p:-2.0,x:-6.7};
+// 事类入参归一化：调用方可能传 ①问题字符串 ②{key,l} 对象 ③null。
+// 陷阱：直接传 QTYPES[k] 是错的——它只有 {kw,l}，没有 key 字段（key 是 detectQ 才补上的），
+// 会让「用神」与「事类」两个维度静默丢分（合计约 14% 贡献度，且无任何报错）。此处一律兜住。
+function normQ(q){
+  if(!q) return null;
+  if(typeof q==='string') return detectQ(q);
+  if(q.key) return q;
+  if(q.l){ for(var k in QTYPES){ if(QTYPES[k].l===q.l) return {key:k,l:q.l}; } }
+  return null;
+}
 function fortune(r,qtype){
+  qtype=normQ(qtype);
   var chu=r.chu,zhang=r.zhang,mo=r.mo;
   var g=r.generals||{};
   var chuJ=(g[chu]&&g[chu].jiang)||'';
@@ -1093,6 +1189,14 @@ function fortune(r,qtype){
     total+=add('qtype',qScore,'事类用神');
   }
 
+  // ⑧ 课体格局：定性分 + 三合局对日干之六亲。
+  //    ⚠️ 实测（tmp_sens.js 432 局 cov 分解）：本维贡献度只有 1.2%（σ=0.90），天将仍是 43.7%。
+  //    也就是说「加课体以分散天将话语权」这个目的**没达成**——课体命中率不低（连茹/间传各 7~8%、
+  //    伏吟反吟各 8.3%），但分值量级小、方差自然小。继续放大 KT_SCORE 纯属把拍数换个地方拍，
+  //    不改善可信度；课体的价值在于「给一句有出处的定性话」，不在于拉高它的权重。
+  var kt=ketiScore(r);
+  total+=add('keti',kt.score,'课体格局');
+
   // 格局标签（不计分，仅供参照）
   var allJ=[chuJ,zhongJ,moJ],cntGuiren=0;
   for(var ci2=0;ci2<allJ.length;ci2++) if(allJ[ci2]==='贵人') cntGuiren++;
@@ -1117,12 +1221,17 @@ function fortune(r,qtype){
   if(top) text+='；'+top.label+(top.v>0?'有助':'不利')+'（'+(top.v>0?'+':'')+top.v.toFixed(1)+'）';
 
   if(pat.length) tags.unshift({c:'tg-y',t:pat.join('+')});
+  if(kt.list.length){
+    var kn=[];
+    for(var kti=0;kti<kt.list.length;kti++) kn.push(kt.list[kti].name);
+    tags.unshift({c:'tg-y',t:kn.join('·')});
+  }
   if(qtype&&qtype.l) tags.push({c:'tg-j',t:qtype.l});
   if(tags.length>7) tags=tags.slice(0,7);
 
   return{score:score,level:level,sym:sym,text:text,tags:tags,parts:parts,jianBr:jianBr,
          wx:{chu:sC,zhang:sZ,mo:sM},rel:{chuZhang:relCZ,zhangMo:relZM,chuMo:relCM},
-         ganRel:{chu:rC,mo:rM}};
+         ganRel:{chu:rC,mo:rM},keti:kt.list};
 }
 
 // ─── 用神选取 ─────────────────────────────────────────────────────
@@ -1446,10 +1555,11 @@ function genAdvice(r,qtype){
     var stemElem=ELEM_S[r.dsb.stem];
     var cElem=ELEM[r.chu],zElem=ELEM[r.zhang],mElem=ELEM[r.mo];
     html+='<p>日干'+STEM[r.dsb.stem]+'（'+stemElem+'），三传：'+cElem+'→'+zElem+'→'+mElem+'</p>';
-    var shengStem=(SHENG[cElem]===stemElem)?'生':'克',shengZ=(SHENG[zElem]===stemElem)?'生':'克',shengM=(SHENG[mElem]===stemElem)?'生':'克';
-    var sc=(SHENG[cElem]===stemElem?'生助日干，大吉':SHENG[stemElem]===cElem?'日干生传，耗泄':'克日干，损耗');
-    var sz=(SHENG[zElem]===stemElem?'生助日干，大吉':SHENG[stemElem]===zElem?'日干生传，耗泄':'克日干，损耗');
-    var sm=(SHENG[mElem]===stemElem?'生助日干，大吉':SHENG[stemElem]===mElem?'日干生传，耗泄':'克日干，损耗');
+    // 方向复核：SHENG[传]===日干 ⟺ 日干生传（耗泄）；SHENG[日干]===传 ⟺ 传生日干（大吉）。两者此前写反
+    var shengStem=(SHENG[stemElem]===cElem)?'生':'克',shengZ=(SHENG[stemElem]===zElem)?'生':'克',shengM=(SHENG[stemElem]===mElem)?'生':'克';
+    var sc=(SHENG[stemElem]===cElem?'生助日干，大吉':SHENG[cElem]===stemElem?'日干生传，耗泄':'克日干，损耗');
+    var sz=(SHENG[stemElem]===zElem?'生助日干，大吉':SHENG[zElem]===stemElem?'日干生传，耗泄':'克日干，损耗');
+    var sm=(SHENG[stemElem]===mElem?'生助日干，大吉':SHENG[mElem]===stemElem?'日干生传，耗泄':'克日干，损耗');
     html+='<p style="font-size:.78rem">初传'+cElem+'<'+sc+'>；中传'+zElem+'<'+sz+'>；末传'+mElem+'<'+sm+'>。</p>';
     var cnt=([sc,sz,sm].filter(function(v){return v.indexOf('大吉')>=0||v.indexOf('生助')>=0;})).length;
     if(cnt>=2) html+='<p style="color:var(--green)">整体财气得势，财运旺盛，宜进取求财。</p>';
@@ -1765,8 +1875,9 @@ function genAdvice(r,qtype){
     html+='<p>干上神 '+BRAN[ganShang]+'（'+ganShangJ+'）——代表本人/求测人状态</p>';
     html+='<p>支上神 '+BRAN[zhiShang]+'（'+zhiShangJ+'）——代表对方/事之状态</p>';
     var gsElem=ELEM[ganShang],zsElem=ELEM[zhiShang];
-    if(SHENG[gsElem]===zsElem) html+='<p>干生支：我方主动付出，感情由我方推动。</p>';
-    else if(SHENG[zsElem]===gsElem) html+='<p>支生干：对方主动，感情由对方推动，我方处于被动接受状态。</p>';
+    // 方向复核：SHENG[干]===支 ⟺ 支生干（对方主动）；SHENG[支]===干 ⟺ 干生支（我方主动）。此前两者写反
+    if(SHENG[zsElem]===gsElem) html+='<p>干生支：我方主动付出，感情由我方推动。</p>';
+    else if(SHENG[gsElem]===zsElem) html+='<p>支生干：对方主动，感情由对方推动，我方处于被动接受状态。</p>';
     else if(KE[gsElem]===zsElem) html+='<p>干克支：我方主导，感情由我方掌控，须防强势给对方压力。</p>';
     else if(KE[zsElem]===gsElem) html+='<p>支克干：对方主导，我方处于被动，感情由对方掌控。</p>';
     else html+='<p>干支比和：双方关系平等，感情较为平衡稳定。</p>';
@@ -2252,6 +2363,28 @@ function renderFortuneCard(ft){
     th+='<span class="tg '+ft.tags[i].c+'">'+ft.tags[i].t+'</span>';
   }
   tags.innerHTML=th;
+  // 分项条：五档是硬切边界（±50% 参数扰动会有 18~33% 的课改档），而「哪课更吉」的相对排序很稳。
+  // 所以把 total=Σparts 摊开给用户：看得到每一维贡献多少，就不必迷信那一个「吉/凶」字。
+  var brk=document.getElementById('fcBrk');
+  if(brk&&ft.parts){
+    var mx=1,pi;
+    for(pi=0;pi<ft.parts.length;pi++){ if(Math.abs(ft.parts[pi].v)>mx) mx=Math.abs(ft.parts[pi].v); }
+    var rows='';
+    for(pi=0;pi<ft.parts.length;pi++){
+      var it=ft.parts[pi];
+      if(!it.v) continue;
+      var half=Math.abs(it.v)/mx*50;
+      var col=it.v>0?'#5f9e5f':it.v<0?'#c85030':'var(--faint)';
+      var bar=it.v>0?'left:50%;width:'+half.toFixed(1)+'%':'right:50%;width:'+half.toFixed(1)+'%';
+      rows+='<div class="fc-brk-r">'+
+        '<span class="fc-brk-l">'+it.label+'</span>'+
+        '<span class="fc-brk-b"><u></u><i style="'+bar+';background:'+col+'"></i></span>'+
+        '<span class="fc-brk-v" style="color:'+col+'">'+(it.v>0?'+':'')+it.v.toFixed(1)+'</span>'+
+      '</div>';
+    }
+    brk.innerHTML='<div class="fc-brk-h">综合分 '+(ft.score>0?'+':'')+ft.score.toFixed(1)+
+      '　（各维加权之和；五档为 '+ft.level+'，档位边界会随参数微调而变，排序比档位可靠）</div>'+rows;
+  }
   el.style.display='block';
 }
 
@@ -2590,8 +2723,9 @@ function renderInterp(r,q,ft){
     (KE[r.chuElem]===r.zhangElem?'初传克中传（'+r.chuElem+'克'+r.zhangElem+'），事有阻碍，中途有变，须防不测。':'')+
     (KE[r.zhangElem]===r.moElem?'中传克末传（'+r.zhangElem+'克'+r.moElem+'），结局有损，事成不易。':'')+
     (KE[r.moElem]===r.chuElem?'末传克初传（'+r.moElem+'克'+r.chuElem+'），首尾相克，事有反复。':'')+
-    (SHENG[r.zhangElem]===r.chuElem?'中传生初传（'+r.zhangElem+'生'+r.chuElem+'），中途有助，宜借力。':'')+
-    (SHENG[r.moElem]===r.zhangElem?'末传生中传（'+r.moElem+'生'+r.zhangElem+'），结局有助，后劲足。':'')+
+    // 与上文 zhangShengChu/moShengZhang 同一口径：SHENG[X]===Y ⟺ Y 生 X，故「中传生初传」判 SHENG[初]===中
+    (SHENG[r.chuElem]===r.zhangElem?'中传生初传（'+r.zhangElem+'生'+r.chuElem+'），中途有助，宜借力。':'')+
+    (SHENG[r.zhangElem]===r.moElem?'末传生中传（'+r.moElem+'生'+r.zhangElem+'），结局有助，后劲足。':'')+
     (r.chuElem===r.zhangElem&&r.zhangElem===r.moElem?'三传五行相同（皆'+r.chuElem+'），事专一，但亦主固执。':'')+
     (r.chuElem===r.zhangElem||r.zhangElem===r.moElem||r.chuElem===r.moElem?'有五行相同之传，主事有延续性。':'')+
     '</p>'+
@@ -2649,14 +2783,30 @@ function renderInterp(r,q,ft){
 
     // 特殊格局
     '<hr class="dv">'+
+    '<p><strong>◆ 课体格局：</strong></p>'+
+    // 课体格由 keti() 统一判定（三合局/连茹/间传/伏吟反吟），此处只负责呈现。
+    // 三合局括号里是「局五行对日干」的六亲——六亲是客观定义，不是打分卡。
+    (function(){
+      var kt=(ft&&ft.keti)?ft.keti:keti(r);
+      if(!kt.length) return '<p style="font-size:.8rem;color:var(--dim)">本课三传不成常见课体格局，以三传天将、生克与旺衰论断。</p>';
+      var tags='<div class="ss-tags">';
+      for(var i=0;i<kt.length;i++){
+        var nm=kt[i].name+(kt[i].lq?'（'+kt[i].lq+'）':'');
+        tags+='<span class="ss-tg" style="cursor:default" title="'+escHtml(kt[i].note||'')+'">'+nm+'</span>';
+      }
+      tags+='</div>';
+      var txt='<p style="font-size:.8rem;color:var(--dim);line-height:1.7;margin-top:4px">';
+      for(var j=0;j<kt.length;j++) txt+='<span style="color:var(--gold2)">【'+kt[j].name+'】</span>'+escHtml(kt[j].note||'')+'。 ';
+      return tags+txt+'</p>';
+    })()+
     '<p><strong>◆ 特殊格局：</strong></p>'+
     '<p style="font-size:.8rem;color:var(--dim);line-height:1.7">'+
-    (r.chu===r.zhang&&r.zhang===r.mo?'<span style="color:var(--gold2)">【三传归一】</span>初、中、末三传相同，事无变化，从头至尾一致。主专一，亦主无转机。 ':
-     r.chu===r.mo&&r.chu!==r.zhang?'<span style="color:var(--gold2)">【首尾相同】</span>初末相同，事有回旋，终归原点，须防循环往复。 ':'')+
+    (r.chu===r.mo&&r.chu!==r.zhang?'<span style="color:var(--gold2)">【首尾相同】</span>初末相同，事有回旋，终归原点，须防循环往复。 ':'')+
     (KE[chuE]===r.dayElem?'<span style="color:var(--red)">【初传克日】</span>初传克日干，有耗损、压力，来自外部阻碍。 ':'')+
-    (SHENG[chuE]===r.dayElem?'<span style="color:var(--green)">【初传生日】</span>初传生日干，外来滋养，有助力。 ':'')+
+    // 方向复核：初传生日干 ⟺ SHENG[日干]===初传（此前写成 SHENG[初传]===日干，实际判的是日干生初传）
+    (SHENG[r.dayElem]===chuE?'<span style="color:var(--green)">【初传生日】</span>初传生日干，外来滋养，有助力。 ':'')+
     (chuE===r.dayElem?'<span style="color:var(--green)">【初传扶日】</span>初传五行与日干相同，本气相扶。 ':'')+
-    (SHENG[r.dayElem]===chuE?'<span style="color:var(--orange)">【日干生初传】</span>日干生初传，自身付出，有消耗但亦主慷慨。 ':'')+
+    (SHENG[chuE]===r.dayElem?'<span style="color:var(--orange)">【日干生初传】</span>日干生初传，自身付出，有消耗但亦主慷慨。 ':'')+
     (KE[r.dayElem]===chuE?'<span style="color:var(--orange)">【日干克初传】</span>日干克初传，可主动掌控局面，耗力但不被动。 ':'')+
     (r.chu===r.dayBr?'<span style="color:var(--gold2)">【初传临日支】</span>初传临支，事与本地、本身相关，亲力亲为。 ':'')+
     (chuJ&&chuJ===moJ&&chuJ!==zhongJ?'<span style="color:var(--gold2)">【首尾天将同】</span>天将首尾呼应，事有始有终，善始善终之象。 ':'')+
@@ -2666,8 +2816,10 @@ function renderInterp(r,q,ft){
     (chuJ==='贵人'?'<span style="color:var(--green)">【贵人发用】</span>贵人为初传，开局得助，宜积极行动。 ':'')+
     (chuJ==='青龙'?'<span style="color:var(--green)">【青龙发用】</span>青龙为初传，吉祥如意，财喜临门。 ':'')+
     (chuJ==='玄武'?'<span style="color:var(--blue)">【玄武发用】</span>玄武为初传，主暗昧、盗匪、暧昧不明之事。 ':'')+
-    ((function(a,b){var d=((a-b)%12+12)%12;return Math.min(d,12-d);})(r.chu,r.zhang)===4&&(function(a,b){var d=((a-b)%12+12)%12;return Math.min(d,12-d);})(r.zhang,r.mo)===4?'<span style="color:var(--gold2)">【三传三合局】</span>三传成三合之势，事情蓄力，待时而发。 ':'')+
-    (SHENG[moE]===r.dayElem?'<span style="color:var(--green)">【末传生日】</span>末传生日干，结果有滋养，大吉收尾。 ':'')+
+
+    // 同上：末传生日干 ⟺ SHENG[日干]===末传；另一向为「日干生末传」，结果耗泄
+    (SHENG[r.dayElem]===moE?'<span style="color:var(--green)">【末传生日】</span>末传生日干，结果有滋养，大吉收尾。 ':'')+
+    (SHENG[moE]===r.dayElem?'<span style="color:var(--orange)">【日干生末传】</span>日干生末传，结局自身付出，有耗泄之象。 ':'')+
     (KE[moE]===r.dayElem?'<span style="color:var(--red)">【末传克日】</span>末传克日干，结果耗损，需防后患。 ':'')+
     (r.chu===r.mo&&r.zhang!==r.chu?'<span style="color:var(--gold2)">【循环课】</span>天盘循环，首尾同宫，事反复循环。 ':'')+
     (r.deBr===r.chu?'<span style="color:var(--green)">【德神发用】</span>德神居初传，天赐之吉，能化解凶险。 ':'')+
@@ -2911,6 +3063,8 @@ globalThis.DLR={
   mod:mod,jdn:jdn,calc:calc,daySB:daySB,yearSB:yearSB,monthSB:monthSB,hourSB:hourSB,
   getYueJiang:getYueJiang,fortune:fortune,detectQ:detectQ,jqTime:jqTime,afterJQ:afterJQ,
   wxState:wxState,wxRel:wxRel,WX_SCORE:WX_SCORE,FT_TH:FT_TH,
+  keti:keti,ketiScore:ketiScore,liuqin5:liuqin5,KT_SCORE:KT_SCORE,
+  KT_SANHE_E:KT_SANHE_E,LQ5:LQ5,normQ:normQ,
   trueSolar:trueSolar,eqOfTime:eqOfTime,dayOfYear:dayOfYear,shiftYMD:shiftYMD,
   JQ_TABLE:JQ_TABLE,JQ_NAME:JQ_NAME,JQ_MONTH:JQ_MONTH,JIEQI:JIEQI,
   genAdvice:genAdvice,getYongshen:getYongshen,getYingqi:getYingqi,isKongWang:isKongWang,

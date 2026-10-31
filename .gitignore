@@ -1,0 +1,4 @@
+# 运行产物：每次跑脚本都会重写，不入库
+test_result.txt
+tools/calibrate_out.txt
+tools/sensitivity_out.txt

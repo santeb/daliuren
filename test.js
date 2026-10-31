@@ -35,14 +35,21 @@ if (!DLR) { console.error('脚本未导出 DLR，无法测试'); process.exit(1)
 
 const { STEM, BRAN, calc, daySB, hourSB, monthSB, yearSB, getYueJiang, jqTime, afterJQ,
         ELEM, ELEM_S, LU_BR, DE_LU, CHANGSHENG_ORDER, mod,
-        fortune, wxState, wxRel, WX_SCORE, FT_TH, getYongshen } = DLR;
+        fortune, wxState, wxRel, WX_SCORE, FT_TH, getYongshen,
+        keti, ketiScore, liuqin5, normQ, KT_SCORE, KT_SANHE_E, LQ5, QTYPES, KE, SHENG } = DLR;
 
 let pass = 0, fail = 0, warn = 0;
 const failures = [];
 function group(name) { console.log('\n── ' + name); }
+// 失败标记用 ASCII 而非 ✗：✗(U+2717)/OK(U+2714) 不在 GBK 字符集中，
+// Windows 下重定向到文件时会令 stdout 进入错误状态，后续输出（含整个第 17 组）被静默丢弃，
+// 表现为「测试只跑一半、exit 0、看不到任何失败项」。此处改用 ASCII，且失败项加序号便于定位。
 function ok(cond, name, detail) {
   if (cond) { pass++; }
-  else { fail++; failures.push(name + (detail ? ' → ' + detail : '')); console.log('   ✗ ' + name + (detail ? '  ' + detail : '')); }
+  else {
+    fail++; failures.push(name + (detail ? ' → ' + detail : ''));
+    console.log('   [FAIL#' + fail + '] ' + name + (detail ? '  ' + detail : ''));
+  }
 }
 function note(msg) { warn++; console.log('   ! ' + msg); }
 function sb(s, b) { return STEM[s] + BRAN[b]; }
@@ -592,7 +599,7 @@ group('17. 吉凶层：月令旺衰与三传生克（断法主干，非将神打
       `初生末 生克分 ${skOf(fa)} > 末克初 生克分 ${skOf(fb)}（走向分正负相反）`);
   }
 
-  // ⑥ 结构完整性 + 五档分布（阈值由 44352 局分布校准）
+  // ⑥ 结构完整性 + 五档分布（阈值由 tools/calibrate.js 全样本 43800 局分布校准）
   let bad = 0, tagBad = 0, n = 0;
   const dist = { 大凶: 0, 凶: 0, 平: 0, 吉: 0, 大吉: 0 };
   const QLIST = Object.keys(DLR.QTYPES).map(k => ({ key: k, l: DLR.QTYPES[k].l })).concat([null]);
@@ -632,8 +639,143 @@ group('17. 吉凶层：月令旺衰与三传生克（断法主干，非将神打
   ok(fortune(rY, null).parts.every(p => p.k !== 'yongshen'), '未提问时不计用神分');
 }
 
+group('18. 课体格（keti）与事类入参归一化（normQ）');
+{
+  // 造假盘：keti 只读三传三支 + 伏吟/反吟标记；ketiScore 再加日干五行
+  const mk = (c, z, m, de, opt) => Object.assign(
+    { chu: c, zhang: z, mo: m, dayElem: de || '木', isFuYin: false, isFanYin: false }, opt || {});
+  const names = (r) => keti(r).map(k => k.name);
+
+  // ① 三合局：亥卯未曲直（木）／寅午戌炎上（火）／申子辰润下（水）／巳酉丑从革（金）
+  ok(names(mk(11, 3, 7)).indexOf('曲直') >= 0, '亥卯未 → 曲直局', names(mk(11, 3, 7)).join('·'));
+  ok(names(mk(2, 6, 10)).indexOf('炎上') >= 0, '寅午戌 → 炎上局', names(mk(2, 6, 10)).join('·'));
+  ok(names(mk(8, 0, 4)).indexOf('润下') >= 0, '申子辰 → 润下局', names(mk(8, 0, 4)).join('·'));
+  ok(names(mk(5, 9, 1)).indexOf('从革') >= 0, '巳酉丑 → 从革局', names(mk(5, 9, 1)).join('·'));
+  ok(names(mk(1, 4, 7)).indexOf('稼穑') >= 0, '丑辰未（四土之三）→ 稼穑', names(mk(1, 4, 7)).join('·'));
+  { // 三合局是「会」不是「连」，与三传次序无关
+    const set = [11, 3, 7]; let bad = 0;
+    for (const p of [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]])
+      if (names(mk(set[p[0]], set[p[1]], set[p[2]])).indexOf('曲直') < 0) bad++;
+    ok(bad === 0, '三合局与三传次序无关（6 种排列皆判曲直）', bad + ' 种漏判');
+  }
+
+  // ② 连茹 / 间传 / 归一 / 伏吟反吟
+  ok(names(mk(0, 1, 2)).indexOf('进茹') >= 0, '子丑寅 → 进茹（顺连）', names(mk(0,1,2)).join('·'));
+  ok(names(mk(0, 11, 10)).indexOf('退茹') >= 0, '子亥戌 → 退茹（逆连）', names(mk(0,11,10)).join('·'));
+  ok(names(mk(0, 2, 4)).indexOf('顺间') >= 0, '子寅辰 → 顺间（隔位顺行）', names(mk(0,2,4)).join('·'));
+  ok(names(mk(0, 10, 8)).indexOf('逆间') >= 0, '子戌申 → 逆间（隔位逆行）', names(mk(0,10,8)).join('·'));
+  ok(names(mk(5, 5, 5)).indexOf('三传归一') >= 0, '三传同支 → 三传归一');
+  ok(names(mk(3, 3, 3)).length === 1, '三传归一时不再判连茹／间传（互斥）', names(mk(3,3,3)).join('·'));
+  ok(names(mk(0, 1, 2, '木', { isFuYin: true })).indexOf('伏吟') >= 0, 'isFuYin → 伏吟');
+  ok(names(mk(0, 1, 2, '木', { isFanYin: true })).indexOf('反吟') >= 0, 'isFanYin → 反吟');
+
+  // ③ 结构守恒：穷举 12³=1728 组三传，结构格命中数须等于理论值，且无一被多重判定
+  //    理论值：三传归一 12；进茹/退茹/顺间/逆间 各 12 共 48；三合 4 局×6 排列 24；稼穑 C(4,3)×6 排列 24 → 合计 96
+  {
+    let same = 0, struct = 0, multi = 0;
+    for (let c = 0; c < 12; c++) for (let z = 0; z < 12; z++) for (let m = 0; m < 12; m++) {
+      const ks = keti(mk(c, z, m));
+      let s = 0;
+      for (const k of ks) {
+        if (k.name === '三传归一') same++;
+        else if (k.name !== '伏吟' && k.name !== '反吟') s++;
+      }
+      if (s) struct++;
+      if (s > 1) multi++;
+    }
+    ok(same === 12 && struct === 96 && multi === 0,
+      `穷举 12³ 组三传：三传归一 ${same}、结构格 ${struct}（理论 12 / 96），多重判定 ${multi}`,
+      `same=${same} struct=${struct} multi=${multi}`);
+  }
+
+  // ④ 六亲是客观定义：生我者印、我克者财、克我者官、我生者食、同我者比
+  ok(liuqin5('水', '木') === '印', '局水对日干木 = 印（生我者）', liuqin5('水', '木'));
+  ok(liuqin5('土', '木') === '财', '局土对日干木 = 财（我克者）', liuqin5('土', '木'));
+  ok(liuqin5('火', '木') === '食', '局火对日干木 = 食（我生者）', liuqin5('火', '木'));
+  ok(liuqin5('金', '木') === '官', '局金对日干木 = 官（克我者）', liuqin5('金', '木'));
+  ok(liuqin5('木', '木') === '比', '局木同日干木 = 比', liuqin5('木', '木'));
+  { // 25 组穷举，逐组对照 SHENG/KE 表（注意 SHENG[X]=生X者、KE[X]=X所克者，两表方向相反）
+    let bad = 0; const ELS = ['木', '火', '土', '金', '水'];
+    for (const ge of ELS) for (const de of ELS) {
+      let exp;
+      if (ge === de) exp = '比';
+      else if (SHENG[de] === ge) exp = '印';
+      else if (KE[de] === ge) exp = '财';
+      else if (SHENG[ge] === de) exp = '食';
+      else exp = '官';
+      if (liuqin5(ge, de) !== exp) bad++;
+    }
+    ok(bad === 0, '六亲 25 组穷举与 SHENG/KE 表一致（印食未颠倒）', bad + ' 处不符');
+  }
+  ok(LQ5['印'] > LQ5['财'] && LQ5['财'] > LQ5['比'] && LQ5['比'] > LQ5['食'] && LQ5['食'] > LQ5['官'],
+    '六亲吉凶排序：印 > 财 > 比 > 食 > 官（生我者最吉、克我者最凶）', JSON.stringify(LQ5));
+
+  // ⑤ 课体计分：定性分 + 三合局六亲分
+  const s0 = ketiScore(mk(0, 2, 4, '木'));
+  ok(s0.list.length === 1 && s0.score === KT_SCORE['顺间'],
+    '顺间课体分 = KT_SCORE[顺间]（非三合局不计六亲）', String(s0.score));
+  const s1 = ketiScore(mk(11, 3, 7, '木'));    // 曲直属木，对日干木 = 比
+  ok(s1.list[0].lq === '比' && Math.abs(s1.score - (KT_SCORE['曲直'] + LQ5['比'] * 0.8)) < 1e-6,
+    '曲直局 + 日干木 → 六亲比，分 = 曲直 + 比×0.8', String(s1.score));
+  const s2 = ketiScore(mk(11, 3, 7, '土'));    // 曲直属木，木克土 = 官
+  ok(s2.list[0].lq === '官' && s2.score < s1.score,
+    '同一曲直局换日干土 → 六亲官（克我者），分低于比', s2.score + ' < ' + s1.score);
+  ok(ketiScore(mk(0, 3, 6)).score === 0, '不成型三传（子卯午）→ 课体分 0', String(ketiScore(mk(0,3,6)).score));
+
+  // ⑥ 课体维度进 fortune，且与②月令维度不重复计分
+  const rK = calc(2026, 7, 10, 6);
+  const ftK = fortune(rK, null);
+  ok(ftK.parts.some(p => p.k === 'keti'), 'fortune 含「课体格局」分项');
+  ok(Array.isArray(ftK.keti), 'fortune 回传 keti 列表供解读层渲染');
+  {
+    const at = (jb) => fortune(Object.assign({}, rK, { msb: { stem: rK.msb.stem, branch: jb } }), null)
+      .parts.find(p => p.k === 'keti').v;
+    ok(at(2) === at(9), '课体分不受月建影响（与月令维度各计各的，不重复）', at(2) + ' vs ' + at(9));
+  }
+
+  // ⑦ normQ：三种入参口径必须同分。直接传 QTYPES[k] 会静默丢掉用神+事类两维（约 14% 贡献度）
+  ok(normQ(null) === null, 'normQ(null) → null');
+  ok(normQ({ key: 'cai', l: '财运' }).key === 'cai', 'normQ 接受 {key,l} 对象');
+  const qt = normQ(QTYPES['cai']);
+  ok(qt && qt.key === 'cai', 'normQ 能从 QTYPES[k]（只有 {kw,l}、无 key）补出 key', JSON.stringify(qt));
+  const qstr = QTYPES['cai'].kw[0];
+  const qs = normQ(qstr);
+  ok(qs && typeof qs.key === 'string', 'normQ 接受问题字符串并自行 detectQ（"' + qstr + '"）', JSON.stringify(qs));
+  {
+    const r = calc(2026, 7, 10, 6);
+    const a = fortune(r, { key: 'cai', l: '财运' }).score;
+    const b = fortune(r, QTYPES['cai']).score;
+    const c = fortune(r, qs.key ? qstr : null).score;
+    ok(a === b && a === c, 'fortune 三种事类入参（{key,l}／QTYPES[k]／问题字符串）分数一致',
+      `${a} / ${b} / ${c}`);
+    ok(fortune(r, qstr).parts.some(p => p.k === 'yongshen'),
+      '传问题字符串时用神分未丢（旧接口会静默丢掉用神+事类两维）');
+  }
+
+  // ⑧ 全样本扫描：格名必须都在 KT_SCORE 中有分，否则就是判出了没定价的格
+  {
+    const hit = {}; let n = 0, bad = 0;
+    for (let m = 1; m <= 12; m++) for (const d of [3, 12, 21]) for (let hb = 0; hb < 12; hb++) {
+      const r = calc(2026, m, d, hb); n++;
+      for (const k of keti(r)) { hit[k.name] = (hit[k.name] || 0) + 1; if (!KT_SCORE[k.name]) bad++; }
+    }
+    ok(bad === 0, `全样本 ${n} 局：课体名均在 KT_SCORE 中有对应分值`, bad + ' 处未定价');
+    console.log('   课体命中率：' + Object.keys(hit).sort((a, b) => hit[b] - hit[a])
+      .map(k => `${k} ${(hit[k] / n * 100).toFixed(1)}%`).join('  '));
+  }
+}
+
 // ───────────────────────────────────────────────
+// Windows 控制台默认 GBK，而 ✗ / OK 不在 GBK 字符集中：一旦有断言失败、console.log 写出 ✗，
+// stdout 会进入错误状态，其后所有输出（含整个第 17 组与结果行）被静默丢弃，
+// 表现为「测试只跑一半、exit 0、看不到任何失败项」。故结果另存为 UTF-8 文件，与控制台编码无关。
+try {
+  fs.writeFileSync(path.join(__dirname, 'test_result.txt'),
+    'RESULT pass=' + pass + ' fail=' + fail + ' warn=' + warn + '\n\nFAILURES:\n' +
+    (failures.length ? failures.map((f, i) => '[' + (i + 1) + '] ' + f).join('\n') : '(none)'),
+    'utf8');
+} catch (e) { console.log('write result file failed: ' + e.message); }
 console.log('\n' + '='.repeat(52));
 console.log(`结果：${pass} 通过 / ${fail} 失败 / ${warn} 提示`);
 if (fail) { console.log('\n失败项：'); failures.forEach(f => console.log('  - ' + f)); process.exit(1); }
-console.log('全部通过 ✔');
+console.log('全部通过 OK');
