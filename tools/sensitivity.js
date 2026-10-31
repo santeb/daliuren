@@ -81,17 +81,66 @@ const base = runAll(DLR0);
 const keys = ['jiang', 'wx', 'shengke', 'gan', 'kong', 'yongshen', 'qtype', 'keti'];
 function mean(a) { return a.reduce((x, y) => x + y, 0) / a.length; }
 function cov(a, b) { const ma = mean(a), mb = mean(b); let s = 0; for (let i = 0; i < a.length; i++) s += (a[i] - ma) * (b[i] - mb); return s / a.length; }
+function sdv(a) { const m = mean(a); return Math.sqrt(a.reduce((s, v) => s + (v - m) * (v - m), 0) / a.length); }
 
-const tot = base.map(r => r.sum);
-const vT = cov(tot, tot);
-OUT.push('══ A. 各维度对总分的贡献度（432 局，cov 分解，合计恒为 100%）══');
-const contrib = {};
+// ⚠️ 样本量教训（2026-11-01 实测）：贡献度是「小量」，用几百局估不稳。
+//    曾用 432 局（每月 5/15/25 × 12 时辰）估出 keti=1.2%，全样本 43800 局实为 4.3%；
+//    换六组日期得到的 keti 分别是 1.2 / 5.9 / 3.7 / 4.4 / 3.0 / 4.7%——那 1.2% 是六组里最低的一组，
+//    纯属欠采样。越小的维度相对误差越大（bootstrap ±：kong 36% / gan 26% / keti 20% / qtype 15%，
+//    而 jiang 只有 5%）。所以贡献度一律用全样本估，并附 bootstrap 95% 区间。
+const FULL_ROWS = [];
+{
+  const dt0 = Date.now();
+  for (let i = 0; i < 365; i++) {
+    const dt = new Date(2026, 0, 1 + i);
+    for (let h = 0; h < 12; h++) {
+      const r = DLR0.calc(dt.getFullYear(), dt.getMonth() + 1, dt.getDate(), h);
+      for (const qk of QK) {
+        const ft = DLR0.fortune(r, { key: qk, l: DLR0.QTYPES[qk].l });
+        const row = { score: ft.score, sum: 0 };
+        for (const p of ft.parts) { row[p.k] = p.v; row.sum += p.v; }
+        FULL_ROWS.push(row);
+      }
+    }
+  }
+  OUT.push('（全样本 ' + FULL_ROWS.length + ' 局，耗时 ' + ((Date.now() - dt0) / 1000).toFixed(1) + 's）');
+}
+function contribOf(rows, field) {
+  const tot = rows.map(r => r[field]), vT = cov(tot, tot);
+  const o = {};
+  for (const k of keys) o[k] = cov(rows.map(r => r[k] === undefined ? 0 : r[k]), tot) / vT;
+  return o;
+}
+const contrib = contribOf(FULL_ROWS, 'sum');
+
+// bootstrap：重复随机抽 200 组（每组 432 局，与扰动实验同规模），给出各维贡献度的抽样区间
+const BOOT = {}; for (const k of keys) BOOT[k] = [];
+{
+  let seed = 20261101;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  for (let b = 0; b < 200; b++) {
+    const s = [];
+    for (let i = 0; i < 432; i++) s.push(FULL_ROWS[Math.floor(rnd() * FULL_ROWS.length)]);
+    const c = contribOf(s, 'sum');
+    for (const k of keys) BOOT[k].push(c[k]);
+  }
+}
+OUT.push('══ A. 各维度对总分的贡献度（全样本 cov 分解，合计恒为 100%）══');
+OUT.push('  注：附 bootstrap 95% 区间（按 432 局重抽 200 次），区间宽 = 该维估计本身不稳，别只看点估计');
 for (const k of keys) {
-  const a = base.map(r => r.parts[k] === undefined ? 0 : r.parts[k]);
-  contrib[k] = cov(a, tot) / vT;
-  OUT.push('  ' + k.padEnd(9) + (contrib[k] * 100).toFixed(1).padStart(6) + '%   分值标准差 σ=' + Math.sqrt(cov(a, a)).toFixed(2));
+  const s = BOOT[k].slice().sort((a, b) => a - b);
+  const lo = s[Math.floor(200 * 0.025)], hi = s[Math.floor(200 * 0.975)];
+  const a = FULL_ROWS.map(r => r[k] === undefined ? 0 : r[k]);
+  OUT.push('  ' + k.padEnd(9) + (contrib[k] * 100).toFixed(1).padStart(6) + '%' +
+    '   σ=' + sdv(a).toFixed(2) +
+    '   95%区间[' + (lo * 100).toFixed(1) + '%, ' + (hi * 100).toFixed(1) + '%]' +
+    '   相对误差±' + (sdv(BOOT[k]) / Math.abs(contrib[k]) * 100).toFixed(0) + '%');
 }
 OUT.push('  合计      ' + (Object.values(contrib).reduce((x, y) => x + y, 0) * 100).toFixed(1) + '%');
+OUT.push('');
+OUT.push('  σ 是怎么来的：σ_dim ≈ σ(分值表) × ||权重向量|| —— 即分值表内离散度乘权重模，');
+OUT.push('  再经样本中各状态的实际出现频率修正。sMap σ=1.963、天将权重模=1.755 → 预测 3.45，实测 3.32。');
+OUT.push('  所以 σ 不是拟合出来的，是「分值表 + 权重」这两个自定输入的下游结果。');
 
 // ─── B. 扰动 ───
 function rnd(d) { return (Math.random() * 2 - 1) * d; }
