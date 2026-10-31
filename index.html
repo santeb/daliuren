@@ -717,18 +717,29 @@ function calc(y,m,d,hb,opt){
     if(pool.length===1){
       return {k:pool[0],m:matched.length?'比用法（择与日干相比者）':'贼克法（俱不比，取先见者）'};
     }
-    var maxCnt=-1,counts=pool.map(function(x){var c=keCount(x); if(c>maxCnt) maxCnt=c; return c;});
-    var deep=pool.filter(function(x,i){return counts[i]===maxCnt;});
-    if(deep.length===1) return {k:deep[0],m:'涉害法（归家历'+maxCnt+'重害，最深者发用）'};
-    // 深浅相等：先取地盘四孟上神（见机）；孟上无取，乃取四仲上神（察微）；季位不取
-    var byMeng=deep.filter(function(x){return MENG[x.l];});
-    if(byMeng.length===1) return {k:byMeng[0],m:'涉害法·见机格（俱历'+maxCnt+'重害，取地盘四孟上神）'};
-    var byZhong=deep.filter(function(x){return ZHONG[x.l];});
-    if(!byMeng.length&&byZhong.length===1) return {k:byZhong[0],m:'涉害法·察微格（俱历'+maxCnt+'重害，孟上无取，取四仲上神）'};
-    // 孟位并列、仲位并列，或俱在季位 → 复等（一名缀瑕）：阳日取干上两课先见者，阴日取支上两课先见者
-    var pref=yangDay?[lessons[0],lessons[1]]:[lessons[2],lessons[3]];
-    for(var pi=0;pi<pref.length;pi++) if(deep.indexOf(pref[pi])>=0) return {k:pref[pi],m:'涉害法·复等格（一名缀瑕，俱历'+maxCnt+'重害，孟仲无独取，'+(yangDay?'刚日取干上课先见者':'柔日取支上课先见者')+'）'};
-    return {k:deep[0],m:'涉害法·复等格（一名缀瑕，俱历'+maxCnt+'重害，取先见者）'};
+    // 涉害：与日干俱比（或俱不比）而无可独取者，以地盘孟仲季定之
+    //   《六壬粹言》「见机在孟察微仲」：先取孟位上神曰见机，孟上无取则取仲位上神曰察微，季位不取；
+    //   俱在孟位者曰复等，取四课先见者。
+    // 按：「历归本家数重害、以深者为用」乃《粹言》按语所存之古法，原书明言「近来诸家皆无用之」。
+    //     本实现从正文（孟仲取用），仅把古法重数附于取用说明中，以存《六壬大全·订讹》一派之数。
+    function firstOf(set){
+      for(var q=0;q<4;q++) if(set.indexOf(lessons[q])>=0) return lessons[q];
+      return set[0];
+    }
+    var byMeng=pool.filter(function(x){return MENG[x.l];});
+    if(byMeng.length===1) return {k:byMeng[0],m:'涉害法·见机格（取地盘四孟上神；古法历归本家'+keCount(byMeng[0])+'重）'};
+    if(byMeng.length>1){
+      var fm=firstOf(byMeng);
+      return {k:fm,m:'涉害法·复等格（孟位并列，取四课先见者；古法历归本家'+keCount(fm)+'重）'};
+    }
+    var byZhong=pool.filter(function(x){return ZHONG[x.l];});
+    if(byZhong.length===1) return {k:byZhong[0],m:'涉害法·察微格（孟上无取，取四仲上神；古法历归本家'+keCount(byZhong[0])+'重）'};
+    if(byZhong.length>1){
+      var fz=firstOf(byZhong);
+      return {k:fz,m:'涉害法·察微格·复等（仲位并列，取四课先见者；古法历归本家'+keCount(fz)+'重）'};
+    }
+    var fq=firstOf(pool);
+    return {k:fq,m:'涉害法（孟仲皆无取，取四课先见者；古法历归本家'+keCount(fq)+'重）'};
   }
 
   var pick=null;
@@ -2401,7 +2412,11 @@ function renderInterp(r,q,ft){
     '<p style="font-size:.78rem;color:var(--dim);line-height:1.7">'+
     (r.zongmen==='贼克法'?'贼克者，以下犯上也。初传取贼克之神发用，主事有外来之变，须防人暗算或突生枝节。贼克法主急、主动，事情来得快且明显。':
     r.zongmen==='比用法'?'比用者，择与日干阴阳相比者发用。二克二贼，须分阴阳，取与日干同性者为主，主事有选择余地，可择机而动。':
-    r.zongmen==='涉害法'?'涉害者，多克相比，取孟仲季之孟上神。事有多端，须辨轻重缓急，孟为长、为始，取孟上神主先见者、根本者。':
+    r.zongmen.indexOf('涉害法')===0?
+      (r.zongmen.indexOf('见机')>=0?'涉害者，与日干俱比（或俱不比）而无可独取也。取地盘四孟上神发用，曰见机。事有多端而先机已露，宜见机而作，先发者制人。':
+       r.zongmen.indexOf('察微')>=0?'涉害者，与日干俱比（或俱不比）而无可独取也。孟上无取，乃取四仲上神发用，曰察微。事隐而微，须细察其几，不可躁进。':
+       r.zongmen.indexOf('复等')>=0?'涉害者，与日干俱比而俱在孟位，曰复等，取四课中先见者发用。两雄相争，惟在前者有得。':
+       '涉害者，与日干俱比（或俱不比）而无可独取也。以地盘孟仲季定之：先取孟上神曰见机，孟上无取则取仲上神曰察微，季位不取。主事艰辛，须历尽风霜而后得，乃苦尽甘来之象。'):
     r.zongmen==='遥克法'?'遥克者，四课无克，取遥克日干之上神。事无近忧，但有远虑，须防暗中牵连，或事从他方来。':
     r.zongmen==='昂星法'?'昂星者，无克无遥，取酉金为用。酉为西方金，主肃杀、决断。昂星法主事无头绪，须待时而动，或借外力。':
     r.zongmen==='伏吟法'?'伏吟者，天盘与地盘相同，天地不交，事多阻滞不前。主事迟滞、反复、难有进展，须耐心等待或另寻出路。':
