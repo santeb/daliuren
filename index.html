@@ -272,6 +272,9 @@ var ELEM={0:'水',1:'土',2:'木',3:'木',4:'土',5:'火',6:'火',7:'土',8:'金
 var ELEM_S={0:'木',1:'木',2:'火',3:'火',4:'土',5:'土',6:'金',7:'金',8:'水',9:'水'};
 var KE={'木':'土','土':'水','水':'火','火':'金','金':'木'};
 var SHENG={'木':'水','火':'木','土':'火','金':'土','水':'金'};
+// 十干寄宫（地支位 → 所寄天干，取「支→干」方向供涉害历数用）
+// 甲寄寅、乙寄辰、丙戊寄巳、丁己寄未、庚寄申、辛寄戌、壬寄亥、癸寄丑；子午卯酉四正无寄
+var LODGE_STEMS={1:[9],2:[0],4:[1],5:[2,4],7:[3,5],8:[6],10:[7],11:[8]};
 
 var TIANJIANG=['贵人','螣蛇','朱雀','六合','勾陈','青龙','天空','白虎','太常','玄武','太阴','天后'];
 var TJ_DESC={
@@ -636,6 +639,18 @@ function calc(y,m,d,hb,opt){
   // 有克的课
   var kes=[];
   for(var ki=0;ki<4;ki++) if(lessons[ki].ke) kes.push(lessons[ki]);
+  // 四课中上克下与下贼上并见者，「除上克不用」，只就下贼上之课取用
+  // （《六壬粹言》甲戌日例：一课未甲、二课子未、三课卯戌皆下贼上，四课申卯上克下「不用」）
+  var zeiKes=kes.filter(function(x){return x.ke==='下贼上';});
+  if(zeiKes.length) kes=zeiKes;
+  // 四课不备（如干上神与支阴神同，壬午日巳将子时一课四课皆「辰加亥」）者，
+  // 重复之课只作一课论，否则同一课自相比对必判「深浅相等」，生出虚假并列
+  var kesU=[],kesSeen={};
+  for(var ku=0;ku<kes.length;ku++){
+    var kk=kes[ku].u+'_'+kes[ku].l;
+    if(!kesSeen[kk]){kesSeen[kk]=1;kesU.push(kes[ku]);}
+  }
+  kes=kesU;
 
   // heavenMap 的逆查（由天盘神找其下地盘位）
   var heavenRev={};
@@ -669,10 +684,26 @@ function calc(y,m,d,hb,opt){
     zhang=mid;
     mo=ZIXING[mid]?CHONG[mid]:XING[mid];
   }
-  // 涉害深浅：自下神位顺行归上神本家，途中克上神者计数
+  // 某地在盘位上参与涉害的五行清单：本气 + 所寄天干（巳位计丙火、戊土；未位计丁火、己土）
+  function posElems(p){
+    var list=[ELEM[p]];
+    var st=LODGE_STEMS[p];
+    if(st) for(var i=0;i<st.length;i++) list.push(ELEM_S[st[i]]);
+    return list;
+  }
+  // 涉害深浅：自上神所临地盘位之次位起，顺行归上神本家（本家不计），途中逐项数「害」
+  //   上克下（上神克下神）→ 数沿途被上神所克者
+  //   下贼上（下神克上神）→ 数沿途克上神者
+  // 每地盘位本气与寄宫天干各算一项
+  // 例（《六壬大全·订讹》）：庚子日 午加庚，历酉金、戌中辛金 = 二重；戌加子，历丑中癸水 = 一重
   function keCount(k){
-    var cnt=0;
-    for(var p=k.l;p!==k.u;p=mod(p+1,12)) if(KE[ELEM[p]]===ELEM[k.u]) cnt++;
+    var cnt=0,isUp=(k.ke==='上克下');
+    for(var p=mod(k.l+1,12);p!==k.u;p=mod(p+1,12)){
+      var es=posElems(p);
+      for(var i=0;i<es.length;i++){
+        if(isUp ? (KE[ELEM[k.u]]===es[i]) : (KE[es[i]]===ELEM[k.u])) cnt++;
+      }
+    }
     return cnt;
   }
   // 有克取用：贼克 → 比用 → 涉害
@@ -686,16 +717,18 @@ function calc(y,m,d,hb,opt){
     if(pool.length===1){
       return {k:pool[0],m:matched.length?'比用法（择与日干相比者）':'贼克法（俱不比，取先见者）'};
     }
-    var maxCnt=-1;
-    pool.forEach(function(x){var c=keCount(x); if(c>maxCnt) maxCnt=c;});
-    var deep=pool.filter(function(x){return keCount(x)===maxCnt;});
-    if(deep.length===1) return {k:deep[0],m:'涉害法（归家路途多克，最深者发用）'};
+    var maxCnt=-1,counts=pool.map(function(x){var c=keCount(x); if(c>maxCnt) maxCnt=c; return c;});
+    var deep=pool.filter(function(x,i){return counts[i]===maxCnt;});
+    if(deep.length===1) return {k:deep[0],m:'涉害法（归家历'+maxCnt+'重害，最深者发用）'};
+    // 深浅相等：先取地盘四孟上神（见机）；孟上无取，乃取四仲上神（察微）；季位不取
     var byMeng=deep.filter(function(x){return MENG[x.l];});
-    if(byMeng.length) return {k:byMeng[0],m:'涉害法·见机格（深浅等，孟上先见）'};
+    if(byMeng.length===1) return {k:byMeng[0],m:'涉害法·见机格（俱历'+maxCnt+'重害，取地盘四孟上神）'};
     var byZhong=deep.filter(function(x){return ZHONG[x.l];});
-    if(byZhong.length) return {k:byZhong[0],m:'涉害法·察微格（深浅等，仲上先见）'};
-    var tie=deep.filter(function(x){return yangDay?(x===lessons[0]):(x===lessons[2]);});
-    return {k:tie.length?tie[0]:deep[0],m:'涉害法（深浅俱等，'+(yangDay?'刚日取干上':'柔日取支上')+'）'};
+    if(!byMeng.length&&byZhong.length===1) return {k:byZhong[0],m:'涉害法·察微格（俱历'+maxCnt+'重害，孟上无取，取四仲上神）'};
+    // 孟位并列、仲位并列，或俱在季位 → 复等（一名缀瑕）：阳日取干上两课先见者，阴日取支上两课先见者
+    var pref=yangDay?[lessons[0],lessons[1]]:[lessons[2],lessons[3]];
+    for(var pi=0;pi<pref.length;pi++) if(deep.indexOf(pref[pi])>=0) return {k:pref[pi],m:'涉害法·复等格（一名缀瑕，俱历'+maxCnt+'重害，孟仲无独取，'+(yangDay?'刚日取干上课先见者':'柔日取支上课先见者')+'）'};
+    return {k:deep[0],m:'涉害法·复等格（一名缀瑕，俱历'+maxCnt+'重害，取先见者）'};
   }
 
   var pick=null;

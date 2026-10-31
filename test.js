@@ -401,6 +401,83 @@ group('15. 真太阳时校正（经度差 + 时差方程）');
 }
 
 // ───────────────────────────────────────────────
+group('16. 九宗门古籍课例（《六壬粹言》《六壬大全·订讹》《大六壬探源》）');
+{
+  const BI = {}; BRAN.forEach((b, i) => { BI[b] = i; });
+  const SI = {}; STEM.forEach((s, i) => { SI[s] = i; });
+
+  // 2026-01-01 起连续 60 天，日干支正好遍历 60 甲子
+  function findDay(day) {
+    for (let i = 0; i < 60; i++) {
+      const t = new Date(Date.UTC(2026, 0, 1 + i));
+      const y = t.getUTCFullYear(), m = t.getUTCMonth() + 1, d = t.getUTCDate();
+      const s = daySB(y, m, d);
+      if (s.stem === SI[day[0]] && s.branch === BI[day[1]]) return [y, m, d];
+    }
+    return null;
+  }
+  // 固定时辰、指定月将起课（位移 = 月将 − 时辰）
+  function qi(day, jiang, hour) {
+    const ymd = findDay(day);
+    const r = calc(ymd[0], ymd[1], ymd[2], BI[hour], { yueJiang: BI[jiang] });
+    return { san: BRAN[r.chu] + BRAN[r.zhang] + BRAN[r.mo], chu: BRAN[r.chu], m: r.method || '' };
+  }
+
+  // ① 元首：壬戌日酉将子时，干上申，三课无克，取第二课上克下为用
+  let t = qi('壬戌', '酉', '子');
+  ok(t.san === '巳寅亥', '元首·壬戌日酉将子时 → 巳寅亥（《粹言》）', t.san);
+  ok(/元首/.test(t.m), '　└ 取用法标为元首（一上克下，余课无克）', t.m);
+
+  // ② 阳日阳比：甲戌日巳将子时，四课申卯上克下「除上克不用」，取与日比之子
+  t = qi('甲戌', '巳', '子');
+  ok(t.san === '子巳戌', '比用·甲戌日巳将子时 → 子巳戌（《粹言》阳日阳比）', t.san);
+  ok(/比用/.test(t.m), '　└ 上克下并见下贼上时先除上克', t.m);
+
+  // ③ 阴日阴比：辛卯日辰将申时，一课午辛、四课未亥俱上克下，取未
+  t = qi('辛卯', '辰', '申');
+  ok(t.san === '未卯亥', '比用·辛卯日辰将申时 → 未卯亥（《粹言》阴日阴比）', t.san);
+
+  // ④ 涉害深浅（上克下，数沿途被上神所克者）：庚子日戌将子时
+  t = qi('庚子', '戌', '子');
+  ok(t.chu === '午', '涉害·庚子日戌将子时 → 发用午（《订讹》二重 > 一重）', t.chu);
+  ok(/历2重害/.test(t.m), '　└ 午加庚历酉金、戌寄辛金，计 2 重', t.m);
+
+  // ⑤ 涉害深浅（下贼上，数沿途克上神者）：丁卯日戌将子时
+  t = qi('丁卯', '戌', '子');
+  ok(t.chu === '亥', '涉害·丁卯日戌将子时 → 发用亥（《订讹》五重 > 一重）', t.chu);
+  ok(/历5重害/.test(t.m), '　└ 亥加丑历辰、戊、未、己、戌五重土', t.m);
+
+  // ⑥⑦⑧ 《粹言》见机 / 察微 / 复等三格（三传为硬标准）
+  t = qi('癸未', '辰', '子');
+  ok(t.san === '酉丑巳', '见机·癸未日辰将子时 → 酉丑巳（《粹言》见机课）', t.san);
+  t = qi('庚辰', '午', '辰');
+  ok(t.san === '申戌子', '察微·庚辰日午将辰时 → 申戌子（《粹言》察微课）', t.san);
+  t = qi('戊辰', '未', '子');
+  ok(t.san === '子未寅', '复等·戊辰日未将子时 → 子未寅（《粹言》复等课）', t.san);
+
+  // ⑨ 《粹言》：「此外又有戊辰、戊戌日返吟两课」亦作缀瑕取用
+  const fy1 = qi('戊辰', '午', '子'), fy2 = qi('戊戌', '午', '子');
+  ok(fy1.chu === '亥' && fy2.chu === '亥',
+    `反吟缀瑕·戊辰、戊戌日午将子时 → 发用并为亥（${fy1.san} / ${fy2.san}）`, fy1.chu + '/' + fy2.chu);
+
+  // ⑩ 口径守护：720 课（60 甲子 × 12 位移）中元首课应约 120（《粹言》「计一百二十课」）
+  let yuanShou = 0, jianJi = 0, chaWei = 0;
+  for (let i = 0; i < 60; i++) {
+    const tt = new Date(Date.UTC(2026, 0, 1 + i));
+    const y = tt.getUTCFullYear(), m = tt.getUTCMonth() + 1, d = tt.getUTCDate();
+    for (let yj = 0; yj < 12; yj++) {
+      let r; try { r = calc(y, m, d, 0, { yueJiang: yj }); } catch (e) { continue; }
+      const mm = r.method || '';
+      if (/元首/.test(mm) && !/^伏吟|^反吟/.test(r.zongmen || '')) yuanShou++;
+      if (/见机/.test(mm)) jianJi++;
+      if (/察微/.test(mm)) chaWei++;
+    }
+  }
+  ok(Math.abs(yuanShou - 120) <= 3, `720 课中元首课 ${yuanShou} 课（《粹言》记 120 课，容差 ±3）`, String(yuanShou));
+  ok(jianJi > 0 && chaWei > 0, `孟仲取用路径可达：见机 ${jianJi} 课、察微 ${chaWei} 课`, `${jianJi}/${chaWei}`);
+}
+
+// ───────────────────────────────────────────────
 console.log('\n' + '='.repeat(52));
 console.log(`结果：${pass} 通过 / ${fail} 失败 / ${warn} 提示`);
 if (fail) { console.log('\n失败项：'); failures.forEach(f => console.log('  - ' + f)); process.exit(1); }
