@@ -36,7 +36,8 @@ if (!DLR) { console.error('脚本未导出 DLR，无法测试'); process.exit(1)
 const { STEM, BRAN, calc, daySB, hourSB, monthSB, yearSB, getYueJiang, jqTime, afterJQ,
         ELEM, ELEM_S, LU_BR, DE_LU, CHANGSHENG_ORDER, mod,
         fortune, wxState, wxRel, WX_SCORE, FT_TH, getYongshen,
-        keti, ketiScore, liuqin5, normQ, KT_SCORE, KT_SANHE_E, LQ5, QTYPES, KE, SHENG } = DLR;
+        keti, ketiScore, liuqin5, normQ, KT_SCORE, KT_SANHE_E, LQ5, QTYPES, KE, SHENG,
+        XI_MAP, nianming, LEISHEN, liuWx, WX_BR } = DLR;
 
 let pass = 0, fail = 0, warn = 0;
 const failures = [];
@@ -763,6 +764,69 @@ group('18. 课体格（keti）与事类入参归一化（normQ）');
     console.log('   课体命中率：' + Object.keys(hit).sort((a, b) => hit[b] - hit[a])
       .map(k => `${k} ${(hit[k] / n * 100).toFixed(1)}%`).join('  '));
   }
+}
+
+// ───────────────────────────────────────────────
+// 19. 年命与类神（2026-11-01 线 A 新增）
+//     两者都属展示层：补「人」与「事之主线」这两极，但不进 fortune() 计分、不动 FT_TH。
+group('19. 年命（本命·行年）与类神体系');
+{
+  // nianming 的占问年取自 r.raw，故测试里显式给定，避免依赖系统当前年份
+  const mkR = () => { const r = calc(2026, 7, 10, 6); r.raw = { y: 2026, m: 7, d: 10 }; return r; };
+  const r = mkR();
+  const nmM = nianming(r, 1990, 6, 15, '男');
+  const nmF = nianming(r, 1990, 6, 15, '女');
+  ok(nmM && nmF, 'nianming 返回非空');
+  ok(nmM.benBr === nmF.benBr, '本命支不因性别而变', BRAN[nmM.benBr]);
+  ok(nmM.benBr === yearSB(1990, 6, 15).branch, '本命支 = 生年支（yearSB，立春分界）',
+    BRAN[nmM.benBr] + ' vs ' + BRAN[yearSB(1990, 6, 15).branch]);
+  ok(nmM.xuSui === 37, '虚岁 = 占问年 - 生年 + 1', String(nmM.xuSui));
+
+  // 行年：男一岁起寅顺行、女一岁起申逆行（本实现采用的派别，源码已注明另有他说）
+  const m1 = nianming(mkR(), 2026, 6, 15, '男'), f1 = nianming(mkR(), 2026, 6, 15, '女');
+  const m2 = nianming(mkR(), 2025, 6, 15, '男'), f2 = nianming(mkR(), 2025, 6, 15, '女');
+  ok(m1.xuSui === 1 && f1.xuSui === 1, '一岁虚岁推算正确');
+  ok(m1.xingBr === 2, '男一岁行年起寅', BRAN[m1.xingBr]);
+  ok(f1.xingBr === 8, '女一岁行年起申', BRAN[f1.xingBr]);
+  ok(m2.xingBr === 3, '男二岁行年顺行至卯', BRAN[m2.xingBr]);
+  ok(f2.xingBr === 7, '女二岁行年逆行至未', BRAN[f2.xingBr]);
+
+  // 上神取天盘：本命/行年上神 = heavenMap[该支]
+  ok(nmM.benShang === r.heavenMap[nmM.benBr], '本命上神 = heavenMap[本命支]',
+    BRAN[nmM.benShang] + ' vs ' + BRAN[r.heavenMap[nmM.benBr]]);
+  ok(nmM.xingShang === r.heavenMap[nmM.xingBr], '行年上神 = heavenMap[行年支]');
+  ok(typeof nmM.benJiang === 'string' && nmM.benJiang.length > 0, '本命上神乘有天将', nmM.benJiang);
+  ok(['印','比','食','财','官'].indexOf(nmM.benLq) >= 0, '本命对日干之六亲合法', nmM.benLq);
+
+  // 关键约定：年命不得进入评分。年命是在 fortune() 之后才挂到 r 上的，
+  // 此处守住 parts 中没有这一维，防止日后有人顺手把它接进计分。
+  const ft = fortune(mkR(), { key: 'cai', l: '财运' });
+  ok(!ft.parts.some(p => p.k === 'nianming'), '年命不参与评分（parts 中无 nianming 维）');
+}
+{
+  // 类神表必须覆盖全部事类，否则某个事类会整段消失
+  const keys = Object.keys(QTYPES);
+  const missing = keys.filter(k => !LEISHEN[k]);
+  ok(missing.length === 0, `LEISHEN 覆盖全部 ${keys.length} 个事类`, missing.join(','));
+
+  // 六亲 → 五行（以日干为主语）。记忆：KE[X]=X所克者，SHENG[X]=生X者，XI_MAP[X]=X所生者
+  const R = calc(2026, 7, 10, 6);
+  const dayE = R.dayElem;
+  ok(liuWx(dayE, '妻财') === KE[dayE], '妻财 = 日干所克者', liuWx(dayE, '妻财'));
+  ok(KE[liuWx(dayE, '官鬼')] === dayE, '官鬼 = 克日干者', liuWx(dayE, '官鬼'));
+  ok(liuWx(dayE, '子孙') === XI_MAP[dayE], '子孙 = 日干所生者', liuWx(dayE, '子孙'));
+  ok(SHENG[dayE] === liuWx(dayE, '父母'), '父母 = 生日干者', liuWx(dayE, '父母'));
+  ok(liuWx(dayE, '兄弟') === dayE, '兄弟 = 与日干同气', liuWx(dayE, '兄弟'));
+  // 穷举五个日干 × 五亲，均须落在五行之内
+  for (const g of ['木', '火', '土', '金', '水'])
+    for (const liu of ['妻财', '官鬼', '子孙', '父母', '兄弟'])
+      ok(['木', '火', '土', '金', '水'].indexOf(liuWx(g, liu)) >= 0,
+        `liuWx 日干${g} 之${liu} 落在五行内`, liuWx(g, liu));
+
+  // 五行 → 地支：须恰好覆盖十二支，不重不漏
+  const all = [].concat(...Object.values(WX_BR)).sort((a, b) => a - b);
+  ok(all.length === 12 && all.every((v, i) => v === i), 'WX_BR 覆盖十二支且不重不漏',
+    all.join(','));
 }
 
 // ───────────────────────────────────────────────

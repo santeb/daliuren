@@ -184,7 +184,7 @@ select.ipt option{background:var(--bg)}
     <div class="row" style="margin-top:10px;margin-bottom:0;align-items:center">
       <label style="display:flex;align-items:center;gap:7px;cursor:pointer;flex-shrink:0">
         <input type="checkbox" id="cbMingpan" style="accent-color:var(--gold);width:15px;height:15px">
-        <span style="font-size:.78rem;color:var(--gold2);letter-spacing:.05em">&#9800; 终身命盘</span>
+        <span style="font-size:.78rem;color:var(--gold2);letter-spacing:.05em">&#9800; 占者年命</span>
       </label>
       <div id="mingpanFields" style="display:none;flex:1;flex-direction:row;gap:8px;flex-wrap:wrap;align-items:center">
         <div class="cg"><lbl style="font-size:.65rem">出生年</lbl><input class="ipt" type="number" id="iby" value="1990" min="1900" max="2100" style="padding:4px 6px;font-size:.78rem"></div>
@@ -196,6 +196,11 @@ select.ipt option{background:var(--bg)}
             <option value="3">卯</option><option value="4">辰</option><option value="5">巳</option>
             <option value="6">午</option><option value="7">未</option><option value="8">申</option>
             <option value="9">酉</option><option value="10">戌</option><option value="11">亥</option>
+          </select>
+        </div>
+        <div class="cg"><lbl style="font-size:.65rem">性别</lbl>
+          <select class="ipt" id="ibsex" style="padding:4px 6px;font-size:.72rem">
+            <option value="男" selected>男</option><option value="女">女</option>
           </select>
         </div>
         <div id="mingpanResult" style="font-size:.72rem;color:var(--dim)"></div>
@@ -1304,6 +1309,87 @@ function getYongshen(r,qtype){
   if(hasKvm) info.desc+='（注：用神临空亡，事有落空之象，逢冲方验）';
 
   return info;
+}
+
+// ─── 年命（本命 · 行年） ───────────────────────────────────────────
+// 六壬极重年命：同一课，年命不同则断语不同；类神与年命的关系才是真正的落点。
+// 本函数 2026-11-01 补入，属「线 A」：先把「人」这一极的输入补齐，只做展示层，
+// ⚠️ 不进 fortune() 评分、不动 FT_TH 校准 —— 年命怎么进分，留到「线 B」断法重构时一并定。
+//
+// ⚠️ 行年算法有派别分歧（此处为一次站队，不是纯技术活）：
+//    主流说（本实现采用）：男一岁起寅顺行、女一岁起申逆行。
+//    另一说：以本命支为起点，按虚岁顺数，不分男女。
+//    分歧只影响展示文案；若日后年命进分，须先查证课经再定，不能沿用本实现默认。
+function nianming(r,by,bm,bd,sex){
+  if(!r||!by) return null;
+  var female=(sex==='女');
+  // 本命支＝生年支。yearSB 已按立春分界，故传 bm/bd
+  var ben=yearSB(by,bm,bd).branch;
+  var curY=(r.raw&&r.raw.y)||new Date().getFullYear();
+  var xuSui=curY-by+1;                     // 虚岁：按公历年近似，未分农历
+  if(xuSui<1) xuSui=1;
+  // 行年：男一岁寅(2)顺行 → mod(xuSui+1,12)；女一岁申(8)逆行 → mod(9-xuSui,12)
+  var xing=female?mod(9-xuSui,12):mod(xuSui+1,12);
+  var hm=r.heavenMap||{},g=r.generals||{},kv=r.kvmWang||[];
+  var dayE=r.dayElem||ELEM_S[r.dsb.stem];
+  var chuan=[r.chu,r.zhang,r.mo];
+  return{
+    by:by,sex:female?'女':'男',xuSui:xuSui,
+    benBr:ben,                             // 本命支
+    xingBr:xing,                           // 行年支
+    benShang:hm[ben],                      // 本命上神（天盘）
+    benJiang:(g[ben]&&g[ben].jiang)||'',
+    xingShang:hm[xing],                    // 行年上神
+    xingJiang:(g[xing]&&g[xing].jiang)||'',
+    benInChuan:chuan.indexOf(ben)>=0,      // 本命入三传：事与己身相关
+    xingInChuan:chuan.indexOf(xing)>=0,    // 行年入三传：事应在当年
+    benKong:kv.indexOf(ben)>=0,
+    xingKong:kv.indexOf(xing)>=0,
+    benWxRel:wxRel(ELEM[ben],dayE),        // 本命五行对日干：生/克/被生/被克/比
+    benLq:liuqin5(ELEM[ben],dayE)          // 本命对日干之六亲：印/比/食/财/官
+  };
+}
+
+// ─── 类神体系（课经通说，整理备查） ────────────────────────────────
+// 类神＝断事的主线。古籍断法是「先定类神，再看它入不入传、旺不旺、空不空、加临何将」，
+// 而不是把各象加权求和 —— 这正是现行 fortune() 与原理的差距所在（见 原理对照.md）。
+//
+// ⚠️ 本表 2026-11-01 整理，现阶段刻意不接进计分路径：
+//    getYongshen() 的 focus 仍是简化子集，改它会动到 yongshen 维（份额 8.2%）→ 触发 FT_TH 重校。
+//    按「线 A 不动校准」的约定，本表先只用于展示层；统一计分口径留到「线 B」断法重构。
+//
+// ⚠️ 来源声明：以下为六壬类神取用的通说整理，未经逐条回查课经原文，各家或有差异。
+var LEISHEN={
+  cai :{liu:'妻财',jiang:['青龙','太常','六合'],taboo:['玄武','天空'],
+        note:'以妻财爻（日干所克者）为正类神；青龙、太常为财帛之神，六合主交易合伙。玄武主盗损暗昧，天空主虚浮落空。'},
+  guan:{liu:'官鬼',jiang:['青龙','贵人','太常'],taboo:['天空','玄武','白虎'],
+        note:'以官鬼爻（克日干者）为正类神；青龙主升迁、贵人主提携、太常主印绶俸禄。天空主失职落空，玄武主暗昧，白虎主压力刑伤。'},
+  hun :{liu:'妻财',jiang:['六合','天后','青龙'],taboo:['玄武','天空','白虎'],
+        note:'古法男占妻取妻财、女占夫取官鬼；本页未分占者性别，暂统列妻财。六合为媒合、天后为妻位、青龙主喜庆。玄武主暧昧不明，天空主虚，白虎主凶暴。'},
+  bing:{liu:'',jiang:['太阴','天后'],taboo:['白虎','螣蛇'],
+        note:'以日干为身宫；白虎为病丧之神，螣蛇主惊疑怪异，太阴、天后主暗疾。占病重在看日干是否入墓绝、白虎所临何处。'},
+  song:{liu:'',jiang:['贵人','太阴'],taboo:['白虎','玄武','勾陈'],
+        note:'勾陈主争讼纠缠，朱雀主口舌词讼；贵人主官方得力，太阴主暗中化解。白虎主刑伤，玄武主暗证不明。'},
+  shi :{liu:'',jiang:['六合'],taboo:['玄武','天空'],
+        note:'玄武为贼盗、主失物；六合主物可寻、有人归还；天空主散失难觅。另看支上神与玄武所临之方，以定物之所在。'},
+  chu :{liu:'',jiang:['青龙','六合'],taboo:['白虎','螣蛇','玄武'],
+        note:'以日马（驿马）为正类神；青龙主路途顺畅，六合主同行得助。白虎主险阻，螣蛇主惊扰，玄武主途中失盗。'},
+  xue :{liu:'父母',jiang:['朱雀','青龙','贵人'],taboo:['天空','螣蛇'],
+        note:'朱雀为文书之神，父母爻（生我者）为印绶功名；青龙主喜庆，贵人主提携。天空主落第落空，螣蛇主临场惊乱。'},
+  tao :{liu:'',jiang:['六合','天后','太阴'],taboo:['天空','玄武'],
+        note:'桃花（日支三合局之沐浴位）为正类神；六合主媒合，天后主姻缘，太阴主私情暗恋。天空主落空，玄武主暧昧不明。'},
+  gui :{liu:'',jiang:['贵人','青龙','太阴'],taboo:['玄武','天空'],
+        note:'以天乙贵人为主类神；青龙主得力相助，太阴主暗中扶助。玄武主小人暗算，天空主虚言无实。'}
+};
+// 五行 → 地支（0子1丑2寅3卯4辰5巳6午7未8申9酉10戌11亥）
+var WX_BR={'木':[2,3],'火':[5,6],'土':[1,4,7,10],'金':[8,9],'水':[11,0]};
+// 六亲 → 五行（以日干为主语）。记忆：KE[X]=X所克者，SHENG[X]=生X者，XI_MAP[X]=X所生者
+function liuWx(dayE,liu){
+  if(liu==='妻财') return KE[dayE]||'';
+  if(liu==='官鬼'){ for(var k in KE) if(KE[k]===dayE) return k; return ''; }
+  if(liu==='子孙') return XI_MAP[dayE]||'';
+  if(liu==='父母') return SHENG[dayE]||'';
+  return dayE;                                  // 兄弟＝与日干同气
 }
 
 // ─── 应期判断 ─────────────────────────────────────────────────────
@@ -2586,6 +2672,70 @@ function renderShafa(r){
   el.innerHTML=h;
 }
 
+// 年命解读段 —— 纯展示层，不参与吉凶五档评分（线 A）。
+// 措辞一律描述式（「古谓…之象」「牵连较深」），不写「必」「定能」这类承诺，
+// 与 1a 的文案降级同一原则：不参与判定的象，就不要说得像能改变判定。
+// 类神段 —— 纯展示层，不参与吉凶五档评分（线 A）。
+// 展示「本占该抓哪条主线」，以及这条主线在本课的实际落点。
+function renderLeishen(r){
+  var qt=r.qtype;
+  if(!qt||!qt.key) return '';
+  var L=LEISHEN[qt.key];
+  if(!L) return '';
+  var g=r.generals||{};
+  var allJ=[r.chu,r.zhang,r.mo].map(function(b){return (g[b]&&g[b].jiang)||'-';});
+  var dayE=r.dayElem||ELEM_S[r.dsb.stem];
+  var h='<div class="sep">&#9670; 类神 · '+qt.l+' &#9670;</div>';
+  h+='<p style="font-size:.78rem;color:var(--dim);text-indent:0;line-height:1.8">';
+  if(L.liu&&liuWx(dayE,L.liu)){
+    var lw=liuWx(dayE,L.liu);
+    var brs=(WX_BR[lw]||[]).map(function(b){return BRAN[b];}).join('、');
+    h+='正类神：<strong>'+L.liu+'（'+lw+'）</strong>，临 '+brs+'。';
+  } else {
+    h+='本占不以六亲为类神，以神煞与天将为主。';
+  }
+  h+='喜用天将 '+L.jiang.join('、')+'；所忌 '+L.taboo.join('、')+'。</p>';
+  var hitJ=[],hitT=[];
+  for(var i=0;i<allJ.length;i++){
+    if(L.jiang.indexOf(allJ[i])>=0&&hitJ.indexOf(allJ[i])<0) hitJ.push(allJ[i]);
+    if(L.taboo.indexOf(allJ[i])>=0&&hitT.indexOf(allJ[i])<0) hitT.push(allJ[i]);
+  }
+  h+='<p style="font-size:.78rem;color:var(--dim);text-indent:0;line-height:1.8">'+
+     '本课三传天将 '+allJ.join(' → ')+'　——　'+
+     (hitJ.length?'喜用入传：'+hitJ.join('、')+'　':'喜用未入传　')+
+     (hitT.length?'忌神入传：'+hitT.join('、'):'忌神未入传')+'</p>';
+  h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0;line-height:1.7">'+L.note+'</p>';
+  h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0">类神为参考展示项，不参与上方吉凶五档的评分。</p>';
+  return h;
+}
+
+function renderNianming(r){
+  var nm=r.nm;
+  if(!nm) return '';
+  var LQW={'印':'生我者·印','比':'同气者·比','食':'我生者·食','财':'我克者·财','官':'克我者·官'};
+  var WXW={'生':'生助日干','被生':'受日干之生','克':'克伐日干','被克':'受日干所克','比':'与日干同气','无关':'与日干无涉'};
+  var h='<div class="sep">&#9670; 年命 &#9670;</div>';
+  h+='<p style="font-size:.78rem;color:var(--dim);text-indent:0;line-height:1.8">'+
+     '本命 <strong>'+BRAN[nm.benBr]+'</strong>（'+nm.sex+'·'+nm.xuSui+'岁），'+
+     '行年 <strong>'+BRAN[nm.xingBr]+'</strong>；'+
+     '本命上神 '+BRAN[nm.benShang]+'（'+nm.benJiang+'），'+
+     '行年上神 '+BRAN[nm.xingShang]+'（'+nm.xingJiang+'）。'+
+     '本命为日干之'+LQW[nm.benLq]+'，'+WXW[nm.benWxRel]+'。</p>';
+  var li=[];
+  if(nm.benInChuan) li.push('本命入三传 —— 事与己身牵连较深，非旁观之局');
+  if(nm.xingInChuan) li.push('行年入三传 —— 古谓事应在当年');
+  if(nm.benKong) li.push('本命临空亡 —— 自身气力不足之象，事难着力');
+  if(nm.xingKong) li.push('行年临空亡 —— 当年行事有落空之象');
+  if(!nm.benInChuan&&!nm.xingInChuan) li.push('本命、行年皆不入三传 —— 事与己身牵连较浅');
+  if(li.length){
+    h+='<ul style="font-size:.78rem;color:var(--dim);line-height:1.8;margin:4px 0 0 18px;padding:0">';
+    for(var i=0;i<li.length;i++) h+='<li>'+li[i]+'</li>';
+    h+='</ul>';
+  }
+  h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0">年命为参考展示项，不参与上方吉凶五档的评分。</p>';
+  return h;
+}
+
 function renderInterp(r,q,ft){
   var chuJ=r.generals[r.chu]?r.generals[r.chu].jiang:'';
   var zhongJ=r.generals[r.zhang]?r.generals[r.zhang].jiang:'';
@@ -2832,16 +2982,25 @@ function renderInterp(r,q,ft){
     (SHENG[moE]===r.dayElem?'<span style="color:var(--orange)">【日干生末传】</span>日干生末传，结局自身付出，有耗泄之象。 ':'')+
     (KE[moE]===r.dayElem?'<span style="color:var(--red)">【末传克日】</span>末传克日干，结果耗损，需防后患。 ':'')+
     (r.chu===r.mo&&r.zhang!==r.chu?'<span style="color:var(--gold2)">【循环课】</span>天盘循环，首尾同宫，事反复循环。 ':'')+
-    (r.deBr===r.chu?'<span style="color:var(--green)">【德神发用】</span>德神居初传，天赐之吉，能化解凶险。 ':'')+
-    (r.luBr===r.chu?'<span style="color:var(--orange)">【禄神发用】</span>禄神居初传，财禄临门，主得利。 ':'')+
-    (r.yima===r.chu?'<span style="color:var(--orange)">【驿马发用】</span>驿马为初传，事速动，须立即行动。 ':'')+
-    (r.taohua===r.chu?'<span style="color:#e879f9">【桃花发用】</span>桃花为初传，感情事动，异性缘活跃。 ':'')+
+    // ⚠️ 以下四项为「神煞类象」——均不进 fortune() 评分（德神、桃花从不进分；
+    //    禄神/驿马仅财运·官禄·出行几类的用神维里进分，且被 focus 平均）。
+    //    故措辞一律为描述式，不写「能化解凶险」「主得利」这类承诺——
+    //    那是把不参与判定的象说成能改变判定，属自相矛盾。2026-11-01 降级。
+    (r.deBr===r.chu?'<span style="color:var(--green)">【德神发用】</span>德神居初传，古谓有德相助之象。 ':'')+
+    (r.luBr===r.chu?'<span style="color:var(--orange)">【禄神发用】</span>禄神居初传，古谓财禄临身之象。 ':'')+
+    (r.yima===r.chu?'<span style="color:var(--orange)">【驿马发用】</span>驿马为初传，主动、出行之象。 ':'')+
+    (r.taohua===r.chu?'<span style="color:#e879f9">【桃花发用】</span>桃花为初传，主感情缘动之象。 ':'')+
     '</p>'+
     qSection+
+    renderLeishen(r)+
+    renderNianming(r)+
     '<div class="sep">◆ ◇ ◆</div>'+
     '<p style="font-size:.78rem;color:var(--faint);text-indent:0;line-height:1.8">'+
     '附注：本页面为六壬算法教学演示版，融合九宗门起传、月将节气定位、贵人顺逆排将、十二天将、神煞、长生十二宫、德禄等核心要素。'+
     '完整六壬占断需结合占者行年、事情原委、方位、神煞细目等因素综合判断，此处解读仅供兴趣参考。'+
+    '<br><span style="color:var(--gold2)">关于吉凶五档</span>：本页的「大吉/吉/平/凶/大凶」由八个维度加权求和得出，'+
+    '阈值取全样本分布的分位数，故「大吉」意为「在这批课里靠前」，不等于古籍断语中的吉。'+
+    '神煞类象（德神、禄神、驿马、桃花发用等）为参考附注，不参与该评分。'+
     '</p>';
 }
 
@@ -2882,11 +3041,21 @@ function divine(){
   r.question=q;
   r.qtype=detectQ(q);
   r.fortune=fortune(r,r.qtype);
+  // 年命：刻意放在评分「之后」才挂到 r 上 —— 用代码顺序本身表达它不参与 fortune()
+  // （线 A 的约定：只补输入与展示，不动校准。年命进分留到线 B 断法重构时一并定）
+  if(document.getElementById('cbMingpan').checked){
+    var sxEl=document.getElementById('ibsex');
+    r.nm=nianming(r,
+      parseInt(document.getElementById('iby').value)||1990,
+      parseInt(document.getElementById('ibm').value)||1,
+      parseInt(document.getElementById('ibd').value)||1,
+      sxEl?sxEl.value:'男');
+  }
   // 缓存结果供导出/命盘/TTS使用
   window._lastR=r;
   window._lastFT=r.fortune;
   renderAll(r,q,r.fortune);
-  // 若开启了终身命盘则立即更新
+  // 若开启了年命则立即更新
   if(document.getElementById('cbMingpan').checked) updateMingpan(r);
 }
 
@@ -2981,13 +3150,13 @@ document.getElementById('cbMingpan').addEventListener('change',function(){
   var result=document.getElementById('mingpanResult');
   if(this.checked){
     fields.style.display='flex';
-    // 若已有结果则立即计算
-    if(window._lastR){
-      updateMingpan(window._lastR);
-    }
+    // 年命段在主解读区内，故需整局重算，不能只更新 mingpanResult
+    if(window._lastR) divine();
   } else {
     fields.style.display='none';
     result.textContent='';
+    // 关闭时同样重算：新 r 上不挂 nm，年命段随之移除
+    if(window._lastR) divine();
   }
 });
 
@@ -2998,14 +3167,25 @@ function updateMingpan(r){
   var by=parseInt(document.getElementById('iby').value)||1990;
   var bm=parseInt(document.getElementById('ibm').value)||1;
   var bd=parseInt(document.getElementById('ibd').value)||1;
+  var sxEl=document.getElementById('ibsex');
+  var sx=sxEl?sxEl.value:'男';
   try{
-    var bJDN=Math.floor(jdn(by,bm,bd));
-    var dsb=daySB(by,bm,bd);
-    var bStem=STEM[dsb.stem],bBran=BRAN[dsb.branch];
-    var bAge=(parseInt(document.getElementById('iy').value)||2026)-by;
-    var bGen=r.generals[dsb.branch]?r.generals[dsb.branch].jiang:'-';
-    result.innerHTML='命宫：<span style="color:var(--gold2)">'+bStem+bBran+'</span>　当前岁数：<span style="color:var(--gold2)">'+bAge+'岁</span>　命宫主神：<span style="color:var(--gold2)">'+bGen+'</span>';
-  }catch(e){result.textContent='命盘计算出错';}
+    var nm=nianming(r,by,bm,bd,sx);
+    r.nm=nm;
+    var LQW={'印':'生我·印','比':'同气·比','食':'我生·食','财':'我克·财','官':'克我·官'};
+    var h='<span style="color:var(--gold2)">本命 '+BRAN[nm.benBr]+'</span>（'+nm.sex+'·'+nm.xuSui+'岁）'+
+      '　行年 <span style="color:var(--gold2)">'+BRAN[nm.xingBr]+'</span>'+
+      '　本命上神 '+BRAN[nm.benShang]+'（'+nm.benJiang+'）'+
+      '　行年上神 '+BRAN[nm.xingShang]+'（'+nm.xingJiang+'）';
+    var tg=[];
+    if(nm.benInChuan) tg.push('本命入三传');
+    if(nm.xingInChuan) tg.push('行年入三传');
+    if(nm.benKong) tg.push('本命空亡');
+    if(nm.xingKong) tg.push('行年空亡');
+    if(tg.length) h+='　<span style="color:var(--orange)">'+tg.join(' · ')+'</span>';
+    h+='　本命为日干之 '+LQW[nm.benLq];
+    result.innerHTML=h+'<br><span style="color:var(--faint)">（年命为展示项，不参与吉凶评分）</span>';
+  }catch(e){result.textContent='年命计算出错';}
 }
 
 // ── JSON 导出 ──
@@ -3050,9 +3230,12 @@ document.getElementById('btnTTS').addEventListener('click',function(){
 });
 
 // ── 终身命盘 出生日期联动重算 ──
-['iby','ibm','ibd','ibh'].forEach(function(id){
-  document.getElementById(id).addEventListener('change',function(){
-    if(window._lastR&&document.getElementById('cbMingpan').checked) updateMingpan(window._lastR);
+// 含 ibsex：性别决定行年顺逆；出生数据改动后整局重算（年命段跟随更新）
+['iby','ibm','ibd','ibh','ibsex'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('change',function(){
+    if(window._lastR&&document.getElementById('cbMingpan').checked) divine();
   });
 });
 
@@ -3075,6 +3258,8 @@ globalThis.DLR={
   wxState:wxState,wxRel:wxRel,WX_SCORE:WX_SCORE,FT_TH:FT_TH,
   keti:keti,ketiScore:ketiScore,liuqin5:liuqin5,KT_SCORE:KT_SCORE,
   KT_SANHE_E:KT_SANHE_E,LQ5:LQ5,normQ:normQ,
+  nianming:nianming,LEISHEN:LEISHEN,liuWx:liuWx,WX_BR:WX_BR,
+  KE:KE,SHENG:SHENG,XI_MAP:XI_MAP,ELEM:ELEM,ELEM_S:ELEM_S,BRAN:BRAN,
   trueSolar:trueSolar,eqOfTime:eqOfTime,dayOfYear:dayOfYear,shiftYMD:shiftYMD,
   JQ_TABLE:JQ_TABLE,JQ_NAME:JQ_NAME,JQ_MONTH:JQ_MONTH,JIEQI:JIEQI,
   genAdvice:genAdvice,getYongshen:getYongshen,getYingqi:getYingqi,isKongWang:isKongWang,
