@@ -35,7 +35,9 @@ const SRC = fs.readFileSync(HTML, 'utf8').match(/<script>([\s\S]*?)<\/script>/)[
 
 // 原样片段，替换时按此定位（必须与 index.html 完全一致，否则抛错）
 const FRAG = {
-  sMap: "var sMap={'贵人':3,'青龙':3,'六合':2,'太阴':2,'太常':1,'天后':1,\n            '朱雀':0,'螣蛇':-1,'勾陈':-1,'玄武':-2,'天空':-2,'白虎':-3};",
+  // ⚠️ 2026-11-01 线 B：sMap 从 fortune() 内提到模块级并改名 JIANGS_SCORE（类神层也要用同一张表）。
+  //    片段文本必须随之更新，否则 replace 静默返回原文、整张扰动结果表跑的都是基线（见下方 assertChanged）。
+  sMap: "var JIANGS_SCORE={'贵人':3,'青龙':3,'六合':2,'太阴':2,'太常':1,'天后':1,\n                  '朱雀':0,'螣蛇':-1,'勾陈':-1,'玄武':-2,'天空':-2,'白虎':-3};",
   jiang: "total+=add('jiang',(sMap[chuJ]||0)*1.2+(sMap[zhongJ]||0)*0.8+(sMap[moJ]||0)*1.0,'十二天将');",
   wx: "total+=add('wx',WX_SCORE[sC]*1.5+WX_SCORE[sZ]*0.8+WX_SCORE[sM]*1.2,'月令旺衰');",
   wxScore: "var WX_SCORE={'旺':2.0,'相':1.2,'休':0.2,'囚':-0.9,'死':-1.8};"
@@ -78,7 +80,9 @@ function runAll(D) {
 
 // ─── A. 贡献度分解：cov(part_k, total)/var(total)，总和恒为 1 ───
 const base = runAll(DLR0);
-const keys = ['jiang', 'wx', 'shengke', 'gan', 'kong', 'yongshen', 'qtype', 'keti'];
+// 线 B 起多了三个：⑨leishen（类神定性·主线）、⑩shensha（神煞类象）、⑫capadj（其余各维的限幅差额）。
+// capadj 恒与 rest 各维负相关，是「限幅正在起作用」的直接证据，不是维度重复。
+const keys = ['leishen', 'shensha', 'capadj', 'jiang', 'wx', 'shengke', 'gan', 'kong', 'yongshen', 'qtype', 'keti'];
 function mean(a) { return a.reduce((x, y) => x + y, 0) / a.length; }
 function cov(a, b) { const ma = mean(a), mb = mean(b); let s = 0; for (let i = 0; i < a.length; i++) s += (a[i] - ma) * (b[i] - mb); return s / a.length; }
 function sdv(a) { const m = mean(a); return Math.sqrt(a.reduce((s, v) => s + (v - m) * (v - m), 0) / a.length); }
@@ -190,6 +194,11 @@ OUT.push('  用途：ρ 明显偏离 0 = 两个维度在算同一件事。阈值
     if (Math.abs(r) > 0.25) { OUT.push('  ⚠ ρ(' + keys[i] + ',' + keys[j] + ')=' + r.toFixed(2) + ' —— 同源嫌疑'); warned++; }
   }
   if (!warned) OUT.push('  （无 |ρ|>0.25 的组合）');
+  // ⚠️ capadj 与各维的强负相关是**设计使然**，不是维度重复，别当 bug 查：
+  //    capadj = 限幅后 − 限幅前 = LS_CAP·tanh(rest/LS_CAP) − rest，rest 越大被削得越多，
+  //    故必然与 rest 各组成维负相关。ρ(capadj,jiang)=−0.64 只是因为 jiang 是 rest 的最大分量。
+  //    它不是新维度，而是「其余各维被限幅掉的那部分」——记账项，用来维持 Σparts ≡ total。
+  //    要看限幅后的净话语权，看 leishen 那一行的份额即可（全样本 54.9%）。
   // 已知案例：qtype 的 qScore 直接查初/末传天将（源码 ⑦ 事类加成），与①天将同源
   const jq = FULL_ROWS.map(r => (r.jiang || 0) + (r.qtype || 0));
   const tot = FULL_ROWS.map(r => r.sum), vT = cov(tot, tot);
@@ -209,7 +218,7 @@ function jitter(v, d, range) { return v * (1 + rnd(d)) + rnd(d) * range * 0.35; 
 function mkSMap(d) {
   const m = { '贵人': 3, '青龙': 3, '六合': 2, '太阴': 2, '太常': 1, '天后': 1, '朱雀': 0, '螣蛇': -1, '勾陈': -1, '玄武': -2, '天空': -2, '白虎': -3 };
   const e = Object.keys(m).map(k => "'" + k + "':" + (d ? Math.round(jitter(m[k], d, 3) * 100) / 100 : m[k]));
-  return "var sMap={" + e.slice(0, 6).join(',') + ",\n            " + e.slice(6).join(',') + "};";
+  return "var JIANGS_SCORE={" + e.slice(0, 6).join(',') + ",\n                  " + e.slice(6).join(',') + "};";
 }
 function mkWxScore(d) {
   const m = { '旺': 2.0, '相': 1.2, '休': 0.2, '囚': -0.9, '死': -1.8 };
@@ -227,10 +236,20 @@ function mkWw(d, a, b, c) {
 
 function variant(opts) {
   let s = SRC;
-  if (opts.sMap !== undefined) s = s.replace(FRAG.sMap, mkSMap(opts.sMap));
-  if (opts.wxScore !== undefined) s = s.replace(FRAG.wxScore, mkWxScore(opts.wxScore));
-  if (opts.jw !== undefined) s = s.replace(FRAG.jiang, mkW(opts.jw, 1.2, 0.8, 1.0));
-  if (opts.xw !== undefined) s = s.replace(FRAG.wx, mkWw(opts.xw, 1.5, 0.8, 1.2));
+  // ⚠️ String.replace 在正则/字符串不匹配时**静默返回原文**，不报错不提示 ——
+  //    结果就是「以为跑了 N 个变体，其实每一行跑的都是基线」，整张结果表是假的。
+  //    2026-11-01 就踩过一次：sMap 改名后片段失配，B/C/D 三段全是基线却毫无征兆。
+  //    故每次替换都必须断言「文本确实变了」（d=0 时新文本等于原文本，属合法的无变化）。
+  const rep = (tag, frag, nxt) => {
+    const before = s;
+    s = s.replace(frag, nxt);
+    if (s === before && frag !== nxt)
+      throw new Error('片段替换失败，源码文本可能已变：' + tag);
+  };
+  if (opts.sMap !== undefined) rep('sMap', FRAG.sMap, mkSMap(opts.sMap));
+  if (opts.wxScore !== undefined) rep('wxScore', FRAG.wxScore, mkWxScore(opts.wxScore));
+  if (opts.jw !== undefined) rep('jiang权重', FRAG.jiang, mkW(opts.jw, 1.2, 0.8, 1.0));
+  if (opts.xw !== undefined) rep('wx权重', FRAG.wx, mkWw(opts.xw, 1.5, 0.8, 1.2));
   return s;
 }
 
@@ -275,14 +294,16 @@ for (const [name, mk] of EXP) {
 OUT.push('');
 OUT.push('══ C. 极端对照：删掉天将这一维，结论会塌掉吗 ══');
 {
-  const flat = "var sMap={'贵人':0,'青龙':0,'六合':0,'太阴':0,'太常':0,'天后':0,'朱雀':0,'螣蛇':0,'勾陈':0,'玄武':0,'天空':0,'白虎':0};";
+  // ⚠️ 必须与 FRAG.sMap 同格式（var JIANGS_SCORE + 第二行 18 空格缩进）。写成旧格式 var sMap= 会把
+  //    JIANGS_SCORE 声明整个改名成 sMap，后面类神层引用它时 ReferenceError（2026-11-01 实际踩到）。
+  const flat = "var JIANGS_SCORE={'贵人':0,'青龙':0,'六合':0,'太阴':0,'太常':0,'天后':0,\n                  '朱雀':0,'螣蛇':0,'勾陈':0,'玄武':0,'天空':0,'白虎':0};";
   const rows = runAll(load(SRC.replace(FRAG.sMap, flat)));
   let c = 0; for (let i = 0; i < rows.length; i++) if (rows[i].level !== baseLv[i]) c++;
   OUT.push('  天将全部置 0（整个维度删除）→ 归类改变率 ' + (c / rows.length * 100).toFixed(1) + '%   ρ=' + spearman(rows.map(r => r.score), baseSc).toFixed(3));
 }
 {
   // 天将吉凶次序完全颠倒：最吉的贵人青龙给 -3，最凶的白虎给 +3
-  const rev = "var sMap={'贵人':-3,'青龙':-3,'六合':-2,'太阴':-2,'太常':-1,'天后':-1,'朱雀':0,'螣蛇':1,'勾陈':1,'玄武':2,'天空':2,'白虎':3};";
+  const rev = "var JIANGS_SCORE={'贵人':-3,'青龙':-3,'六合':-2,'太阴':-2,'太常':-1,'天后':-1,\n                  '朱雀':0,'螣蛇':1,'勾陈':1,'玄武':2,'天空':2,'白虎':3};";
   const rows = runAll(load(SRC.replace(FRAG.sMap, rev)));
   let c = 0; for (let i = 0; i < rows.length; i++) if (rows[i].level !== baseLv[i]) c++;
   OUT.push('  天将吉凶首尾颠倒（贵人-3 / 白虎+3）→ 归类改变率 ' + (c / rows.length * 100).toFixed(1) + '%   ρ=' + spearman(rows.map(r => r.score), baseSc).toFixed(3));

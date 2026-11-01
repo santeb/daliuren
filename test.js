@@ -37,7 +37,8 @@ const { STEM, BRAN, calc, daySB, hourSB, monthSB, yearSB, getYueJiang, jqTime, a
         ELEM, ELEM_S, LU_BR, DE_LU, CHANGSHENG_ORDER, mod,
         fortune, wxState, wxRel, WX_SCORE, FT_TH, getYongshen,
         keti, ketiScore, liuqin5, normQ, KT_SCORE, KT_SANHE_E, LQ5, QTYPES, KE, SHENG,
-        XI_MAP, nianming, LEISHEN, liuWx, WX_BR } = DLR;
+        XI_MAP, nianming, LEISHEN, liuWx, WX_BR,
+        leishenBr, leishenScore, jiangBr, LS_CAP, JIANGS_SCORE } = DLR;
 
 let pass = 0, fail = 0, warn = 0;
 const failures = [];
@@ -827,6 +828,116 @@ group('19. 年命（本命·行年）与类神体系');
   const all = [].concat(...Object.values(WX_BR)).sort((a, b) => a - b);
   ok(all.length === 12 && all.every((v, i) => v === i), 'WX_BR 覆盖十二支且不重不漏',
     all.join(','));
+}
+
+// ───────────────────────────────────────────────
+// 20. 线 B：类神定性 + 限幅（2026-11-01）
+//     旧结构「各维求和」的病是可补偿性：类神空亡 -2.5，天将 +3.6、旺衰 +3.0 轻松补回来，
+//     于是「多数好」淹没「关键坏」。新结构把其余各维压进 ±LS_CAP 的软饱和区间。
+//     ⚠️ 断言 ③ 是**数学必然**（不依赖采样），比任何统计指标都可靠 ——
+//        贡献度那种量会随样本抖（见 MEMORY 里 keti 1.2% 的教训），而 |adj| ≤ LS_CAP 不会。
+group('20. 线 B：类神定性 + 限幅（消灭可补偿性）');
+{
+  const r = calc(2026, 7, 10, 6);
+  // ① 每个事类都要能取出类神支，否则该类等于没有主线
+  for (const qk of Object.keys(QTYPES)) {
+    const ls = leishenBr(r, { key: qk, l: QTYPES[qk].l });
+    ok(ls.brs.length > 0, `类神支非空 · ${qk}`, ls.brs.map(b => BRAN[b]).join(''));
+    ok(ls.brs.every(b => b >= 0 && b < 12), `类神支合法 · ${qk}`);
+  }
+  // ② 求财的类神五行必须 = 日干所克者（妻财），方向反了整个层就废了
+  const dayE = r.dayElem;
+  const caiL = leishenBr(r, { key: 'cai', l: '财运' });
+  ok(caiL.wx === KE[dayE], '求财类神五行 = 日干所克者（妻财）', caiL.wx + ' vs ' + KE[dayE]);
+
+  // ③ 限幅的数学必然：其余各维对总分的影响被夹死在 ±LS_CAP 内
+  let maxDev = 0;
+  for (let d = 0; d < 28; d++) {
+    const rr = calc(2026, 7, 1 + d, 6);
+    for (const qk of Object.keys(QTYPES)) {
+      const ft = fortune(rr, { key: qk, l: QTYPES[qk].l });
+      const ls = ft.parts.find(p => p.k === 'leishen'), ss = ft.parts.find(p => p.k === 'shensha');
+      const dev = Math.abs(ft.score - ((ls ? ls.v : 0) + (ss ? ss.v : 0)));
+      if (dev > maxDev) maxDev = dev;
+    }
+  }
+  ok(maxDev <= LS_CAP + 0.05, `其余各维合计拉不动超过 LS_CAP(${LS_CAP})`,
+    '实测最大 ' + maxDev.toFixed(3));
+
+  // ④ Σparts ≡ score：capadj 记账项让恒等式在新结构下仍然成立（贡献度分解才能照旧用）
+  let maxGap = 0;
+  for (let d = 0; d < 28; d++) {
+    const ft = fortune(calc(2026, 7, 1 + d, 6), { key: 'cai', l: '财运' });
+    maxGap = Math.max(maxGap, Math.abs(ft.parts.reduce((a, p) => a + p.v, 0) - ft.score));
+  }
+  ok(maxGap < 0.05, 'Σparts ≡ score（限幅差额计入 capadj）', '最大误差 ' + maxGap.toFixed(4));
+
+  // ⑤ 限幅函数本身：过原点、单调（保序）、双向饱和、不发散
+  const adj = (x) => LS_CAP * Math.tanh(x / LS_CAP);
+  ok(adj(0) === 0, '限幅函数在 0 处为 0');
+  ok(adj(1) < adj(2) && adj(2) < adj(3), '限幅单调 —— 不破坏「哪课更吉」的排序');
+  // 注意是 <= 不是 <：tanh(33) 在双精度下已等于 1.0，adj(100) 恰好取到 LS_CAP
+  ok(adj(100) <= LS_CAP && adj(100) > LS_CAP * 0.99, '正向渐近饱和到 +LS_CAP', adj(100).toFixed(4));
+  ok(adj(-100) >= -LS_CAP && adj(-100) < -LS_CAP * 0.99, '负向渐近饱和到 -LS_CAP', adj(-100).toFixed(4));
+  ok(adj(1) < 1, '小值处限幅已开始压缩（adj(1) < 1）', adj(1).toFixed(4));
+
+  // ⑥ 采样对照：类神定性分最低 20% 与最高 20% 的 score 均值须显著拉开
+  const rows = [];
+  for (let m = 1; m <= 12; m++) {
+    const rr = calc(2026, m, 1, 6);
+    for (const qk of Object.keys(QTYPES)) {
+      const ft = fortune(rr, { key: qk, l: QTYPES[qk].l });
+      const ls = ft.parts.find(p => p.k === 'leishen');
+      rows.push({ ls: ls ? ls.v : 0, sc: ft.score });
+    }
+  }
+  rows.sort((a, b) => a.ls - b.ls);
+  const k = Math.floor(rows.length * 0.2);
+  const avg = (a) => a.reduce((s, o) => s + o.sc, 0) / a.length;
+  const lo = avg(rows.slice(0, k)), hi = avg(rows.slice(rows.length - k));
+  ok(hi - lo > 3, '类神最差 20% 与最好 20% 的 score 显著拉开',
+    lo.toFixed(2) + ' → ' + hi.toFixed(2));
+}
+{
+  // ⑦ 年命是可选输入：不传 → 无该维（校准就走这条路径，FT_TH 反映「无年命」分布）；
+  //    传了 → 进分并真的改变结论（否则等于没接上），但同样受限幅约束。
+  const mkR = () => { const r = calc(2026, 7, 10, 6); r.raw = { y: 2026, m: 7, d: 10 }; return r; };
+  const r0 = mkR(), q = { key: 'cai', l: '财运' };
+  const f0 = fortune(r0, q);
+  ok(!f0.parts.some(p => p.k === 'nianming'), '不传年命 → parts 中无 nianming 维（校准口径）');
+  const f1 = fortune(r0, q, nianming(r0, 1990, 6, 15, '男'));
+  ok(f1.parts.some(p => p.k === 'nianming'), '传入年命 → parts 中有 nianming 维');
+  ok(Math.abs(f1.score - f0.score) > 1e-6, '年命会改变总分（否则等于没接上）',
+    f0.score + ' → ' + f1.score);
+  const g = (ft, kk) => { const p = ft.parts.find(p => p.k === kk); return p ? p.v : 0; };
+  const dev1 = Math.abs(f1.score - (g(f1, 'leishen') + g(f1, 'shensha') + g(f1, 'nianming')));
+  ok(dev1 <= LS_CAP + 0.05, '带年命时限幅约束同样成立', 'dev=' + dev1.toFixed(3));
+  // 男女行年不同 → 同一课同一事类，年命维应不同（行年入传与否会影响分数）
+  const nmM = nianming(r0, 1990, 6, 15, '男'), nmF = nianming(r0, 1990, 6, 15, '女');
+  const fM = fortune(r0, q, nmM), fF = fortune(r0, q, nmF);
+  ok(nmM.xingBr !== nmF.xingBr, '同生年不同性别 → 行年支不同',
+    BRAN[nmM.xingBr] + ' / ' + BRAN[nmF.xingBr]);
+  ok(g(fM, 'nianming') !== g(fF, 'nianming') || fM.score === fF.score,
+    '行年不同 → 年命维随之不同（或恰同分）', g(fM, 'nianming') + ' / ' + g(fF, 'nianming'));
+}
+{
+  // ⑧ tao（桃花）类缺口已补：getYongshen 不再落到 other
+  const r = calc(2026, 7, 10, 6);
+  const ysT = getYongshen(r, { key: 'tao', l: '桃花' });
+  ok(ysT && ysT.key === 'tao', 'getYongshen 的 tao 分支已补（原落到 other）', ysT && ysT.key);
+  ok(ysT.focus && ysT.focus.length === 1 && ysT.focus[0] === r.taohua,
+    '桃花类用神 focus = 桃花支', BRAN[ysT.focus[0]] + ' vs ' + BRAN[r.taohua]);
+  // ⑨ 神煞进分（线 B 的 1b）：德神/禄神发用的课，shensha 维必须非 0 —— 兑现 1a 降级时的承诺
+  let hit = 0;
+  for (let d = 0; d < 60; d++) {
+    const rr = calc(2026, 6, 1 + (d % 30), d % 12);
+    const ft = fortune(rr, { key: 'cai', l: '财运' });
+    const ss = ft.parts.find(p => p.k === 'shensha');
+    if (rr.deBr === rr.chu || rr.luBr === rr.chu) {
+      if (ss && ss.v > 0) hit++;
+    }
+  }
+  ok(hit > 0, '德神/禄神发用 → shensha 维确实加分（文案承诺已兑现）', String(hit));
 }
 
 // ───────────────────────────────────────────────
