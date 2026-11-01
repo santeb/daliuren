@@ -38,7 +38,8 @@ const { STEM, BRAN, calc, daySB, hourSB, monthSB, yearSB, getYueJiang, jqTime, a
         fortune, wxState, wxRel, WX_SCORE, FT_TH, getYongshen,
         keti, ketiScore, liuqin5, normQ, KT_SCORE, KT_SANHE_E, LQ5, QTYPES, KE, SHENG,
         XI_MAP, nianming, LEISHEN, liuWx, WX_BR,
-        leishenBr, leishenScore, jiangBr, LS_CAP, JIANGS_SCORE } = DLR;
+        leishenBr, leishenScore, jiangBr, LS_CAP, JIANGS_SCORE,
+        panding, yingqi, LS_ACT, HE6, relPhrase, wxRelNote, chuanRel } = DLR;
 
 let pass = 0, fail = 0, warn = 0;
 const failures = [];
@@ -938,6 +939,89 @@ group('20. 线 B：类神定性 + 限幅（消灭可补偿性）');
     }
   }
   ok(hit > 0, '德神/禄神发用 → shensha 维确实加分（文案承诺已兑现）', String(hit));
+}
+
+// ───────────────────────────────────────────────
+// 21. 线 C：去五档 → 判词 + 应期 + 判据明细
+// 判词层不再有分数，所以这里的断言全部是**结构不变量**，不是抽样数值。
+group('21. 线 C：去五档 → 判词 + 应期 + 判据明细');
+{
+  const keys = Object.keys(LS_ACT);
+  ok(keys.indexOf('other') >= 0, 'LS_ACT 含兜底事类 other');
+  const missing = Object.keys(QTYPES).filter(k => !LS_ACT[k]);
+  ok(missing.length === 0, 'QTYPES 每一类都有「成/难」判语（无遗漏回落到 other）',
+    missing.join(',') || 'none');
+
+  let nT = 0, nF = 0, nU = 0, bad = 0, empty = 0, yqBad = 0, kongLocked = 0;
+  let kongUsed = 0, kongAny = 0, cnt = 0;
+  for (let d = 0; d < 120; d++) {
+    const r = calc(2026, 1 + (d % 12), 1 + (d % 28), d % 12);
+    const nm = nianming(r, 1990, 5, 10, '男');
+    for (const k of Object.keys(QTYPES)) {
+      const q = { key: k, l: (QTYPES[k] && QTYPES[k].l) || k };
+      const pd = panding(r, q, nm);
+      const yq = yingqi(r, q, nm, pd.ok);
+      cnt++;
+      if (pd.kong) kongUsed++;
+      if (pd.leishen && pd.leishen.kong) kongAny++;
+      if (!pd.lines.length) empty++;
+      const valid = pd.verdict === LS_ACT[k][0] || pd.verdict === LS_ACT[k][1] ||
+                    pd.verdict === '难以遽断' || pd.verdict === '类神未定';
+      if (!valid) bad++;
+      if (pd.ok === true) { nT++; }
+      else if (pd.ok === false) { nF++; }
+      else { nU++; }
+      if (!yq.win || ['速', '迟', '虚'].indexOf(yq.speed) < 0) yqBad++;
+      // 硬不变量（不依赖采样）：判「可」的课，类神绝不能犯硬否决项 ——
+      // 这是 panding 的定性规则直接推出来的，一旦破说明「一票否决」漏判。
+      if (pd.ok === true && pd.hard && pd.hard.length) bad++;
+      // 空亡 + 判难 → 应期必须拒绝给日期（本页不取「出空填实即应」）
+      // ⚠️ 用 pd.kong（本次实际取用的那一个类神），不用 leishen.kong（候选集任一支落空）
+      if (pd.kong && pd.ok === false) {
+        if (yq.win === '恐无定期') kongLocked++; else bad++;
+      }
+    }
+  }
+  ok(bad === 0, 'verdict 合法 + 判「可」时无硬否决项 + 空亡判难不给日期', 'bad=' + bad);
+  ok(empty === 0, '每份判词至少一句判语（不许空判）', 'empty=' + empty);
+  ok(yqBad === 0, '应期窗口非空、迟速取值合法', 'bad=' + yqBad);
+  ok(nT > 0 && nF > 0, '三态没有退化成一态（可/难均出现）', '可' + nT + ' 难' + nF + ' 未决' + nU);
+  ok(kongLocked > 0, '确实触发了「空亡判难 → 无定期」路径（非死代码）', String(kongLocked));
+  // 「类神空亡」必须问**本次实际取用的那一个支**，不能问候选集里任一支 ——
+  // 后者把候选支数量带进概率里，实测会漂到 23.8%（理论应是 2/12≈16.7%）。
+  const rUsed = kongUsed / cnt, rAny = kongAny / cnt;
+  ok(rUsed < rAny, '空亡按「实际取用支」判定，严格低于候选集任一落空',
+    (rUsed * 100).toFixed(1) + '% < ' + (rAny * 100).toFixed(1) + '%');
+  ok(rUsed < 0.20, '取用类神空亡率贴近理论值 2/12≈16.7%（候选集口径会漂到 23.8%）',
+    (rUsed * 100).toFixed(1) + '%');
+  const tot = nT + nF + nU;
+  console.log('   三态分布：可 ' + (nT / tot * 100).toFixed(1) + '%　难 ' +
+    (nF / tot * 100).toFixed(1) + '%　难以遽断 ' + (nU / tot * 100).toFixed(1) + '%');
+}
+{
+  // HE6 六合自反子午丑未…）
+  let hbad = 0;
+  for (let b = 0; b < 12; b++) if (HE6[HE6[b]] !== b) hbad++;
+  ok(hbad === 0, 'HE6 六合自反（HE6[HE6[b]] === b）', 'bad=' + hbad);
+
+  // 短语函数覆盖全部关系取值，不留 undefined
+  const rels = ['生', '克', '被生', '被克', '比', '无关'];
+  const empties = [];
+  for (const rel of rels) { if (!relPhrase(rel) || !chuanRel(rel)) empties.push(rel); }
+  const W = ['木', '火', '土', '金', '水'];
+  for (const a of W) for (const b of W) if (!wxRelNote(a, b)) empties.push(a + b);
+  ok(empties.length === 0, 'relPhrase/chuanRel/wxRelNote 覆盖全部关系值', empties.join(',') || 'none');
+
+  // 页面静态检查：吉凶卡不得再出现五档与分数
+  const src = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  const m = src.match(/function renderFortuneCard[\s\S]*?\n}\n/) || [''];
+  const code = m[0].replace(/^\s*\/\/.*$/gm, '');   // 去掉整行注释后再查
+  ok(code.length > 0, '取到 renderFortuneCard 源码用于静态检查', code.length + ' 字符');
+  ok(!/\.level\b/.test(code), 'renderFortuneCard 不再引用 ft.level（五档已下架）');
+  ok(!/\bscore\b/.test(code), 'renderFortuneCard 不再把分数显示给用户');
+  ok(/pd\.verdict/.test(code), 'renderFortuneCard 改出判词（verdict）');
+  ok(/yq\.win/.test(code), 'renderFortuneCard 输出应期');
+  ok(/判据明细/.test(code), 'renderFortuneCard 输出可复核的判据明细');
 }
 
 // ───────────────────────────────────────────────

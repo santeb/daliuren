@@ -59,8 +59,16 @@ select.ipt option{background:var(--bg)}
 .tg-x{color:var(--red);border-color:rgba(200,80,48,.4);background:rgba(200,80,48,.08)}
 .tg-p{color:var(--dim);border-color:rgba(138,128,112,.3);background:rgba(138,128,112,.06)}
 .tg-y{color:#c89040;border-color:rgba(200,144,64,.4);background:rgba(200,144,64,.08)}
-/* 吉凶分项条：把 total = Σ parts 摊开给使用者看，避免只有一个「吉/凶」标签的黑箱感 */
+/* 判词·应期·判据明细（线 C）：原先这里是「综合分 + 各维加权条」，那是五档产物，已废弃 */
 .fc-brk{margin-top:9px;border-top:1px solid var(--border);padding-top:7px}
+.fc-pan{margin-top:9px;font-size:.8rem;line-height:1.9;color:var(--dim)}
+.fc-pan p{margin:0 0 3px}
+.fc-yq{margin-top:9px;padding:8px 10px;border:1px solid rgba(200,144,64,.28);background:rgba(200,144,64,.07);border-radius:8px;font-size:.78rem;line-height:1.85}
+.fc-yq-h{font-weight:600;color:var(--gold2);font-size:.8rem;margin-bottom:4px}
+.fc-it{margin-top:8px}
+.fc-it-r{display:flex;gap:8px;margin-bottom:3px;font-size:.72rem;line-height:1.7}
+.fc-it-k{color:var(--faint);width:3.6em;flex:none}
+.fc-it-v{color:var(--dim);flex:1}
 .fc-brk-h{font-size:.68rem;color:var(--faint);margin-bottom:5px;letter-spacing:.05em}
 .fc-brk-r{display:flex;align-items:center;gap:6px;margin-bottom:3px}
 .fc-brk-l{font-size:.68rem;color:var(--dim);width:5.4em;flex:none}
@@ -219,6 +227,7 @@ select.ipt option{background:var(--bg)}
         <div class="fc-lbl">综合判断</div>
         <div class="fc-rslt" id="fcRslt"></div>
         <div class="fc-tags" id="fcTags"></div>
+        <div class="fc-pan" id="fcPan"></div>
         <div class="fc-brk" id="fcBrk"></div>
       </div>
     </div>
@@ -1089,7 +1098,14 @@ function ketiScore(r){
   return {list:ks,score:Math.round(s*1000)/1000};
 }
 
-// ─── 吉凶计算 ─────────────────────────────────────────────
+// ─── 吉凶计算（⚠️ 线 C 起降为「内部体检用」，页面已不再展示）─────────────
+// 2026-11-01 线 C：判定改由 panding()（判词）+ yingqi()（应期）承担，输出形态不再是五档。
+// fortune()/FT_TH **保留但不再对外展示**，只用于：
+//   ① tools/calibrate.js 与 sensitivity.js 的贡献度分解、可补偿性体检；
+//   ② 需要「哪课更好」的相对排序时（阈值只影响标签，排序本就由 score 决定）。
+// ⚠️ 别再往这里加新维度然后指望它能改善用户体验 —— 它已经不出现在页面上。
+//    要让判词更准，改 panding() 的判据；要让应期更合理，改 yingqi() 的口径。
+//
 // 多维加权：天将 + 月令旺衰 + 三传生克 + 日干关系 + 空亡 + 用神 + 事类
 // 单看天将名（旧实现）等于把断法简化成打分卡；旺衰与生克才是断课的主干。
 // 阈值 FT_TH 由全样本 score 分布校准：2026 全年 365 天 × 12 时辰 × 10 种提问共 43800 局，
@@ -1461,6 +1477,266 @@ function leishenScore(r,qtype,nm){
           kong:anyKong,zhu:ls.zhu};
 }
 
+// ─── 判词与应期（线 C · 2026-11-01「去五档」）──────────────────────
+// 古籍断的是「这件事成不成／得不得／何时」，从不给百分制的运气评分。
+// 这两个函数把 leishenScore() 已经算好的类神状态，翻译成**定性判语 + 应期**。
+//
+// ⚠️ 三处口径必须讲清（详见 原理对照.md 第九节）：
+//   1. 判据类型取自六壬通说；但**每一句措辞是我们写的**，不是古籍原文。
+//      已尽可能标注书名（《六壬金铰剪》徐养浩「克应」、《大六壬说约》、《玉成歌》），
+//      未逐句回查原典 —— 与 LEISHEN 表同为「通说整理」，不是引证。
+//   2. 「可／难」是对本节课的判断，不是承诺。
+//   3. 不产出五档、不产出分数。fortune() 的 score 仍在，但只用于内部排序与
+//      calibrate/sensitivity 两工具的体检 —— 页面已不再暴露。
+//      「去五档」砍的是**输出形态**，不是算分能力。
+//
+// 判词回答三件事：① 成不成 ② 凭什么这么说 ③ 有无前提或转折。
+//
+// ─────────────────────────────────────────────────────────────────
+// 应期的裁择（三派并存，本实现取其一，故须声明）：
+//   甲《大六壬说约》：「应期实为事之始，自宜视用（初传）…古人于应期每视用神，不视末传」
+//   乙 通说一路：「专注类神，岂可舍类神之象而言应期者？上述种种，务是类神方位，
+//      否则不论矣…专以类神加临地盘之字…始为正宗合理」
+//   丙《六壬金铰剪》徐养浩「克应」：太岁／月建／月将／四立／气／候／旬首／当日／真时
+//      逐级发用，各应本级。
+//   → 本实现：**乙为主**（类神定应在何处），**甲丙为辅**（初传定迟速与窗口）；
+//     末传只在「吉事已动、凶事已萌」时才取（《说约》原话：惟此际宜视末传）。
+//   ⚠️ 这是一次**站队**，不是唯一答案；若换流派，此处应整体替换而非微调。
+var HE6=[1,0,11,10,9,8,7,6,5,4,3,2];       // 六合：子丑·寅亥·卯戌·辰酉·巳申·午未
+var LQ_NAME={'印':'印绶','比':'比肩','食':'食伤','财':'妻财','官':'官鬼'};
+// 各事类的成败判语 [可, 难]：古籍断的是「得不得／成不成」，不是「吉不吉」
+var LS_ACT={
+  cai:['求财可得','求财难得'],   guan:['官禄可期','官禄难期'],
+  hun:['姻缘可成','姻缘难成'],   tao:['缘动将至','缘动难期'],
+  bing:['病势可愈','病势缠绵'],  chu:['出行可行','出行宜止'],
+  song:['词讼可胜','词讼不利'],  xue:['学业可望','学业难成'],
+  shi:['失物可觅','失物难觅'],   gui:['贵人可遇','贵人难遇'],
+  other:['此事可成','此事难成']
+};
+// 把 wxRel 的关系名译成人话：rel 以「类神」为主语（a=ELEM[类神支], b=日干五行）
+function relPhrase(rel){
+  if(rel==='生')   return '生日干（古谓爱神）';
+  if(rel==='克')   return '克日干（古谓恶神）';
+  if(rel==='被生') return '日干生之（耗泄）';
+  if(rel==='被克') return '日干克之（我可制者为财）';
+  if(rel==='比')   return '与日干比和';
+  return '与日干无涉';
+}
+
+// ── 判词：类神得失 + 课体 + 三传走向 → 定性判语 ─────────────────────
+function panding(r,qtype,nm){
+  qtype=normQ(qtype);
+  var key=(qtype&&qtype.key)||'other';
+  var act=LS_ACT[key]||LS_ACT.other;
+  var out={key:key,q:(qtype&&qtype.l)||'',act:act,ok:null,verdict:'',
+           lines:[],items:[],note:'',leishen:null};
+  var ls=leishenScore(r,qtype,nm);
+  out.leishen=ls;
+  if(!ls.brs.length){
+    out.verdict='类神未定';
+    out.lines.push('本案未取到明确类神（所占为「'+((qtype&&qtype.l)||'未定事类')+'」）。'+
+      '六壬以类神为断事主线 —— 主线不立，则无从定判，此非「凶」，是「不可断」。');
+    out.note='请确认所占之事属于何类。类神表为通说整理，未尽之处宜另参课经。';
+    return out;
+  }
+  var jian=(r.msb&&typeof r.msb.branch==='number')?(r.msb.branch%12):0;
+  var g=r.generals||{},chuan=[r.chu,r.zhang,r.mo];
+  var lessons=r.lessons||[],dayBr=(lessons[2]&&lessons[2].l!==undefined)?lessons[2].l:0;
+  var dayE=r.dayElem||ELEM_S[r.dsb.stem];
+  var b0=ls.inC.length?ls.inC[0]:ls.brs[0];
+  var wx0=wxState(b0,jian),j0=(g[b0]&&g[b0].jiang)||'',rel0=wxRel(ELEM[b0],dayE);
+  var lq0=liuqin5(ELEM[b0],dayE),pos=chuan.indexOf(b0);
+  // ⚠️ 空亡必须只看**本次实际取用的那一个类神**（b0），不能看 ls.kong：
+  //    leishenScore 的 kong 是「候选类神里任一支落空」，候选常有 2~4 支，概率被放大到 23.8%，
+  //    而古籍说的「类神空亡」是**你取用的那一个**落空。多支中有一支空、别支实，则事仍有实象。
+  var kong0=brKong(r,b0);
+  out.kong=kong0;
+
+  // ── 定性：硬否决（一票否决）+ 软砝码（综合权衡）→ 三态 ──────────────
+  // 「硬否决」是线 C 对旧「偏离 1（可补偿性）」的最终答案：类神犯此，
+  // 其余象再好也补不回来 —— 直接判难，不看别的。
+  // 「不入三传」不在此列：古籍只说「事无发动之机、宜待」，是迟滞不是死局，故降为软砝码。
+  // 「值死」只在入传时才算硬否决：《玉成歌》「休囚传用总无成」说的是传用（发用），
+  // 类神根本不入传时，其休囚的影响也随之减弱。
+  var hard=[],soft=[],net=0;
+  if(kong0)                          hard.push('类神落旬空');
+  if(ls.inC.length&&wx0==='死')      hard.push('类神入传而值死于月令');
+  // 软砝码：古籍的「综合权衡」本就是权衡，此处砝码数值是我们定的（原理对照.md 已声明），
+  // 但它只决定三态归属，不产出也不会显示为分数 —— 与旧的「八维加权求和出百分制」不是一回事。
+  var LW={'旺':1.0,'相':0.8,'休':-0.3,'囚':-0.6,'死':-1.0};
+  var LR={'生':1.0,'被生':0.2,'克':-1.5,'被克':0.6,'比':0.2,'无关':0};
+  // 不入传只判「迟滞」不判「死局」，故砝码小于克日干（-1.5）：单独压不进「难」档，
+  // 但若再逢休囚（-0.3~-0.6）即越过 -1.2 —— 这与「事无发动之机，宜待」的分量相符。
+  if(ls.inC.length){ var lv=[1.0,0.6,0.8][pos]; net+=lv; soft.push(['入初传','入中传','入末传'][pos]+(lv>0?' +':' ')+lv); }
+  else             { net-=1.0; soft.push('不入三传 -1.0'); }
+  net+=(LW[wx0]||0);   soft.push(wx0+'于月令 '+(LW[wx0]||0));
+  net+=(LR[rel0]||0);  soft.push(relPhrase(rel0)+' '+(LR[rel0]||0));
+  var jv=(JIANGS_SCORE[j0]||0)*0.5; net+=jv;
+  if(jv) soft.push((j0||'无将')+' '+(jv>0?'+':'')+jv);
+  out.net=Math.round(net*100)/100; out.soft=soft; out.hard=hard;
+
+  // 三态而非五档：可 / 难 / 难以遽断
+  // ⚠️ 带宽 ±1.2 是我们定的。三态比例**不是先验规定的**，是这套规则跑出来的结果 ——
+  //    这正是线 C 与旧五档的分野：旧的比例由 P8/P30/P70/P92 先定死，这里是后验的。
+  var good=[];
+  if(ls.inC.length)                 good.push('类神入'+['初传','中传','末传'][pos]);
+  if(wx0==='旺'||wx0==='相')        good.push('类神'+wx0+'于月令');
+  if(rel0==='生')                   good.push('类神生日干');
+  if((JIANGS_SCORE[j0]||0)>0)       good.push(j0+'加临');
+  if(hard.length)            out.ok=false;
+  else if(net>=1.2)          out.ok=true;
+  else if(net<=-1.2)         out.ok=false;
+  else                       out.ok=null;
+  out.verdict = out.ok===true?act[0] : out.ok===false?act[1] : '难以遽断';
+
+  // ① 主线：类神本体
+  var s1=BRAN[b0]+'（'+ELEM[b0]+'·'+LQ_NAME[lq0]+'）为「'+((qtype&&qtype.l)||'本案')+'」之类神，'+
+        (ls.inC.length?('入'+['初传','中传','末传'][pos]):'不入三传')+
+        (j0?'，'+j0+'加临':'')+'，'+wx0+'于月令，'+relPhrase(rel0)+'。';
+  out.lines.push(s1);
+  out.items.push({k:'类神',v:BRAN[b0]+'（'+ELEM[b0]+'·'+LQ_NAME[lq0]+'）',
+                  note:(ls.inC.length?['入初传','入中传','入末传'][pos]:'不入三传')+
+                       (j0?'·'+j0:'')+'·'+wx0+'·'+relPhrase(rel0)});
+  // ② 得失（否决项照直说，不美化）
+  var reasons=[];
+  if(kong0) reasons.push('类神'+BRAN[b0]+'落旬空，古谓「事虚」「不足」，多以不实论；'+
+    '⚠ 但因历来也有「出空填实」一说，故本页不作保证，只作前提昭示');
+  else if(ls.kong&&ls.brs.length>1) reasons.push('另有候选类神落空（本次取用之'+BRAN[b0]+'未空），'+
+    '其力稍减 —— 多支并存时，取未空者为断');
+  if(!ls.inC.length) reasons.push('三传不见类神，事无主线 —— 无发动之由，宜待勿动');
+  if(wx0==='死') reasons.push('类神值死于月令，'+(ls.inC.length?'且已入传，《玉成歌》所谓「休囚传用总无成」，纵有其象，力亦不足':'然未入传，其无力之影响亦随之减弱'));
+  else if(wx0==='囚'||wx0==='休') reasons.push('类神休囚，力弱而缓 —— 纵成亦迟，须待旺相之时');
+  if((JIANGS_SCORE[j0]||0)<0){
+    var tjd=((typeof TJ_DESC==='object'&&TJ_DESC&&TJ_DESC[j0])||'凶将临身')
+              .replace(/。/g,'；').replace(/；$/,'');
+    reasons.push(j0+'压类神 —— '+tjd+'，此为阻滞之象');
+  }
+  if(rel0==='克') reasons.push('类神克日干，古谓恶神 —— 此非美占，纵有别象相扶，亦当存戒心');
+  if((JIANGS_SCORE[j0]||0)>0&&ls.inC.length&&(wx0==='旺'||wx0==='相'))
+    reasons.push('吉将乘旺、类神入传，此为正格之得');
+  for(var ri=0;ri<reasons.length;ri++) out.lines.push(reasons[ri]+'。');
+
+  // ③ 三传走向：古籍最看重的「过程」，不是只看一头一尾
+  var rc=wxRel(ELEM[r.chu],dayE),rm=wxRel(ELEM[r.mo],dayE);
+  var s2='';
+  if(rc==='克'&&(rm==='生'||rm==='比'))      s2='初传'+BRAN[r.chu]+'克日干而末传'+BRAN[r.mo]+'生日干 —— 先难后易，熬过发端自见转机';
+  else if((rc==='生'||rc==='比')&&rm==='克') s2='初传'+BRAN[r.chu]+'生日干而末传'+BRAN[r.mo]+'克日干 —— 先易后难，开局顺遂而收尾须防反噬';
+  else if(rc==='克'&&rm==='克')             s2='初末皆克日干，首尾受制，不宜强求';
+  else if(rc==='生'&&rm==='生')             s2='初末皆生日干，首尾有助，其事顺遂';
+  else                                      s2='三传'+BRAN[r.chu]+'→'+BRAN[r.zhang]+'→'+BRAN[r.mo]+'，初'+chuanRel(rc)+'，末'+chuanRel(rm)+'，走向平平，未见显要转折';
+  out.lines.push(s2+'。');
+  out.items.push({k:'三传',v:BRAN[r.chu]+'→'+BRAN[r.zhang]+'→'+BRAN[r.mo],
+                  note:s2});
+
+  // ④ 课体格：给一句有出处的定性话。只添定性描述，不参与上面的「成/难」判定 ——
+  //    判词是给读者看的话，不是又一个加分项
+  var kt=keti(r);
+  if(kt.length){
+    var kn=[]; for(var ki=0;ki<kt.length;ki++) kn.push(kt[ki].name);
+    out.lines.push('课体见'+kn.join('、')+'：'+kt[0].note+'。');
+    out.items.push({k:'课体',v:kn.join('、'),note:kt[0].note});
+  }
+  // ⑤ 年命：补上「人」这一极（线 A 引入输入，线 B 起进评分）
+  if(nm&&nm.benBr!==undefined){
+    var nmTxt='占者本命'+BRAN[nm.benBr]+'，'+(nm.benInChuan?'本命入三传，事与己身相关':'本命不入三传')+'；'+
+              '行年'+BRAN[nm.xingBr]+(nm.xingInChuan?'入三传，事应在当年':'未入三传')+'。'+
+              wxRelNote(ELEM[b0],ELEM[nm.benBr])+'。';
+    out.lines.push(nmTxt);
+    out.items.push({k:'年命',v:'本命'+BRAN[nm.benBr]+'·行年'+BRAN[nm.xingBr],
+                    note:(nm.benInChuan?'本命入传':'本命不入传')+'·'+(nm.xingInChuan?'行年入传':'行年未入传')});
+  }
+  return out;
+}
+// a=类神五行，b=本命五行；返回以「类神」为主语的短语
+function wxRelNote(a,b){
+  var rr=wxRel(a,b);
+  if(rr==='生')   return '类神生本命，于我有助';
+  if(rr==='克')   return '类神克本命，于我有损';
+  if(rr==='被生') return '本命生类神，求得之而有所耗';
+  if(rr==='被克') return '本命克类神，我所求者反受我制';
+  if(rr==='比')   return '类神与本命比和';
+  return '类神与本命五行无涉';
+}
+// 某支是否落旬空。⚠️ 判「类神空亡」只应对着**本次实际取用的那一个支**问，
+// 不要问 leishenScore 的 anyKong —— 那是候选集里任一支落空，概率被放大。
+function brKong(r,br){ return (r.kvmWang||[]).indexOf(br)>=0; }
+
+// 三传初末与日干的关系短语（用于「三传走向」一句，避免生硬套用 relPhrase）
+function chuanRel(rel){
+  if(rel==='生')   return '生日干';
+  if(rel==='克')   return '克日干';
+  if(rel==='被生') return '日干生之';
+  if(rel==='被克') return '日干克之';
+  if(rel==='比')   return '与日干比和';
+  return '与日干无涉';
+}
+
+// ── 应期：何时 ─────────────────────────────────────────────────────
+function yingqi(r,qtype,nm,verdictOk){
+  var out={win:'',speed:'',items:[],lines:[],note:''};
+  var ls=leishenScore(r,qtype,nm);
+  var chuan=[r.chu,r.zhang,r.mo];
+  var lessons=r.lessons||[],dayBr=(lessons[2]&&lessons[2].l!==undefined)?lessons[2].l:0;
+  var jian=(r.msb&&typeof r.msb.branch==='number')?(r.msb.branch%12):0;
+  var y=0;
+  try{ if(r.raw) y=yearSB(r.raw.y,r.raw.m,r.raw.d).branch; }catch(e){ y=-1; }
+  var b0=ls.inC.length?ls.inC[0]:(ls.brs.length?ls.brs[0]:r.chu);
+  var wx0=wxState(b0,jian);
+  var fast=(wx0==='旺'||wx0==='相');
+
+  // ⓪ 前提：类神空亡且判难 —— 不作「填实即应」的承诺
+  if(brKong(r,b0)&&verdictOk===false){
+    out.win='恐无定期';
+    out.speed='虚';
+    out.lines.push('类神空亡且已判难。历来「空亡多应虚空，少应填实」，'+
+      '本页不取「出空即应」一说 —— 事体本自不足，强指一日反成虚妄。');
+    out.items.push({k:'应期',v:'无定期',note:'类神空亡，事体不实'});
+    out.note='此为一派之说：另派主张「出旬填实即应」。本页择前者，故不给日期。';
+    return out;
+  }
+  // ① 乙派：类神落处定迟速
+  var where='',spd=fast?'速':'迟';
+  var pos=chuan.indexOf(b0);
+  if(!ls.inC.length){
+    where='类神不入三传，无应之基';
+    spd='迟';
+  } else if(pos===0){
+    where='类神在于初传，事之发动已见';
+  } else if(pos===1){
+    where='类神见于中传，应期稍后';
+    spd='迟';
+  } else {
+    where='类神见于末传，应期在后';
+    spd='迟';
+  }
+  // ② 丙派《金铰剪》克应：逐级发用
+  var win='',src='';
+  if(r.chu===y&&y>=0){ win='应在本年之内'; src='太岁发用（《六壬金铰剪》克应）'; }
+  else if(r.chu===jian){ win='应在本月之内'; src='月建发用'; }
+  else if(r.chu===r.moonBr){ win='应在日躔之内（本月节令中）'; src='月将发用'; }
+  else if(r.chu===(r.kv1!==undefined?mod(r.kv1+2,12):-1)){ win='应在本旬之内'; src='旬首发用'; }
+  else if(r.chu===dayBr){ win='应在本日'; src='当日支发用'; }
+  else if(r.chu===r.hourBr){ win='应在当时（目下）'; src='真时发用'; }
+  // ③ 甲派补充：不出此者，以本日地支顺推四位
+  if(!win){
+    var st=mod(r.chu-dayBr,12);
+    if(st>=1&&st<=4) win='应在第'+st+'日之后（本日支顺推四位内）';
+    else if(st>4)    win='出四位之外，不当以日推 —— 远则应于年月';
+    src='发用不见岁月旬时者，以本日地支顺推四位';
+  }
+  // ④ 伏吟/反吟：通说「伏吟以冲为应，反吟以合为应」，附具体所指之日支
+  if(r.isFuYin){ win+='；伏吟主静，宜取类神之冲（'+BRAN[mod(b0+6,12)]+'）日为动日'; }
+  if(r.isFanYin){ win+='；反吟主反复，宜取类神之合（'+BRAN[HE6[b0]]+'）日为定日'; }
+  // ⑤ 迟速：旺相速、休囚迟（通说）
+  out.win=win;
+  out.speed=spd;
+  out.lines.push(where+'；'+win+'。'+(src?'（'+src+'）':''));
+  out.lines.push('旺相者应速、休囚者应迟 —— 本案类神'+wx0+'于月令，故作'+spd+'论。');
+  out.items.push({k:'应期',v:win,note:src||'类神方位'});
+  out.items.push({k:'迟速',v:spd,note:'类神'+wx0+'于月令'});
+  out.note='应期三种古法并存，本页取「类神为主、初传为辅」一派；末传只在吉凶已萌时方用。';
+  return out;
+}
 // ─── 年命（本命 · 行年） ───────────────────────────────────────────
 // 六壬极重年命：同一课，年命不同则断语不同；类神与年命的关系才是真正的落点。
 // 本函数 2026-11-01 补入于「线 A」：先把「人」这一极的输入补齐。
@@ -2597,41 +2873,48 @@ function genAdvice(r,qtype){
 }
 
 // ─── 吉凶卡 ───────────────────────────────────────────────
-function renderFortuneCard(ft){
+function renderFortuneCard(r,ft){
   var el=document.getElementById('fcEl');
   var sym=document.getElementById('fcSym');
   var rslt=document.getElementById('fcRslt');
   var tags=document.getElementById('fcTags');
-  if(!ft) return;
-  sym.textContent=ft.sym;
-  sym.style.color=ft.level==='大吉'||ft.level==='吉'?'var(--gold2)':ft.level==='平'?'var(--dim)':'var(--red)';
-  rslt.textContent=ft.level+' · '+ft.text;
-  var th='';
-  for(var i=0;i<ft.tags.length;i++){
-    th+='<span class="tg '+ft.tags[i].c+'">'+ft.tags[i].t+'</span>';
-  }
-  tags.innerHTML=th;
-  // 分项条：五档是硬切边界（±50% 参数扰动会有 18~33% 的课改档），而「哪课更吉」的相对排序很稳。
-  // 所以把 total=Σparts 摊开给用户：看得到每一维贡献多少，就不必迷信那一个「吉/凶」字。
+  var pan=document.getElementById('fcPan');
   var brk=document.getElementById('fcBrk');
-  if(brk&&ft.parts){
-    var mx=1,pi;
-    for(pi=0;pi<ft.parts.length;pi++){ if(Math.abs(ft.parts[pi].v)>mx) mx=Math.abs(ft.parts[pi].v); }
-    var rows='';
-    for(pi=0;pi<ft.parts.length;pi++){
-      var it=ft.parts[pi];
-      if(!it.v) continue;
-      var half=Math.abs(it.v)/mx*50;
-      var col=it.v>0?'#5f9e5f':it.v<0?'#c85030':'var(--faint)';
-      var bar=it.v>0?'left:50%;width:'+half.toFixed(1)+'%':'right:50%;width:'+half.toFixed(1)+'%';
-      rows+='<div class="fc-brk-r">'+
-        '<span class="fc-brk-l">'+it.label+'</span>'+
-        '<span class="fc-brk-b"><u></u><i style="'+bar+';background:'+col+'"></i></span>'+
-        '<span class="fc-brk-v" style="color:'+col+'">'+(it.v>0?'+':'')+it.v.toFixed(1)+'</span>'+
-      '</div>';
+  if(!ft||!r) return;
+  // 线 C（去五档）：这里不再输出「大吉/凶」档位与分数，改出「判词 + 应期 + 判据明细」。
+  // 分数（fortune.score）仍在，但只用于内部排序与 calibrate/sensitivity 的体检 —— 页面不再暴露。
+  var pd=r.panding||panding(r,r.qtype,r.nm);
+  var yq=r.yingqi||yingqi(r,r.qtype,r.nm,pd.ok);
+  var col= pd.ok===true?'var(--gold2)' : pd.ok===false?'var(--red)' : 'var(--dim)';
+  sym.textContent = pd.ok===true?'◆' : pd.ok===false?'▲' : '◇';
+  sym.style.color=col;
+  rslt.textContent=pd.verdict;
+  rslt.style.color=col;
+  if(tags){
+    var th='';
+    if(ft.tags){ for(var i=0;i<ft.tags.length;i++){ th+='<span class="tg '+ft.tags[i].c+'">'+ft.tags[i].t+'</span>'; } }
+    tags.innerHTML=th;
+  }
+  if(pan){
+    var ph='';
+    for(var li=0;li<pd.lines.length;li++) ph+='<p>'+escHtml(pd.lines[li])+'</p>';
+    if(pd.note) ph+='<p style="color:var(--faint);font-size:.73rem">（'+escHtml(pd.note)+'）</p>';
+    pan.innerHTML=ph;
+  }
+  if(brk){
+    var h='';
+    h+='<div class="fc-yq"><div class="fc-yq-h">应期 · '+escHtml(yq.win)+'</div>';
+    for(var yi=0;yi<yq.lines.length;yi++) h+='<div>'+escHtml(yq.lines[yi])+'</div>';
+    if(yq.note) h+='<div style="color:var(--faint);font-size:.72rem;margin-top:4px">'+escHtml(yq.note)+'</div>';
+    h+='</div>';
+    h+='<div class="fc-it"><div class="fc-brk-h">判据明细（每条均可在盘上自行复核）</div>';
+    var its=pd.items.concat(yq.items||[]),k;
+    for(k=0;k<its.length;k++){
+      h+='<div class="fc-it-r"><span class="fc-it-k">'+escHtml(its[k].k)+'</span>'+
+         '<span class="fc-it-v"><b>'+escHtml(its[k].v)+'</b>　'+escHtml(its[k].note)+'</span></div>';
     }
-    brk.innerHTML='<div class="fc-brk-h">综合分 '+(ft.score>0?'+':'')+ft.score.toFixed(1)+
-      '　（各维加权之和；五档为 '+ft.level+'，档位边界会随参数微调而变，排序比档位可靠）</div>'+rows;
+    h+='</div>';
+    brk.innerHTML=h;
   }
   el.style.display='block';
 }
@@ -2646,7 +2929,7 @@ function renderAll(r,q,ft){
     renderGenerals(r);
     renderShafa(r);
     renderInterp(r,q,ft);
-    renderFortuneCard(ft);
+    renderFortuneCard(r,ft);
     document.getElementById('fcEl').style.display='block';
   }catch(e){
     console.error('render error:',e);
@@ -2857,7 +3140,7 @@ function renderLeishen(r){
      (hitJ.length?'喜用入传：'+hitJ.join('、')+'　':'喜用未入传　')+
      (hitT.length?'忌神入传：'+hitT.join('、'):'忌神未入传')+'</p>';
   h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0;line-height:1.7">'+L.note+'</p>';
-  h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0">线 B 起类神即吉凶五档的<b>主线判据</b>（⑨），并非附注。</p>';
+  h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0">线 C 起类神即<b>判词的主线判据</b>（⑨），上面「综合判断」里的成/难之判由此而出，并非附注。</p>';
   return h;
 }
 
@@ -3151,11 +3434,12 @@ function renderInterp(r,q,ft){
     '<p style="font-size:.78rem;color:var(--faint);text-indent:0;line-height:1.8">'+
     '附注：本页面为六壬算法教学演示版，融合九宗门起传、月将节气定位、贵人顺逆排将、十二天将、神煞、长生十二宫、德禄等核心要素。'+
     '完整六壬占断需结合占者行年、事情原委、方位、神煞细目等因素综合判断，此处解读仅供兴趣参考。'+
-    '<br><span style="color:var(--gold2)">关于吉凶五档</span>：本页的「大吉/吉/平/凶/大凶」不是各象简单加权求和，'+
-    '而是「类神定性 + 其余各维限幅微调」：先按所问之事定类神（求财取妻财、出行取驿马、词讼取勾陈等），'+
-    '据其是否入三传、旺衰、空亡、所乘天将给出主线分；其余各维合计只作有限微调（渐近上限 ±3），'+
-    '以免「多数好」淹没「关键坏」。阈值仍取全样本分布的分位数，'+
-    '故「大吉」意为「在这批课里靠前」，不等于古籍断语中的吉。'+
+    '<br><span style="color:var(--gold2)">关于判词与应期</span>：本页<b>不给吉凶档位与分数</b>，只给判词与应期 —— '+
+    '判词由「类神是否入传、旺衰、空亡、所乘天将、与日干生克、三传走向」逐条推出，'+
+    '下方「判据明细」每条都可在盘上自行复核；应期本「类神为主、初传为辅」一派，'+
+    '兼取「旺相应速、休囚应迟」之通例。'+
+    '⚠ 判词措辞与应期口径同属<b>通说整理</b>，已标注所本之书（《六壬金铰剪》《大六壬说约》《玉成歌》），'+
+    '但未逐句回查原典；应期诸家分歧尤大，此处是一次<b>站队</b>，不是定论。'+
     (r.nm?'已填年命，年命与类神之生克亦计入评分；未填则该项不计。':'')+
     '</p>';
 }
@@ -3207,6 +3491,9 @@ function divine(){
       sxEl?sxEl.value:'男');
   }
   r.fortune=fortune(r,r.qtype,r.nm);
+  // 线 C：判词与应期在渲染前算好挂到结果上，保证 UI / 导出 / 播报三处同一份判词
+  r.panding=panding(r,r.qtype,r.nm);
+  r.yingqi=yingqi(r,r.qtype,r.nm,r.panding.ok);
   // 缓存结果供导出/命盘/TTS使用
   window._lastR=r;
   window._lastFT=r.fortune;
@@ -3375,9 +3662,11 @@ document.getElementById('btnExport').addEventListener('click',function(){
 document.getElementById('btnTTS').addEventListener('click',function(){
   var ft=window._lastFT;
   if(!ft){alert('请先起课');return;}
-  var text='大六壬占卜结果：综合判断为'+ft.level+'。'
-    +(ft.tags&&ft.tags.length?'核心标签：'+ft.tags.map(function(t){return t.t;}).join('，')+'.':'')
-    +ft.text;
+  var r0=window._lastR;
+  var pd=(r0&&r0.panding)||(r0?panding(r0,r0.qtype,r0.nm):{verdict:'',lines:[],items:[]});
+  var yq=(r0&&r0.yingqi)||null;
+  var text='大六壬占断结果：'+pd.verdict+'。'+pd.lines.join('')
+    +(yq?('应期：'+yq.win+'。'):'');
   // 使用 render_ui 提示用户确认，或者直接用 tts 工具
   var el=document.getElementById('fcRslt');
   if(el) el.innerHTML+=' <span style="font-size:.7rem;color:var(--dim)">（语音播报中…）</span>';
@@ -3418,6 +3707,8 @@ globalThis.DLR={
   nianming:nianming,LEISHEN:LEISHEN,liuWx:liuWx,WX_BR:WX_BR,
   leishenBr:leishenBr,leishenScore:leishenScore,jiangBr:jiangBr,getYongshen:getYongshen,
   LS_CAP:LS_CAP,LS_ZHU:LS_ZHU,LS_SHA:LS_SHA,LS_GANREL:LS_GANREL,
+  panding:panding,yingqi:yingqi,LS_ACT:LS_ACT,HE6:HE6,brKong:brKong,
+  LQ_NAME:LQ_NAME,relPhrase:relPhrase,wxRelNote:wxRelNote,chuanRel:chuanRel,
   JIANGS_SCORE:JIANGS_SCORE,
   KE:KE,SHENG:SHENG,XI_MAP:XI_MAP,ELEM:ELEM,ELEM_S:ELEM_S,BRAN:BRAN,
   trueSolar:trueSolar,eqOfTime:eqOfTime,dayOfYear:dayOfYear,shiftYMD:shiftYMD,
