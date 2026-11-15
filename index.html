@@ -921,40 +921,140 @@ function calc(y,m,d,hb,opt){
   var deBr=DE_LU[dsb.stem];
   var luBr=LU_BR[dsb.stem];
 
-  // 神煞（按月支推算）
+  // ═══ 神煞（2026-11-15 按卷五《大六壬神煞指南》原文重录）═══
+  // 纪律：①判据全出卷五岁煞/月煞/旬煞/干煞四章文字；②辨讹章明言「非」的起法不录；
+  //   ③卷五只载义、起例在圆图内者（如华盖）不造数，登记待考；④每条 tag 挂章名出处。
   var ss=[];
-  var mb=msb.branch;
-  
-  // 天德（正丁二坤三壬四辛五乾六甲七癸八艮九丙十乙十一巽十二庚）
-  var TIANDE_BR=[null,5,11,8,9,11,2,8,1,4,3,5,6];
-  if(TIANDE_BR[mb]===dayBr) ss.push({n:'天德',d:'主吉庆、解凶祸，逢凶化吉'});
-  
-  // 月德（寅午戌月丙，申子辰月壬，亥卯未月甲，巳酉丑月庚）
-  var YUEDE_STEM=[null,0,2,0,2,6,0,8,6,8,8,0,6];
-  if(YUEDE_STEM[mb]===dsb.stem) ss.push({n:'月德',d:'主吉庆、化解，贵人相助'});
-  
-  // 驿马（申子辰马在寅，寅午戌马在申，巳酉丑马在亥，亥卯未马在巳）
+  var mb=msb.branch, yb=ysb.branch;
+  var facts=[];   // 常显事实（不问命中与否，进 ssPos 呈现）
+
+  // 临日（干上神/支上神）或入传 的统一命中判定
+  function ssHit(b){
+    if(b===null||b===undefined||b<0) return null;
+    if(b===chu||b===zhang||b===mo) return '入传';
+    if(heavenMap[dayLodge]===b) return '临日干上';
+    if(heavenMap[dayBr]===b) return '临日支上';
+    return null;
+  }
+  // 天盘支 → 地盘位（heavenMap 的逆映射，逐支唯一）
+  var invHM={};
+  for(var ih=0;ih<12;ih++){ invHM[heavenMap[ih]]=ih; }
+
+  // —— 天德（月煞章「天德正丁二坤三壬同辛乾甲癸艮丙乙巽庚」）
+  //   宫位换算（六壬干寄宫：甲寅 乙辰 丙巳 丁未 庚申 辛戌 壬亥 癸丑；四维随宫：坤申 艮寅 巽巳 乾亥）
+  //   下标=月建支（子0…亥11；寅月=正月=下标2）。2026-11-15 重录：旧表错位且换算口径错。
+  var TIANDE_BR=[5,8,7,8,11,10,11,2,1,2,5,4];
+  var tianDeBr=TIANDE_BR[mb];
+  // 天德合（月煞章「天德合月德合干神五合者是，俱改祸成福」）：合干再取寄宫支
+  //   丁↔壬 甲↔己 癸↔戊 丙↔辛 乙↔庚；坤艮巽乾四维无干合，不置（-1）
+  var TIANDEHE_BR=[-1,4,11,-1,7,5,-1,7,5,-1,10,8];
+  // —— 月德（月煞章「月德逆行孟丙甲壬庚」＝寅午戌月丙 申子辰月壬 亥卯未月甲 巳酉丑月庚）
+  //   2026-11-15 重录：旧表寅月误作甲（应为丙）且错位。寄宫支：丙巳 甲寅 壬亥 庚申。
+  var YUEDE_STEM=[8,6,2,0,8,6,2,0,8,6,2,0];
+  var YUEDE_LODGE=[11,8,5,2,11,8,5,2,11,8,5,2];
+  var YUEDEHE_BR=[7,4,10,7,7,4,10,7,7,4,10,7];  // 合干寄宫：壬合丁未 庚合乙辰 丙合辛戌 甲合己未
+  var yueDeBr=YUEDE_LODGE[mb], yueDeHe=YUEDEHE_BR[mb];
+  var TD_GAN=['巽','庚','丁','坤','壬','辛','乾','甲','癸','艮','丙','乙'];
+  facts.push('天德在'+BRAN[tianDeBr]+'（'+TD_GAN[mb]+'）');
+  facts.push('月德在'+BRAN[yueDeBr]);
+  var tdHit=ssHit(tianDeBr);
+  if(tdHit) ss.push({n:'天德'+tdHit, d:'百福助佑之神，转凶为吉（卷五月煞章、干煞章）'});
+  var tdhHit=ssHit(TIANDEHE_BR[mb]);
+  if(tdhHit) ss.push({n:'天德合'+tdhHit, d:'改祸成福（卷五月煞章「干神五合」）'});
+  if(YUEDE_STEM[mb]===dsb.stem) ss.push({n:'月德临日干', d:'五行生气之神，改祸为福（卷五月煞章）'});
+  var ydHit=ssHit(yueDeBr);
+  if(ydHit) ss.push({n:'月德'+ydHit, d:'五行生气之神（卷五月煞章「月德逆行孟丙甲壬庚」）'});
+  var ydhHit=ssHit(yueDeHe);
+  if(ydhHit) ss.push({n:'月德合'+ydhHit, d:'改祸成福（卷五月煞章）'});
+
+  // —— 天赦（月煞章「天赦戊寅夏甲午，戊申甲子秋冬云」：春戊寅 夏甲午 秋戊申 冬甲子）
+  var JI_OF=[3,3,0,0,0,1,1,1,2,2,2,3];     // 月建支 0-11 → 0春 1夏 2秋 3冬（寅卯辰春…亥子丑冬）
+  var TIASHE=[14,30,44,0];                  // 戊寅 甲午 戊申 甲子（六十甲子序）
+  facts.push('天赦本季'+['戊寅','甲午','戊申','甲子'][JI_OF[mb]]);
+  if(dsb.idx===TIASHE[JI_OF[mb]]) ss.push({n:'天赦值日', d:'灾散百事吉（卷五月煞章）'});
+
+  // —— 月驿（辨讹章「驿马正申逆四孟」：正申二巳三寅四亥周而复始；义出岁煞章「驿马主行动」）
+  //   下标=月建支：寅月申 卯月巳 辰月寅 巳月亥…
+  var YUEYI=[2,11,8,5,2,11,8,5,2,11,8,5];
+  var yueYiBr=YUEYI[mb];
+  facts.push('月驿在'+BRAN[yueYiBr]);
+  var yyHit=ssHit(yueYiBr);
+  if(yyHit) ss.push({n:'月驿'+yyHit, d:'主行动（卷五岁煞章；起例辨讹章「正申逆四孟」）'});
+
+  // —— 岁煞十二神（岁煞章，年支顺布：太岁太阳丧门六合官符小耗岁破岁墓白虎福德吊客病符）
+  var SUI=[['太岁','主事于岁内，吉凶应在一年'],['太阳','凡事有喜无忧；又为赶煞，克干支大凶'],['丧门','主死丧，占病凶'],['六合','主会合，凡事有成无破'],['官符','主官非勾连'],['小耗','主破耗财物，又为岁宅'],['岁破','主破耗财物（大耗），又主半年事'],['岁墓','主坟墓病讼宅灾'],['白虎','主凶灾血光惊恐'],['福德','贵人难中有救'],['吊客','主吊送姻亲，初传见主骨肉灾'],['病符','主疾病，又主去年旧事']];
+  facts.push('太岁在'+BRAN[yb]);
+  for(var sk=0;sk<12;sk++){
+    var sb=(yb+sk)%12, sHit=ssHit(sb);
+    if(sHit) ss.push({n:SUI[sk][0]+sHit, d:SUI[sk][1]+'（卷五岁煞章）'});
+  }
+
+  // —— 旬煞（旬煞章全文；旬首皆甲，干位随旬内序固定：乙1 丁3 庚5 辛6 癸9）
+  var xun0=dsb.idx-(dsb.idx%10);
+  var XUNSHA=[[1,'旬乙·盗神','主盗贼'],[3,'旬丁','须视六亲之动，动处有力（旧谓丁马）'],[5,'旬庚·响动','官病忌'],[6,'旬辛·五亡','五亡七煞，出逢盗贼，并空亡主走失'],[9,'旬癸·闭口','主机关莫测，病不食人不言']];
+  var xunFacts=[];
+  for(var xk=0;xk<XUNSHA.length;xk++){
+    var xb=(xun0+XUNSHA[xk][0])%12;
+    xunFacts.push(XUNSHA[xk][1].split('·')[0]+'在'+BRAN[xb]);
+    var xh=ssHit(xb);
+    if(xh) ss.push({n:XUNSHA[xk][1]+xh, d:XUNSHA[xk][2]+'（卷五旬煞章）'});
+  }
+  facts.push(xunFacts.join(' '));
+
+  // —— 羊刃/飞刃（干煞章「禄前羊刃对飞安」：禄前一位为刃，刃之对冲为飞刃）
+  var renBr=(LU_BR[dsb.stem]+1)%12, feiBr=(renBr+6)%12;
+  facts.push('羊刃在'+BRAN[renBr]+' 飞刃在'+BRAN[feiBr]);
+  var renHit=ssHit(renBr);
+  if(renHit) ss.push({n:'羊刃'+renHit, d:'静吉动凶，又主血光（卷五干煞章）'});
+  var feiHit=ssHit(feiBr);
+  if(feiHit) ss.push({n:'飞刃'+feiHit, d:'血光凶事（卷五干煞章）'});
+
+  // —— 支德（干煞章「支德解凶巳顺支」：子日起巳顺行十二支）
+  var zhiDeBr=(dayBr+5)%12;
+  facts.push('支德在'+BRAN[zhiDeBr]);
+  var zdHit=ssHit(zhiDeBr);
+  if(zdHit) ss.push({n:'支德'+zdHit, d:'解凶增吉（卷五干煞章）'});
+
+  // —— 六害加临（支煞章「穿心六害暗相伤」以下十案；取害支加临日支位者）
+  var HAI=[[0,7,'子加未，官非口舌'],[7,0,'未加子，阻塞有殃'],[1,6,'丑加午，官病不睦'],[6,1,'午加丑，不就不明'],[5,2,'巳加寅，口舌疑阻'],[2,5,'寅加巳，进滞退良'],[8,11,'申加亥，先得后阻'],[11,8,'亥加申，谋事不长'],[3,4,'卯辰相加，虚诈争财有阻'],[9,10,'酉戌两害，病凶阴小逃亡']];
+  for(var hk=0;hk<HAI.length;hk++){
+    if(HAI[hk][1]===dayBr && heavenMap[HAI[hk][1]]===HAI[hk][0]){
+      var haiTxt=HAI[hk][2].split('，');
+      ss.push({n:'六害·'+haiTxt[0], d:haiTxt[1]+'（卷五支煞章「穿心六害」）'});
+      break;
+    }
+  }
+
+  // —— 支冲（支煞章「对位支冲散事良」以下诸义；取三传上神坐对冲地盘位、及支上神冲日支）
+  var CHONG_YI=['子午，道路奔驰','丑未，兄弟相持','寅申，人鬼伤残','卯酉，门户改易','辰戌，奴婢离异','巳亥，反复无实'];
+  var chuanArr=[['初传',chu],['中传',zhang],['末传',mo]];
+  for(var ck=0;ck<3;ck++){
+    var cu=chuanArr[ck][1], cd=invHM[cu];
+    if((cu+6)%12===cd) ss.push({n:chuanArr[ck][0]+BRAN[cu]+'坐冲位'+BRAN[cd], d:'对位冲散事良：'+CHONG_YI[Math.min(cu,cd)%6]+'（卷五支煞章）'});
+  }
+  if(heavenMap[dayBr]===(dayBr+6)%12) ss.push({n:'支上神冲日支', d:'对位冲：'+CHONG_YI[dayBr%6]+'（卷五支煞章）'});
+
+  // 驿马（日支三合马，旧例）+ 桃花（咸池例）+ 三合局 —— 起例为通行法，义补卷五出处
   var YIMA=YIMA_MA;
   if(YIMA[dayBr]!==undefined){
     var ym=YIMA[dayBr];
-    if(ym===chu||ym===zhang||ym===mo) ss.push({n:'驿马入传',d:'主动、出行、变动，马星发用'});
+    if(ym===chu||ym===zhang||ym===mo) ss.push({n:'驿马入传',d:'主行动（卷五岁煞章「驿马主行动」；日支三合马例）'});
   }
   var yima=YIMA[dayBr];
 
-  // 桃花（子卯相刑为无礼之刑，但卯为桃花之首）
-  // 正统桃花：申子辰桃花酉，寅午戌桃花卯，巳酉丑桃花午，亥卯未桃花子
+  // 桃花（咸池：申子辰在酉，寅午戌在卯，巳酉丑在午，亥卯未在子）
   var TAOHUA={0:9,4:9,8:9,2:3,6:3,10:3,9:6,1:6,5:6,11:0,3:0,7:0};
   if(TAOHUA[dayBr]===chu||TAOHUA[dayBr]===zhang||TAOHUA[dayBr]===mo){
-    ss.push({n:'桃花入传',d:'主感情、姻缘、异性缘'});
+    ss.push({n:'桃花入传',d:'主感情、姻缘；卷五岁煞章列「地煞桃花」谓「诸占不喜」，凶速一路'});
   }
   var taohua=TAOHUA[dayBr];
-  
-  // 三合局
+
+  // 三合局（卷五干煞章「六三合事有成期」）
   var sanhe=null;
-  if(dayBr===0||dayBr===4||dayBr===8) sanhe={n:'三合水局',d:'子辰申三合水，主流动、智谋'};
-  else if(dayBr===2||dayBr===6||dayBr===10) sanhe={n:'三合火局',d:'寅午戌三合火，主礼义、光明'};
-  else if(dayBr===3||dayBr===7||dayBr===11) sanhe={n:'三合木局',d:'亥卯未三合木，主生长、创造'};
-  else if(dayBr===1||dayBr===5||dayBr===9) sanhe={n:'三合金局',d:'巳酉丑三合金，主决断、肃杀'};
+  if(dayBr===0||dayBr===4||dayBr===8) sanhe={n:'三合水局',d:'子辰申三合水，主流动、智谋（卷五干煞章「三合事有成期」）'};
+  else if(dayBr===2||dayBr===6||dayBr===10) sanhe={n:'三合火局',d:'寅午戌三合火，主礼义、光明（卷五干煞章「三合事有成期」）'};
+  else if(dayBr===3||dayBr===7||dayBr===11) sanhe={n:'三合木局',d:'亥卯未三合木，主生长、创造（卷五干煞章「三合事有成期」）'};
+  else if(dayBr===1||dayBr===5||dayBr===9) sanhe={n:'三合金局',d:'巳酉丑三合金，主决断、肃杀（卷五干煞章「三合事有成期」）'};
   if(sanhe) ss.push(sanhe);
 
   // 旺相休囚死：以月建（msb.branch，已按节气分界）为令。
@@ -1025,7 +1125,7 @@ function calc(y,m,d,hb,opt){
     method:method,zongmen:zongmen,
     generals:generals,
     deBr:deBr,luBr:luBr,
-    ss:ss,
+    ss:ss,ssPos:facts,
     wx:wx,
     grBr:grBr,grEarth:grEarth,shun:shun,genByEarth:genByEarth,
     dayElem:ELEM_S[dsb.stem],dayBrElem:dayBrElem,
@@ -2272,7 +2372,8 @@ function genAdvice(r,qtype){
   var kwa=r.kvmWang||[],kwTxt=[BRAN[kwa[0]],BRAN[kwa[1]]],kwIn=[];
   for(var gk=0;gk<3;gk++){ if(BRS[gk]===kwa[0]||BRS[gk]===kwa[1]) kwIn.push(SEQ[gk]); }
   html+='<p style="font-size:.75rem;color:var(--dim);text-indent:0">本旬空亡：'+kwTxt.join('、')+
-        (kwIn.length?('；三传中 '+kwIn.join('、')+' 落空'):'；三传不落空')+'。</p>';
+        (kwIn.length?('；三传中 '+kwIn.join('、')+' 落空'):'；三传不落空')+
+        '。卷五旬煞章：「空亡十干不到之处，主失脱忧喜不成。凡凶神将喜空，吉神将忌空。」</p>';
   if(r.ss&&r.ss.length){
     var sn=[]; for(var gs=0;gs<r.ss.length;gs++) sn.push(r.ss[gs].n);
     html+='<p style="font-size:.75rem;color:var(--dim);text-indent:0">本课神煞：'+sn.join('、')+'。</p>';
@@ -2510,6 +2611,9 @@ function renderGenerals(r){
 function renderShafa(r){
   var el=document.getElementById('ssEl');
   var h='<div class="ss-lbl">神煞 &middot; 德神在'+BRAN[r.deBr]+' &middot; 禄神在'+BRAN[r.luBr]+'</div>';
+  if(r.ssPos&&r.ssPos.length>0){
+    h+='<div style="font-size:.72rem;color:var(--dim);line-height:1.8;margin:2px 0 5px">'+r.ssPos.join(' &middot; ')+'</div>';
+  }
   if(r.ss&&r.ss.length>0){
     h+='<div class="ss-tags">';
     for(var si=0;si<r.ss.length;si++){
