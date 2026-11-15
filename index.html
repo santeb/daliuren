@@ -52,9 +52,16 @@ select.ipt option{background:var(--bg)}
 .fc-sym{font-family:'Ma Shan Zheng',cursive;font-size:3.5rem;line-height:1;text-align:center;min-width:72px;flex-shrink:0}
 .fc-bdy{flex:1;min-width:200px}
 .fc-lbl{font-size:.72rem;color:var(--faint);margin-bottom:4px;letter-spacing:.1em}
-.fc-rslt{font-family:'Ma Shan Zheng',cursive;font-size:1.7rem;letter-spacing:.1em;margin-bottom:6px}
+/* 摘要变长后字号须下调，否则长课象会折行挤掉下面的判据区 */
+.fc-rslt{font-family:'Ma Shan Zheng',cursive;font-size:1.15rem;letter-spacing:.04em;margin-bottom:6px}
+.fc-disclaim{font-size:.7rem;color:var(--faint);line-height:1.7;margin:0 0 8px;
+  border-left:2px solid var(--border);padding-left:8px}
+.fc-disclaim b{color:var(--dim);font-weight:600}
 .fc-tags{display:flex;gap:7px;flex-wrap:wrap}
 .tg{display:inline-block;padding:2px 9px;border-radius:10px;border:1px solid;font-size:.7rem}
+/* 课象标记：统一正文色。2026-11-03 起不再用红/绿/金区分吉凶 ——
+   颜色即暗示，而「哪象为吉」这一步已被 105 课检验证否（见 LS_HEAD 留档）。 */
+.kx{color:var(--text);font-weight:600}
 .tg-j{color:var(--gold);border-color:rgba(200,160,48,.4);background:rgba(200,160,48,.08)}
 .tg-x{color:var(--red);border-color:rgba(200,80,48,.4);background:rgba(200,80,48,.08)}
 .tg-p{color:var(--dim);border-color:rgba(138,128,112,.3);background:rgba(138,128,112,.06)}
@@ -224,8 +231,10 @@ select.ipt option{background:var(--bg)}
     <div class="fc-in">
       <div class="fc-sym" id="fcSym"></div>
       <div class="fc-bdy">
-        <div class="fc-lbl">综合判断</div>
+        <div class="fc-lbl">课象摘要</div>
         <div class="fc-rslt" id="fcRslt"></div>
+        <div class="fc-disclaim">本页呈现课象，<b>不作吉凶判断</b>：断法层经 105 课人工标注检验，
+          命中 42.3%，与抛硬币无显著差别，故不再输出「成／不成」结论，请自行读象。</div>
         <div class="fc-tags" id="fcTags"></div>
         <div class="fc-pan" id="fcPan"></div>
         <div class="fc-brk" id="fcBrk"></div>
@@ -308,19 +317,24 @@ var SHENG={'木':'水','火':'木','土':'火','金':'土','水':'金'};
 var LODGE_STEMS={1:[9],2:[0],4:[1],5:[2,4],7:[3,5],8:[6],10:[7],11:[8]};
 
 var TIANJIANG=['贵人','螣蛇','朱雀','六合','勾陈','青龙','天空','白虎','太常','玄武','太阴','天后'];
+/* 十天将象意（**古书标签**，不是对本案的判断）
+   ⚠️ 2026-11-03 改写：原值第二句是「临身主进财或喜事临门」「得之者诸事顺遂」这类
+   **对当事人结果的预判**，与本页「不作吉凶判断」的立场冲突，全部删除。
+   只留「这个天将在六壬系统里代表什么」——那是可以查书的固定标签，
+   读者拿它配上盘面事实自行参详；至于「所以您这件事会怎样」，本页不给。 */
 var TJ_DESC={
-  '贵人':'统御诸神，主吉庆福佑。得之者有贵人相助，诸事顺遂。',
-  '螣蛇':'主虚惊怪异、惊恐变化。临身主心神不安，临事主突发变故。',
-  '朱雀':'主文书口舌、信息言语。临身主文书往来或口舌是非。',
-  '六合':'主和合婚姻、交易合作。临身主事物联络、人际往来。',
-  '勾陈':'主争斗诉讼、迟滞牵绊。临身主拖延纠缠或疾病反复。',
-  '青龙':'主财禄喜庆、吉祥进益。临身主进财或喜事临门。',
-  '天空':'主虚诈空亡、漂渺无根。临身主计划落空或机缘难测。',
-  '白虎':'主凶丧血光、威权孝服。临身主灾祸伤病或意外变故。',
-  '太常':'主宴饮祭祀、馈赠常事。临身主日常往来与吉庆常事。',
-  '玄武':'主盗贼隐私、暗中作祟。临身主失物或暗中隐藏之事。',
-  '太阴':'主阴私隐藏、女性暗中。临身主暗中助力或女性事务。',
-  '天后':'主恩泽庇护、婚姻柔顺。临身主有人庇护或感情之事。'
+  '贵人':'天将之首，统御诸神。古谓主尊长、官贵、庇佑。',
+  '螣蛇':'古谓主虚惊、怪异、惊恐变化。',
+  '朱雀':'古谓主文书、口舌、信息言语。',
+  '六合':'古谓主和合、婚姻、交易合作。',
+  '勾陈':'古谓主争斗、诉讼、迟滞牵绊。',
+  '青龙':'古谓主财禄、喜庆、进益。',
+  '天空':'古谓主虚诈、空亡、漂渺无根。',
+  '白虎':'古谓主刚猛、血光、威权孝服。',
+  '太常':'古谓主宴饮、祭祀、馈赠常事。',
+  '玄武':'古谓主盗贼、隐私、暗中之事。',
+  '太阴':'古谓主阴私、隐藏、女性之事。',
+  '天后':'古谓主恩泽、庇护、婚姻柔顺。'
 };
 
 var YUEJIANG=[
@@ -364,9 +378,16 @@ var CHANGSHENG_ORDER={
   '癸':[3,2,1,0,11,10,9,8,7,6,5,4]
 };
 
-// 贵人起法（甲戊庚牛羊...）
-var GR_D={0:1,4:1,6:1,1:0,5:8,2:11,3:9,8:5,9:3,7:6};
-var GR_N={0:7,4:7,6:7,1:8,5:0,2:9,3:11,8:3,9:5,7:2};
+// 贵人起法（甲戊庚牛羊，乙己鼠猴乡，丙丁猪鸡位，壬癸蛇兔藏，六辛逢马虎）
+// 口诀前一支为昼贵（旦贵），后一支为夜贵（幕贵）。
+// ⚠️ 2026-11-02 修正：原表 己/丁/癸 三日填反了（同一张表混用了两套读法）。
+//    己 原 昼申夜子 → 应 昼子夜申（差 6 位，天将整体错位最严重）
+//    丁 原 昼酉夜亥 → 应 昼亥夜酉
+//    癸 原 昼卯夜巳 → 应 昼巳夜卯（壬癸两派「壬兔癸蛇」「壬癸蛇兔」有分歧，
+//       但两派癸都是昼巳夜卯 —— 原表癸不合任何一派，属明确笔误）
+//    壬 保持 昼巳夜卯（取「壬癸蛇兔藏」派，与《金口诀》一致）
+var GR_D={0:1,4:1,6:1,1:0,5:0,2:11,3:11,8:5,9:5,7:6};
+var GR_N={0:7,4:7,6:7,1:8,5:8,2:9,3:9,8:3,9:3,7:2};
 
 // 日上起时（五鼠遁）：甲己还加甲，乙庚丙作初，丙辛从戊起，丁壬庚子居，戊癸何方发、壬子是真途
 var HOUR_START=[0,2,4,6,8];   // 按 mod(日干,5) 取子时天干
@@ -657,7 +678,13 @@ function calc(y,m,d,hb,opt){
     var eu=ELEM[l.u];
     // 第一课的下神是日干本身，须用天干五行，不能用寄宫地支五行
     // （乙寄辰、丁寄未、戊寄巳、辛寄戌、癸寄丑，寄宫五行与日干五行并不一致）
-    var el=(li===0)?ELEM_S[dsb.stem]:ELEM[l.l];
+    // ⚠️ 2026-11-02：不止第一课。第四课（支阴）若与第一课完全重复（同下神、同上神），亦以日干五行论。
+    //   《六壬断案》元-07（乙巳日戌将亥时）邵曰：「第四课卯加辰，卯木，辰内乙亦木，不克……
+    //   乙已为干先据，何得重传」。即支阴重复干课者，其克须按日干（乙木）论，卯辰不作克。
+    //   限死在第四课：八专日第三课（支课）与第一课同盘，但古法「八专有克仍以克论」——
+    //   贞-56 癸丑日 子加丑，丑土贼子水作重审，若一并按癸水论会误入八专（2026-11-02 回退验证）。
+    var dupOfGan=(li===3&&l.l===dayLodge&&l.u===lessons[0].u);
+    var el=(li===0||dupOfGan)?ELEM_S[dsb.stem]:ELEM[l.l];
     if(KE[eu]===el) l.ke='上克下';
     else if(KE[el]===eu) l.ke='下贼上';
     else l.ke=null;
@@ -691,6 +718,7 @@ function calc(y,m,d,hb,opt){
   var XING={0:3,3:0,2:5,5:8,8:2,1:10,10:7,7:1,4:4,6:6,9:9,11:11};
   var CHONG={0:6,6:0,1:7,7:1,2:8,8:2,3:9,9:3,4:10,10:4,5:11,11:5};
   var ZIXING={4:1,6:1,9:1,11:1};
+  var YIMA_MA={0:2,4:2,8:2,2:8,6:8,10:8,9:11,1:11,5:11,11:5,3:5,7:5}; // 驿马：申子辰马寅、寅午戌马申、巳酉丑马亥、亥卯未马巳
   var MENG={2:1,5:1,8:1,11:1};                              // 四孟 寅巳申亥
   var ZHONG={0:1,3:1,6:1,9:1};                              // 四仲 子午卯酉
   var HE_STEM={0:5,1:6,2:7,3:8,4:9,5:0,6:1,7:2,8:3,9:4};    // 日干之合干
@@ -787,15 +815,18 @@ function calc(y,m,d,hb,opt){
     }
   }
   else if(isFanYin){
-    // ══ 七、反吟：有克往来取，无克为井栏格（日支之冲发用） ══
+    // ══ 七、反吟：有克往来取，无克为井栏格（日支驿马发用） ══
     zongmen='反吟法';
     if(kes.length){
       pick=takeKe(kes);
       chu=pick.k.u; zhang=CHONG[chu]; mo=chu;
       method='反吟法·有克（'+pick.m+'），中末往来';
     }else{
-      chu=CHONG[dayBr]; zhang=lessons[2].u; mo=lessons[0].u;
-      method='反吟法·无克（井栏格，日支之冲发用，中支末干）';
+      // 井栏格：日支驿马发用，中传支上神，末传干上神
+      // 实证：亨-45 丁未日 午将子时，原文 巳丑丑，巳即未之驿马（亥卯未马在巳）；
+      //       旧法用「日支之冲」丑发用，与原文不合（2026-11-02 改）。
+      chu=YIMA_MA[dayBr]; zhang=lessons[2].u; mo=lessons[0].u;
+      method='反吟法·无克（井栏格，日支驿马发用，中支末干）';
     }
   }
   else if(kes.length){
@@ -804,6 +835,16 @@ function calc(y,m,d,hb,opt){
     zongmen=pick.m.split('（')[0];
     method=pick.m;
     setBy(pick.k.u);
+  }
+  else if(uniqCount<=2){
+    // ══ 九、八专：二课成象，有克仍以克论（已在前支处理），无克直接八专，**不取遥克** ══
+    // 刚日以干上神在天盘顺数三位发用，柔日以第四课上神（支阴）逆数三位发用，中末皆归干上
+    // 实证：《断案》亨-40（甲寅日）、利-19/23/35（己未日）、贞-08（甲寅日）、贞-47（己未日）
+    //   六课皆八专日无贼克，邵彦和一律走八专法，绝不作蒿矢弹射（2026-11-02 调整次序）。
+    zongmen='八专法';
+    chu=yangDay?mod(lessons[0].u+2,12):mod(lessons[3].u-2,12);
+    zhang=lessons[0].u; mo=lessons[0].u;
+    method='八专法（'+(yangDay?'刚日干上顺行三位':'柔日支阴逆行三位')+'发用，中末皆归干上）';
   }
   else{
     // ══ 四、遥克：先神克日（蒿矢），后日克神（弹射）；多则体同用比 ══
@@ -816,17 +857,12 @@ function calc(y,m,d,hb,opt){
     var grp=yaoShen.length?yaoShen:yaoDan;
     if(grp.length){
       zongmen='遥克法';
-      var ym=grp.filter(function(x){return (x.l%2===0)===yangDay;});
+      // 比用：看**上神支**之阴阳（阳日取子寅辰午申戌，阴日取丑卯巳未酉亥），
+      // 不是看课位奇偶。实证：亨-32 壬戌日（辰阳胜丑阴）、亨-43/贞-40/贞-48 庚日（午阳胜巳阴），
+      // 原文所取皆与日干相比者，旧写法 x.l%2 取错（2026-11-02 改）。
+      var ym=grp.filter(function(x){return (x.u%2===0)===yangDay;});
       setBy((ym.length?ym:grp)[0].u);
       method='遥克法（'+(yaoShen.length?'蒿矢·课上神遥克日干':'弹射·日干遥克课上神')+'）';
-    }
-    else if(uniqCount<=2){
-      // ══ 九、八专：二课俱无克 ══
-      // 刚日以干上神在天盘顺数三位发用，柔日以第四课上神逆数三位发用，中末皆归干上
-      zongmen='八专法';
-      chu=yangDay?mod(lessons[0].u+2,12):mod(lessons[3].u-2,12);
-      zhang=lessons[0].u; mo=lessons[0].u;
-      method='八专法（'+(yangDay?'刚日干上顺行三位':'柔日支阴逆行三位')+'发用，中末皆归干上）';
     }
     else if(uniqCount===3){
       // ══ 八、别责：三课无克 ══
@@ -846,24 +882,39 @@ function calc(y,m,d,hb,opt){
   }
 
   // 贵人
-  // 昼夜贵人判断：卯(5-7时)至酉(17-19时)为昼，酉至卯为夜
-  // 更精确应按日出日落，此处简化：寅(3-5)卯辰巳午未申为昼，酉戌亥子丑为夜
-  var isDay=(hb>=3&&hb<=8); // 寅到申为昼
-  var grBr=isDay?(GR_D[dsb.stem]||1):(GR_N[dsb.stem]||7);
-  var grHeaven=heavenMap[grBr];
-  // 贵人顺逆：临亥子丑寅卯辰为顺行，临巳午未申酉戌为逆行
-  var shun=(grBr>=11||grBr<=4);
+  // 昼夜贵人判断：文献「自卯至申为日间时，自酉至寅为夜间时」（分界在卯/酉，卯属昼）
+  // ⚠️ 2026-11-02 二次修正：上一版改成 hb>=4，把**卯时**划给了夜贵，方向反了。
+  //    全书实证（太乙本 195 课）：卯时课共 15 课，按昼贵算 15/15 与原文天将盘吻合；
+  //    酉时课 15 课，按夜贵算 14/15 吻合。故昼 = 卯..申，夜 = 酉..寅。
+  var isDay=(hb>=3&&hb<=8); // 卯辰巳午未申为昼；酉戌亥子丑寅为夜
+  // ⚠️ 2026-11-02 修正：`GR_D[日干]||1` 的 falsy 兜底把 0（子）吃成 1（丑）。
+  //    己日昼贵、乙日昼贵都是子(0)，一吃整条天将链全错。必须显式判 undefined。
+  var grBr=isDay?(GR_D[dsb.stem]===undefined?1:GR_D[dsb.stem])
+                :(GR_N[dsb.stem]===undefined?7:GR_N[dsb.stem]);
+  var grEarth=heavenRev[grBr];   // 贵人乘天盘 grBr，其所临之**地盘**位
+  // ⚠️ 2026-11-02 修正：顺逆看贵人所临**地盘**，不是看贵人支本身。
+  //    文献：「贵神加临之地，自亥至辰为阳顺行，自巳至戌为阴逆行；其阴阳顺逆以地盘方位为主，
+  //          至加临昼夜贵人之法，则以天盘为主」《大六壬排盘入门》
+  //          「贵临地盘亥子丑寅卯辰六位顺行十二神，贵临巳午未申酉戌六位逆行十二神。
+  //           曰贵在地盘者，是以天盘之贵而临地盘之六位，非贵在地盘也」《六壬存验》
+  //    实证：卷四 #70 己丑日辛未时寅将，原文「发用卯乘玄武、中传朱雀、末见白虎」——
+  //          己日昼贵子，天盘子临地盘巳 → 逆布 → 卯戌巳 得 玄武/朱雀/白虎，逐字相合。
+  var shun=(grEarth>=11||grEarth<=4);
   
   // 日支五行
   var dayBrElem=ELEM[dayBr];
 
-  // 天将
+  // 天将：乘于**天盘支**上。贵人乘天盘 grBr，顺行则天盘支 X 之将序为 X-grBr，逆行为 grBr-X。
+  // ⚠️ generals 的键是天盘支（三传/干上/支上/驿马都是天盘支口径，可直接查）
   var generals={};
+  for(var tj=0;tj<12;tj++){
+    generals[tj]={branch:tj,jiang:TIANJIANG[shun?mod(tj-grBr,12):mod(grBr-tj,12)]};
+  }
+  // 按**地盘位**查（盘面表格、本命/行年等地盘口径）：地盘 eb 上所乘天盘神为 heavenMap[eb]
+  var genByEarth={};
   for(var eb=0;eb<12;eb++){
-    var hb2=heavenMap[eb];
-    var diff=mod(hb2-grHeaven,12);
-    var gi=shun?mod(diff,12):mod(-diff,12);
-    generals[eb]={branch:eb,heaven:hb2,jiang:TIANJIANG[gi]};
+    var hv=heavenMap[eb];
+    genByEarth[eb]={branch:eb,heaven:hv,jiang:generals[hv].jiang};
   }
 
   // 德神、禄神
@@ -883,7 +934,7 @@ function calc(y,m,d,hb,opt){
   if(YUEDE_STEM[mb]===dsb.stem) ss.push({n:'月德',d:'主吉庆、化解，贵人相助'});
   
   // 驿马（申子辰马在寅，寅午戌马在申，巳酉丑马在亥，亥卯未马在巳）
-  var YIMA={0:2,4:2,8:2,2:8,6:8,10:8,9:11,1:11,5:11,11:5,3:5,7:5};
+  var YIMA=YIMA_MA;
   if(YIMA[dayBr]!==undefined){
     var ym=YIMA[dayBr];
     if(ym===chu||ym===zhang||ym===mo) ss.push({n:'驿马入传',d:'主动、出行、变动，马星发用'});
@@ -954,9 +1005,18 @@ function calc(y,m,d,hb,opt){
     else                          liuQinMap[lq]= same?'七杀':'正官';   // 克我者
   }
 
+  // 月将换将边界提醒（2026-11-15）：自动推定时，占日与所用月将的换将中气日相差 ≤3 天，
+  //   古今历法换将口径差异最容易在边界处出错（卷四实测自动推定吻合率仅 78%），提示手动核对。
+  //   差值取 min(|差|, 365-|差|) 以兼容 12 月占、1 月换将的跨年情形。
+  var yjEdge=false;
+  if(!manualYJ){
+    var dd=Math.abs(dayOfYear(y,m,d)-dayOfYear(y,yj.m,yj.d));
+    yjEdge=(Math.min(dd,365-dd)<=3);
+  }
   return{
+    ymd:{y:y,m:m,d:d},
     ysb:ysb,msb:msb,dsb:dsb,hsb:hsb,
-    yj:yj,yjManual:manualYJ,
+    yj:yj,yjManual:manualYJ,yjEdge:yjEdge,
     heavenMap:heavenMap,
     dayLodge:dayLodge,dayBr:dayBr,
     lessons:lessons,
@@ -967,7 +1027,7 @@ function calc(y,m,d,hb,opt){
     deBr:deBr,luBr:luBr,
     ss:ss,
     wx:wx,
-    grBr:grBr,grHeaven:grHeaven,shun:shun,
+    grBr:grBr,grEarth:grEarth,shun:shun,genByEarth:genByEarth,
     dayElem:ELEM_S[dsb.stem],dayBrElem:dayBrElem,
     csMap:csMap,csChangsheng:csChangsheng,
     yima:yima,taohua:taohua,
@@ -1085,6 +1145,109 @@ function keti(r){
   if(r.isFanYin) out.push({name:'反吟',note:'月将与占时相冲，主反复，去而复来'});
   return out;
 }
+
+// ═══ 课名库：九宗门 + 课经诸格（2026-11-02）═════════════════════════════════
+// 与 keti() 的分工（重要，别合并）：
+//   keti()    —— 进吉凶打分的「格局」，每一位在 KT_SCORE 里都有价，供 fortune() 用；
+//   ketiGe()  —— 课名 / 课体分类标签，**不进分值**。课名是分类不是刻度，
+//               给「元首」「铸印」各定一个吉凶分，等于拿分类冒充价值判断。
+// 判据来源：《六壬断案》太乙本 195 课原文直书课名。每一格在下面注释里附实证课号，
+//   由 cases/check_keti.js 回归（原文点名 → 本函数必须认得出）。
+// 不收的名目（宁少认一格，不可错认一格）：
+//   闭口 —— 断案 21 处全是「旬尾/旬末为闭口」的神煞义，非课体；
+//   三奇·六仪·三光·三阳·九丑·死奇 —— 叠神煞，各家口径不一；
+//   天网 —— 利-19 说「支干上神相合」、贞-45 说「午发用为鬼」，同一名词两套条件；
+//   顾祖 —— 亨-26 合「日上发传、末归支上」，亨-49／贞-45 三传同为午辰寅却不合，说不过拢；
+//   引从 —— 「初末夹定」夹的是何物，原文自身未定。
+var GE_SCOPE={木:11,火:2,金:5,水:8,土:8};  // 五行长生（六壬习用：甲乙同亥、丙丁同寅、戊己同申）
+var GE_XUN_SHOU=[0,10,8,6,4,2], GE_XUN_WEI=[9,7,5,3,1,11];
+function ketiGe(r){
+  var out=[],L=r.lessons||[];
+  if(L.length<4||r.chu===undefined) return out;
+  var c=r.chu,z=r.zhang,m=r.mo;
+  var dL=r.dayLodge,dB=r.dayBr;
+  var sGan=L[0].u,sZhi=L[2].u;              // 干上神 / 支上神
+  var eGan=r.dayElem||ELEM_S[r.dsb.stem],eZhi=ELEM[dB];
+  var has={},base=keti(r),i;
+  for(i=0;i<base.length;i++) has[base[i].name]=1;   // keti() 已有的不再重出（伏吟/反吟等）
+  function add(n,note){ if(has[n]) return; has[n]=1; out.push({name:n,note:note}); }
+
+  // ── 九宗门名：由 method 串取，绝不重算（重算就等于第二套实现，迟早两套打架）──
+  var zm=r.zongmen||'',mt=r.method||'';
+  if(zm==='贼克法'){
+    if(mt.indexOf('元首')>=0)      add('元首','四课一上克下，取克神发用。尊制卑，名正言顺，事出自然。');
+    else if(mt.indexOf('重审')>=0) add('重审','四课一下贼上，取贼神发用。卑犯尊，谋定后动，事多反复。');
+  }else if(zm==='比用法'){
+    add('知一','克贼并见，取与日干阴阳相比者发用，又名比用。事有两可，择其同类而从。');
+  }else if(zm.indexOf('涉害法')===0){
+    // ⚠️ zongmen 对涉害是 '涉害法·见机格'（pick.m 去了括号），不是裸的 '涉害法'。
+    //    2026-11-02 首轮回归就栽在这里：贞-19 原文「涉害深为用」认不出，只报了绝嗣。
+    if(mt.indexOf('见机')>=0)       add('涉害·见机','涉害深浅相等，取地盘四孟上神发用。事有多端而先机已露。');
+    else if(mt.indexOf('察微')>=0)  add('涉害·察微','孟上无可取，取四仲上神发用。事隐而微，宜细察其几。');
+    else                            add('涉害·复等','俱在孟位，取四课先见者发用。两雄相争，先者为得。');
+  }else if(zm==='遥克法'){
+    if(mt.indexOf('弹射')>=0) add('弹射','四课无克，取日干遥克课上神者发用。我力能及，事在掌握。');
+    else                      add('蒿矢','四课无克，取课上神遥克日干者发用。力弱如矢之遥，事远而缓。');
+  }else if(zm==='昴星法'){
+    if(mt.indexOf('虎视')>=0) add('昴星·虎视','无克无遥，刚日取地盘酉上神发用。事无端绪，主张目而待。');
+    else                      add('昴星·冬蛇掩目','无克无遥，柔日取天盘酉下神发用。事晦未明，宜蛰伏。');
+  }else if(zm==='别责法'){
+    add('别责','四课不全，取日干合神之上神发用。事有缺，须借力他方。');
+  }else if(zm==='八专法'){
+    add('八专','干支同位，四课止二课，阴阳不分。事专一，亦主偏执。');
+  }else if(zm==='反吟法'&&mt.indexOf('井栏')>=0){
+    add('井栏','反吟无克，以日支驿马发用，中传支上、末传干上。天地翻覆而事有定所。');
+  }
+
+  // ── 课经诸格 · 三传层 ──
+  // 铸印：三传巳戌卯（元-01、亨-06、亨-30、贞-42 四课实证）
+  if(c===5&&z===10&&m===3)
+    add('铸印','三传巳戌卯：巳为炉、戌为印、卯为模范。主成器受印，利文书、官爵、迁转。');
+  // 斫轮：三传戌巳子（亨-05、利-28 两课实证；邵氏原文自道「斫轮不成」）
+  if(c===10&&z===5&&m===0)
+    add('斫轮','三传戌巳子：金木相斫而轮未成器。主虚名、多斫削，宜改业。');
+  if(c!==z&&z!==m&&c!==m){
+    var SI=[0,3,6,9],MG=[2,8,5,11];
+    // 三交：三传皆四仲（贞-17、贞-18）
+    if(SI.indexOf(c)>=0&&SI.indexOf(z)>=0&&SI.indexOf(m)>=0)
+      add('三交','三传皆四仲（子午卯酉），交加互见。主交关、交易、牵连不断。');
+    // 玄胎：三传俱孟（定义无争议，195 课中无原文直书，按《课经》收）
+    if(MG.indexOf(c)>=0&&MG.indexOf(z)>=0&&MG.indexOf(m)>=0)
+      add('玄胎','三传俱孟（寅申巳亥），如胎之始萌。主新事初起、孕育未成。');
+  }
+
+  // ── 课经诸格 · 四课层 ──
+  // ⚠️ 干支同位（八专日）时 dL===dB，赘婿/乱首的位置判据失去意义，一律不判
+  if(dL!==dB){
+    // 赘婿：支加干而干克支（元-05、亨-18）
+    if(sGan===dB&&KE[eGan]===eZhi)
+      add('赘婿','支加干而干克支，如赘婿入宅。主寄人篱下、根基不固。');
+    // 上门乱首：支加干而支克干（元-20、亨-31、利-11）
+    if(sGan===dB&&KE[eZhi]===eGan)
+      add('上门乱首','支加干而支克干，卑凌尊、下犯上。主家门不宁、仆妾生事。');
+    // 乱首：干加支，自取其乱（亨-21、亨-27、贞-51）
+    if(sZhi===dL)
+      add('乱首','干加支，自取其乱。主自招是非、舍己就人。');
+  }
+  // 周遍：干上旬尾、支上旬首（贞-44）
+  var xun=Math.floor(r.dsb.idx/10);
+  if(sGan===GE_XUN_WEI[xun]&&sZhi===GE_XUN_SHOU[xun])
+    add('周遍','干上旬尾、支上旬首，一旬周遍。主事在一旬内周而复始、循环不绝。');
+  // 天狱：天罡（辰）加日干五行长生之位（元-20、元-22）
+  var cs=GE_SCOPE[eGan];
+  if(cs!==undefined&&r.heavenMap&&r.heavenMap[cs]===4)
+    add('天狱','天罡加日干长生之位，名天狱。主囚系、争讼、进退不由己。');
+  // 无禄 / 绝嗣：四课全为克。第一课下神按**日干五行**论（同 2026-11-02 元-07 那条口径）
+  var up=0,dn=0;
+  for(i=0;i<4;i++){
+    var lo=(i===0)?eGan:ELEM[L[i].l],hi=ELEM[L[i].u];
+    if(KE[hi]===lo) up++;      // 上克下
+    if(KE[lo]===hi) dn++;      // 下贼上
+  }
+  if(up===4) add('无禄','四课皆上克下，上不容下。主失位、无俸、事不由己。');
+  if(dn===4) add('绝嗣','四课皆下贼上，下强而上无援。主孤立、嗣续艰难。');
+  return out;
+}
 function ketiScore(r){
   var ks=keti(r),s=0;
   var de=r.dayElem||ELEM_S[r.dsb.stem];
@@ -1152,36 +1315,39 @@ function fortune(r,qtype,nm){
   // ② 月令旺衰：三传各支对月建。末传主结局，权重最高
   var sC=wxState(chu,jianBr),sZ=wxState(zhang,jianBr),sM=wxState(mo,jianBr);
   total+=add('wx',WX_SCORE[sC]*1.5+WX_SCORE[sZ]*0.8+WX_SCORE[sM]*1.2,'月令旺衰');
-  if(sM==='旺'||sM==='相') tags.push({c:'tg-j',t:'末传'+sM+'·结局有气'});
-  if(sM==='囚'||sM==='死') tags.push({c:'tg-x',t:'末传'+sM+'·结局无力'});
-  if(sC==='旺'||sC==='相') tags.push({c:'tg-j',t:'初传'+sC});
-  if(sC==='囚'||sC==='死') tags.push({c:'tg-x',t:'初传'+sC});
+  // 2026-11-03 中性化：只标旺衰事实，删去「结局有气／无力」这类价值词，
+  // 标签配色统一 tg-p（中性）。理由见 LS_HEAD 留档 —— 吉凶配色即吉凶暗示。
+  if(sM==='旺'||sM==='相') tags.push({c:'tg-p',t:'末传'+sM});
+  if(sM==='囚'||sM==='死') tags.push({c:'tg-p',t:'末传'+sM});
+  if(sC==='旺'||sC==='相') tags.push({c:'tg-p',t:'初传'+sC});
+  if(sC==='囚'||sC==='死') tags.push({c:'tg-p',t:'初传'+sC});
 
   // ③ 三传五行生克：初中、中末递进 + 初末走向（走向权重最大）
   var SC_STEP={'生':0.7,'被生':0.5,'克':-0.7,'被克':-0.5,'比':0.2,'无关':0};
   var SC_END={'生':1.4,'被生':0.9,'克':-0.9,'被克':-1.8,'比':0.3,'无关':0};
   var relCZ=wxRel(cE,zE),relZM=wxRel(zE,mE),relCM=wxRel(cE,mE);
   total+=add('shengke',SC_STEP[relCZ]+SC_STEP[relZM]+SC_END[relCM],'三传生克');
-  if(relCM==='生') tags.push({c:'tg-j',t:'初生末·有始有终'});
-  else if(relCM==='被克') tags.push({c:'tg-x',t:'末克初·首尾相克'});
-  else if(relCM==='克') tags.push({c:'tg-x',t:'初克末·先难后阻'});
-  else if(relCM==='被生') tags.push({c:'tg-j',t:'末生初·结局回护'});
+  // 同上：只标生克关系，删「有始有终／首尾相克」等断语
+  if(relCM==='生') tags.push({c:'tg-p',t:'初生末'});
+  else if(relCM==='被克') tags.push({c:'tg-p',t:'末克初'});
+  else if(relCM==='克') tags.push({c:'tg-p',t:'初克末'});
+  else if(relCM==='被生') tags.push({c:'tg-p',t:'末生初'});
 
   // ④ 日干与三传：初传主发端，末传主结局
   var GD_C={'生':1.2,'克':-1.3,'被生':-0.3,'被克':0.2,'比':0.1,'无关':0};
   var GD_M={'生':1.5,'克':-1.6,'被生':-0.4,'被克':0.3,'比':0.1,'无关':0};
   var rC=wxRel(cE,dayE),rM=wxRel(mE,dayE);
   total+=add('gan',GD_C[rC]+GD_M[rM],'日干关系');
-  if(rC==='生') tags.push({c:'tg-j',t:'初传生日干'});
-  if(rC==='克') tags.push({c:'tg-x',t:'初传克日干'});
-  if(rM==='生') tags.push({c:'tg-j',t:'末传生日干·收尾吉'});
-  if(rM==='克') tags.push({c:'tg-x',t:'末传克日干·收尾损'});
+  if(rC==='生') tags.push({c:'tg-p',t:'初传生日干'});
+  if(rC==='克') tags.push({c:'tg-p',t:'初传克日干'});
+  if(rM==='生') tags.push({c:'tg-p',t:'末传生日干'});
+  if(rM==='克') tags.push({c:'tg-p',t:'末传克日干'});
 
   // ⑤ 空亡：此前只作文案提示，未进分
   var kScore=0;
-  if(kv.indexOf(chu)>=0){kScore+=-1.6;tags.push({c:'tg-x',t:'初传空亡'});}
+  if(kv.indexOf(chu)>=0){kScore+=-1.6;tags.push({c:'tg-p',t:'初传空亡'});}
   if(kv.indexOf(zhang)>=0){kScore+=-0.6;}
-  if(kv.indexOf(mo)>=0){kScore+=-1.1;tags.push({c:'tg-x',t:'末传空亡'});}
+  if(kv.indexOf(mo)>=0){kScore+=-1.1;tags.push({c:'tg-p',t:'末传空亡'});}
   total+=add('kong',kScore,'空亡');
 
   // ⑥ 用神：月令旺衰 + 日干十二宫 + 空亡
@@ -1195,7 +1361,7 @@ function fortune(r,qtype,nm){
       yScore+=wsum/fs.length;
       var yk=false;
       for(var fj=0;fj<fs.length;fj++) if(kv.indexOf(fs[fj])>=0) yk=true;
-      if(yk){yScore+=-1.2;tags.push({c:'tg-x',t:'用神空亡'});}
+      if(yk){yScore+=-1.2;tags.push({c:'tg-p',t:'用神空亡'});}
       var CS_SC={'长生':1.0,'沐浴':-0.2,'冠带':0.4,'临官':1.0,'帝旺':1.2,'衰':-0.4,
                  '病':-0.9,'死':-1.3,'墓':-1.5,'绝':-1.7,'胎':0.2,'养':0.4};
       var csMap=r.csMap||{},csSum=0,csN=0;
@@ -1255,11 +1421,11 @@ function fortune(r,qtype,nm){
     lsScore=lsR.score;
     if(lsR.inC.length){
       var pi0=[r.chu,r.zhang,r.mo].indexOf(lsR.inC[0]);
-      tags.unshift({c:'tg-y',t:'类神入'+['初传','中传','末传'][pi0]});
+      tags.unshift({c:'tg-p',t:'类神入'+['初传','中传','末传'][pi0]});
     } else {
       tags.unshift({c:'tg-p',t:'类神不入三传'});
     }
-    if(lsR.kong) tags.unshift({c:'tg-x',t:'类神空亡'});
+    if(lsR.kong) tags.unshift({c:'tg-p',t:'类神空亡'});
   }
   total+=add('leishen',lsScore,'类神定性（主线）');
 
@@ -1308,12 +1474,17 @@ function fortune(r,qtype,nm){
   if(chuJ==='白虎'||moJ==='白虎') pat.push('虎临');
 
   var score=Math.round(total*100)/100;
+  // 2026-11-03：五档 level **仅作内部校准档位**保留 —— test.js 用它校验
+  // tools/calibrate.js 的阈值分布，删掉会失去校准护栏。但**不再对外解释为吉凶**：
+  // 页面不显示（fcSym 固定 ◈、fcRslt 用课象摘要），JSON 导出也不写这个档位。
+  // text 改为「象力提要」：只报各维权重，不含任何评断词。
   var level,sym,text;
-  if(score>=FT_TH.dj){level='大吉';sym='✦';text='卦象极吉，大有可为之象';}
-  else if(score>=FT_TH.j){level='吉';sym='◆';text='卦象偏吉，稳步进取可成';}
-  else if(score>=FT_TH.p){level='平';sym='◇';text='卦象平稳，机遇与阻碍并存';}
-  else if(score>=FT_TH.x){level='凶';sym='▲';text='卦象有阻，须防小人或变故';}
-  else{level='大凶';sym='✕';text='卦象多舛，宜静待时机勿妄动';}
+  if(score>=FT_TH.dj){level='大吉';sym='✦';}
+  else if(score>=FT_TH.j){level='吉';sym='◆';}
+  else if(score>=FT_TH.p){level='平';sym='◇';}
+  else if(score>=FT_TH.x){level='凶';sym='▲';}
+  else{level='大凶';sym='✕';}
+  text='象力权重合计 '+(score>0?'+':'')+score.toFixed(2);
 
   // 断语补出最主要的一条依据，避免五档套话完全一样
   var top=null;
@@ -1321,15 +1492,15 @@ function fortune(r,qtype,nm){
     if(parts[pi].v===0) continue;
     if(!top||Math.abs(parts[pi].v)>Math.abs(top.v)) top=parts[pi];
   }
-  if(top) text+='；'+top.label+(top.v>0?'有助':'不利')+'（'+(top.v>0?'+':'')+top.v.toFixed(1)+'）';
+  if(top) text+='；主要来自 '+top.label+'（'+(top.v>0?'+':'')+top.v.toFixed(1)+'）';
 
-  if(pat.length) tags.unshift({c:'tg-y',t:pat.join('+')});
+  if(pat.length) tags.unshift({c:'tg-p',t:pat.join('+')});
   if(kt.list.length){
     var kn=[];
     for(var kti=0;kti<kt.list.length;kti++) kn.push(kt.list[kti].name);
-    tags.unshift({c:'tg-y',t:kn.join('·')});
+    tags.unshift({c:'tg-p',t:kn.join('·')});
   }
-  if(qtype&&qtype.l) tags.push({c:'tg-j',t:qtype.l});
+  if(qtype&&qtype.l) tags.push({c:'tg-p',t:qtype.l});
   if(tags.length>7) tags=tags.slice(0,7);
 
   return{score:score,level:level,sym:sym,text:text,tags:tags,parts:parts,jianBr:jianBr,
@@ -1364,10 +1535,10 @@ function getYongshen(r,qtype){
     info={label:'财气（求财）',key:'cai',desc:'以日禄青龙为用神，若禄或青龙入传则财旺；见玄武天空则财难聚。',focus:[luBr,yima]};
   }
   else if(qtype&&qtype.key==='hun'){
-    info={label:'姻缘（感情）',key:'hun',desc:'以干上神与六合为用神，看感情走向；青龙天后主吉利，玄武白虎主波折。',focus:[ganShang,zhiShang]};
+    info={label:'姻缘（感情）',key:'hun',desc:'以干上神与六合为用神，看感情走向；古谓青龙天后主和合喜庆，玄武白虎主波折。',focus:[ganShang,zhiShang]};
   }
   else if(qtype&&qtype.key==='guan'){
-    info={label:'官禄（事业）',key:'guan',desc:'以官鬼与青龙为用神，正官入传则事业顺遂；见劫财则竞争压力大。',focus:[r.dayLodge,luBr]};
+    info={label:'官禄（事业）',key:'guan',desc:'以官鬼与青龙为用神，古法以正官入传为顺、见劫财为争。',focus:[r.dayLodge,luBr]};
   }
   else if(qtype&&qtype.key==='chu'){
     info={label:'行旅（出行）',key:'chu',desc:'以日马为用神，驿马发用则动；螣蛇有惊，白虎有险，青龙顺畅。',focus:[yima]};
@@ -1435,7 +1606,11 @@ function leishenBr(r,qtype){
   if(!qtype||!qtype.key||!LEISHEN[qtype.key]) return none;
   var dayE=r.dayElem||ELEM_S[r.dsb.stem],L=LEISHEN[qtype.key],out=[],i;
   function push(b){ if(typeof b==='number'&&b>=0&&out.indexOf(b)<0) out.push(b); }
-  if(L.liu){ var bs=WX_BR[liuWx(dayE,L.liu)]||[]; for(i=0;i<bs.length;i++) push(bs[i]); }
+  // 感情类双取：《指南》婚姻章「男占妻取财、女占夫取鬼」是两套类神。
+  // 占者性别未选时按男占处理（liu 默认即 liuM），与旧行为一致，不静默改断。
+  var liuSel=L.liu;
+  if(L.liuF){ liuSel=(r.gender==='f')?L.liuF:(L.liuM||L.liu); }
+  if(liuSel){ var bs=WX_BR[liuWx(dayE,liuSel)]||[]; for(i=0;i<bs.length;i++) push(bs[i]); }
   var zhu=LS_ZHU[qtype.key]||'';
   if(zhu){ var jb=jiangBr(r,zhu); for(i=0;i<jb.length;i++) push(jb[i]); }
   var sh=LS_SHA[qtype.key]||[],shaBr=[];
@@ -1444,7 +1619,7 @@ function leishenBr(r,qtype){
            sh[i]==='de'?r.deBr:sh[i]==='lodge'?r.dayLodge:-1);
     if(typeof b==='number'&&b>=0){ shaBr.push(b); push(b); }
   }
-  return {brs:out,zhu:zhu,sha:shaBr,liu:L.liu,wx:(L.liu?liuWx(dayE,L.liu):'')};
+  return {brs:out,zhu:zhu,sha:shaBr,liu:liuSel,wx:(liuSel?liuWx(dayE,liuSel):'')};
 }
 // 类神定性分。nm 可空（校准样本无年命 → 年命维不含，FT_TH 反映「无年命」分布）
 function leishenScore(r,qtype,nm){
@@ -1504,14 +1679,37 @@ function leishenScore(r,qtype,nm){
 //   ⚠️ 这是一次**站队**，不是唯一答案；若换流派，此处应整体替换而非微调。
 var HE6=[1,0,11,10,9,8,7,6,5,4,3,2];       // 六合：子丑·寅亥·卯戌·辰酉·巳申·午未
 var LQ_NAME={'印':'印绶','比':'比肩','食':'食伤','财':'妻财','官':'官鬼'};
-// 各事类的成败判语 [可, 难]：古籍断的是「得不得／成不成」，不是「吉不吉」
-var LS_ACT={
-  cai:['求财可得','求财难得'],   guan:['官禄可期','官禄难期'],
-  hun:['姻缘可成','姻缘难成'],   tao:['缘动将至','缘动难期'],
-  bing:['病势可愈','病势缠绵'],  chu:['出行可行','出行宜止'],
-  song:['词讼可胜','词讼不利'],  xue:['学业可望','学业难成'],
-  shi:['失物可觅','失物难觅'],   gui:['贵人可遇','贵人难遇'],
-  other:['此事可成','此事难成']
+// 各事类的称法（用于课象摘要的抬头）
+// ⚠️ 2026-11-03 起，此处**不再是「成／难」判语**。删除理由须留档，免得日后被当失误改回去：
+//   用 105 课人工标注（cases/exam_marks.json）检验旧判词，命中 30/71 = 42.3%，
+//   95%CI 30.8%~53.7%（含 50%），对 50% 检验 z=-1.31 不显著 —— 与抛硬币无差别；
+//   14 条判据逐条 z 检验，全部 |z|<1.3，连「类神旺相」都只是噪声（z=-0.40）。
+//   即：判据与断验结论之间**没有可测的相关性**。
+//   功效分析（cases/power_analysis.js）另证：现有样本量下，任何规则都证明不了自己不是运气
+//   （事业类有效 40 课，对半切后测试集 20 课需命中 79.3% 才算显著，基线 42.5%）。
+//   → 结论：断法层停止输出成败判断，只呈现盘上可复核的课象，判断权交还给人。
+var LS_HEAD={
+  cai:'所占·求财',   guan:'所占·官禄',
+  hun:'所占·婚姻',   tao:'所占·缘分',
+  bing:'所占·疾病',  chu:'所占·出行',
+  song:'所占·词讼',  xue:'所占·学业',
+  shi:'所占·失物',   gui:'所占·求贵',
+  other:'所占·未定事类'
+};
+// ── 判据出典（2026-11-02 线 B 落地：判词每一句后面挂出处）─────────────
+// 纪律：**有原句的挂原句，没原句的直说没有**。绝不给「本页自定的分值」编一个古文出处。
+//   卷三会纂是断法口诀的原始出处，故通用项直接引卷三；《玉成歌》《说约》等为旁证。
+//   标〔自定〕的三项是全页仅有的「无文献支撑」处，显示给用户看，不藏。
+var SRC={
+  kong :'〔卷三·疾病章「须防虎鬼驾马恶，死墓绝空最为凶」；求财章「财逢空墓最为难」〕',
+  dsj  :'〔卷三·疾病章「死墓绝空最为凶」—— 原书四项并列，非独重空亡〕',
+  notIn:'〔卷三·求财章「闭口昴星皆不成，网罗任信空费力」；出行章「逼迫令人难进退」〕',
+  wx   :'〔《玉成歌》「休囚传用总无成」；卷三·疾病章「全然脱败身衰羸」〕',
+  rel  :'〔通说，非原句：卷三无「类神克日为恶神」之文，此为后世断法通名〕',
+  jiang:'〔通说，非原句：卷三只论个别天将克日之应（如「朱勾克日莫兴词」「朱雀值鬼防黜落」），'+
+          '未立通用天将吉凶表；本页天将分值亦为自定〕',
+  pos  :'〔自定：入初 1.0／入中 0.6／入末 0.8，卷三无「入初传胜于入末传」之说〕',
+  band :'〔自定：三态带宽 ±1.2〕'
 };
 // 把 wxRel 的关系名译成人话：rel 以「类神」为主语（a=ELEM[类神支], b=日干五行）
 function relPhrase(rel){
@@ -1523,12 +1721,35 @@ function relPhrase(rel){
   return '与日干无涉';
 }
 
-// ── 判词：类神得失 + 课体 + 三传走向 → 定性判语 ─────────────────────
+/* ── 课象摘要：把盘上可复核的事实压成一行，取代旧的「可／难」判语 ──────────
+   纪律：**只出现事实项，不出现价值词**。
+   「午（火·官鬼）／入初传／旺于月令／生日干／青龙加临／落旬空」每一项都能在盘上自己核对；
+   而「可期／难期／宜止／可胜」是把事实翻成吉凶的一步 —— 那一步已被 105 课检验否掉
+   （命中 42.3%，与抛硬币无显著差别），不再由本页代劳。
+   rel 只取纯关系，剥掉「古谓恶神／爱神」这类价值注（那是断法层的措辞，不是事实）。 */
+function kexiangSummary(out,b0,lq0,pos,inC,j0,wx0,rel0,kong0,cs0){
+  var RP={'生':'生日干','克':'克日干','被生':'日干生之',
+          '被克':'日干克之','比':'与日干比和','无关':'与日干无涉'};
+  var kx=[BRAN[b0]+'（'+ELEM[b0]+'·'+LQ_NAME[lq0]+'）'];
+  kx.push(inC?('入'+['初传','中传','末传'][pos]):'不入三传');
+  kx.push(wx0+'于月令');
+  if(RP[rel0]) kx.push(RP[rel0]);
+  if(j0)    kx.push(j0+'加临');
+  if(kong0) kx.push('落旬空');
+  if(cs0==='墓') kx.push('临墓（日干十二宫）');
+  return (out.head||'')+'　'+kx.join('·');
+}
+
+// ── 判词：类神得失 + 课体 + 三传走向 → 课象陈述 + 判据明细 ──────────────
+// ⚠️ 2026-11-03 更名说明：此函数原名即 panding（判定），现**不再产出判定结论**，
+//    只产出课象陈述（lines／items）与课象摘要（verdict）。
+//    函数名保留 panding 以免动到 test.js／smoke.js／导出与播报的调用点 ——
+//    但读代码时请按「课象层」理解，不要指望它回答「成不成」。
 function panding(r,qtype,nm){
   qtype=normQ(qtype);
   var key=(qtype&&qtype.key)||'other';
-  var act=LS_ACT[key]||LS_ACT.other;
-  var out={key:key,q:(qtype&&qtype.l)||'',act:act,ok:null,verdict:'',
+  var head=LS_HEAD[key]||LS_HEAD.other;
+  var out={key:key,q:(qtype&&qtype.l)||'',head:head,ok:null,verdict:'',
            lines:[],items:[],note:'',leishen:null};
   var ls=leishenScore(r,qtype,nm);
   out.leishen=ls;
@@ -1558,9 +1779,27 @@ function panding(r,qtype,nm){
   // 「不入三传」不在此列：古籍只说「事无发动之机、宜待」，是迟滞不是死局，故降为软砝码。
   // 「值死」只在入传时才算硬否决：《玉成歌》「休囚传用总无成」说的是传用（发用），
   // 类神根本不入传时，其休囚的影响也随之减弱。
+  // ── 「死墓绝空」：四项里只收了「空」「墓」，另两项登记不收（2026-11-02）──
+  // 卷三疾病章原文是四项并列：「须防虎鬼驾马恶，死墓绝空最为凶」。此前我们只有空亡，属单腿站。
+  // 但**四项不是都能机械判**，逐项验过才收：
+  //   空 ✅ 旬空，判据无歧义（r.kvmWang）
+  //   墓 ✅ 取日干十二长生之墓位（r.csMap）。验算：甲日财爻为土（辰戌丑未），未正是甲之墓 →
+  //        「财临未」＝「财入墓」，与求财章「财逢空墓最为难」指同一件事。
+  //   死 ❌ 不收。日干十二宫之「死」与月令之「死」语义重叠，且对子孙类神必然误伤
+  //        （火为日干所生，午为甲之死地，甲日问子息则必判死地）。只保留原有的月令义（下一行）。
+  //   绝 ✗ 不收。两种定义都不可用：
+  //        ① 用日干十二宫 → 官鬼必然中招（甲日官鬼为金，申酉两支，申正是甲之绝），
+  //           等于「凡甲日占事业必绝」，这是干支配置的必然，不是古法的「类神气尽」；
+  //        ② 用类神自身五行之绝 → 类神支本就属该类神五行（财为木则只在寅卯），
+  //           木绝在申，永不可达，写成规则就是恒假（全域 0 命中）。
+  //        两种都不成立，故登记不收，宁缺勿滥。
+  // 全域影响必须量化：cases/audit_panding.js 给出 仅空 / 空+墓绝 / 全严 三档对照，
+  //   见 STATUS 进展（十一）—— 数字是这次决定收哪几项的依据，不是先定严宽再找理由。
   var hard=[],soft=[],net=0;
-  if(kong0)                          hard.push('类神落旬空');
-  if(ls.inC.length&&wx0==='死')      hard.push('类神入传而值死于月令');
+  var cs0=(r.csMap&&r.csMap[b0])||'';
+  if(kong0)                     hard.push('类神落旬空');
+  if(cs0==='墓')                hard.push('类神临墓（日干十二宫·'+BRAN[b0]+'为'+STEM[r.dsb.stem]+'之墓，古谓入库）');
+  if(ls.inC.length&&wx0==='死') hard.push('类神入传而值死于月令');
   // 软砝码：古籍的「综合权衡」本就是权衡，此处砝码数值是我们定的（原理对照.md 已声明），
   // 但它只决定三态归属，不产出也不会显示为分数 —— 与旧的「八维加权求和出百分制」不是一回事。
   var LW={'旺':1.0,'相':0.8,'休':-0.3,'囚':-0.6,'死':-1.0};
@@ -1587,42 +1826,61 @@ function panding(r,qtype,nm){
   else if(net>=1.2)          out.ok=true;
   else if(net<=-1.2)         out.ok=false;
   else                       out.ok=null;
-  out.verdict = out.ok===true?act[0] : out.ok===false?act[1] : '难以遽断';
+  // ⚠️ verdict 自 2026-11-03 起不再是「可／难」判语，改为**课象摘要**：
+  // 只陈述盘上可复核的事实（类神何支、入传与否、旺衰、与日干生克、所乘天将、空墓），
+  // 不含「可／难／宜／忌／吉／凶」等价值词。
+  // out.ok 仍在内部计算（供 yingqi 的前置判断与 test.js 的自洽性检查），
+  // 但**不再对外展示**，也不再驱动颜色与符号 —— 理由见 LS_HEAD 处的留档。
+  out.verdict=kexiangSummary(out,b0,lq0,pos,ls.inC.length,j0,wx0,rel0,kong0,cs0);
 
   // ① 主线：类神本体
+  var L0=LEISHEN[key]||{};
   var s1=BRAN[b0]+'（'+ELEM[b0]+'·'+LQ_NAME[lq0]+'）为「'+((qtype&&qtype.l)||'本案')+'」之类神，'+
         (ls.inC.length?('入'+['初传','中传','末传'][pos]):'不入三传')+
-        (j0?'，'+j0+'加临':'')+'，'+wx0+'于月令，'+relPhrase(rel0)+'。';
+        (j0?'，'+j0+'加临':'')+'，'+wx0+'于月令，'+relPhrase(rel0)+'。'+
+        (L0.src?'〔'+L0.src+'〕':'');
   out.lines.push(s1);
   out.items.push({k:'类神',v:BRAN[b0]+'（'+ELEM[b0]+'·'+LQ_NAME[lq0]+'）',
                   note:(ls.inC.length?['入初传','入中传','入末传'][pos]:'不入三传')+
                        (j0?'·'+j0:'')+'·'+wx0+'·'+relPhrase(rel0)});
+  // 「死墓绝空」四项：本页只取其中可机械判的两项（空、墓），死与绝登记不收（理由见 hard 段注释）
+  var sx=[];
+  if(kong0)      sx.push('空');
+  if(cs0==='墓') sx.push('墓');
+  out.items.push({k:'死墓绝空',v:sx.length?sx.join('·'):'不犯',
+                  note:'四项中本页可机械判者两项：'+(sx.length?('犯 '+sx.join('、')):'皆不犯')+
+                       '。「死」每月令一义、「绝」无干净判据，两项登记不收'+SRC.dsj});
   // ② 得失（否决项照直说，不美化）
   var reasons=[];
+  if(cs0==='墓') reasons.push('类神'+BRAN[b0]+'入'+STEM[r.dsb.stem]+'之墓（日干十二宫），'+
+    '事入墓则难出、财入墓则难求，此为「死墓绝空」四项中之墓 '+SRC.dsj);
   if(kong0) reasons.push('类神'+BRAN[b0]+'落旬空，古谓「事虚」「不足」，多以不实论；'+
-    '⚠ 但因历来也有「出空填实」一说，故本页不作保证，只作前提昭示');
+    '（按：历来亦有「出空填实」一说，两派并存，本页不判其应验）'+SRC.kong);
   else if(ls.kong&&ls.brs.length>1) reasons.push('另有候选类神落空（本次取用之'+BRAN[b0]+'未空），'+
     '其力稍减 —— 多支并存时，取未空者为断');
-  if(!ls.inC.length) reasons.push('三传不见类神，事无主线 —— 无发动之由，宜待勿动');
-  if(wx0==='死') reasons.push('类神值死于月令，'+(ls.inC.length?'且已入传，《玉成歌》所谓「休囚传用总无成」，纵有其象，力亦不足':'然未入传，其无力之影响亦随之减弱'));
-  else if(wx0==='囚'||wx0==='休') reasons.push('类神休囚，力弱而缓 —— 纵成亦迟，须待旺相之时');
+  // 2026-11-03 中性化：这些原本是本页自己的评断（「此非美占」「宜待勿动」「正格之得」）。
+  // 一律改为「事实 + 古谓」，把评断还给读者。术语（恶神／吉将）保留但明标为术语。
+  if(!ls.inC.length) reasons.push('三传不见类神，事无主线 —— 古谓无发动之由 '+SRC.notIn);
+  if(wx0==='死') reasons.push('类神值死于月令，'+(ls.inC.length?'且已入传，《玉成歌》所谓「休囚传用总无成」，古谓纵有其象而力不足':'然未入传，古谓其无力之影响亦随之减弱')+' '+SRC.wx);
+  else if(wx0==='囚'||wx0==='休') reasons.push('类神休囚，力弱而缓 —— 古谓纵成亦迟，当待旺相 '+SRC.wx);
   if((JIANGS_SCORE[j0]||0)<0){
     var tjd=((typeof TJ_DESC==='object'&&TJ_DESC&&TJ_DESC[j0])||'凶将临身')
               .replace(/。/g,'；').replace(/；$/,'');
-    reasons.push(j0+'压类神 —— '+tjd+'，此为阻滞之象');
+    reasons.push(j0+'压类神 —— '+tjd+'，古谓阻滞之象 '+SRC.jiang);
   }
-  if(rel0==='克') reasons.push('类神克日干，古谓恶神 —— 此非美占，纵有别象相扶，亦当存戒心');
+  if(rel0==='克') reasons.push('类神克日干，古谓「恶神」（术语，非本页评断）—— 古法于此存戒心 '+SRC.rel);
   if((JIANGS_SCORE[j0]||0)>0&&ls.inC.length&&(wx0==='旺'||wx0==='相'))
-    reasons.push('吉将乘旺、类神入传，此为正格之得');
+    reasons.push('吉将乘旺、类神入传 —— 古谓正格（术语，非本页评断） '+SRC.jiang);
   for(var ri=0;ri<reasons.length;ri++) out.lines.push(reasons[ri]+'。');
 
   // ③ 三传走向：古籍最看重的「过程」，不是只看一头一尾
   var rc=wxRel(ELEM[r.chu],dayE),rm=wxRel(ELEM[r.mo],dayE);
   var s2='';
-  if(rc==='克'&&(rm==='生'||rm==='比'))      s2='初传'+BRAN[r.chu]+'克日干而末传'+BRAN[r.mo]+'生日干 —— 先难后易，熬过发端自见转机';
-  else if((rc==='生'||rc==='比')&&rm==='克') s2='初传'+BRAN[r.chu]+'生日干而末传'+BRAN[r.mo]+'克日干 —— 先易后难，开局顺遂而收尾须防反噬';
-  else if(rc==='克'&&rm==='克')             s2='初末皆克日干，首尾受制，不宜强求';
-  else if(rc==='生'&&rm==='生')             s2='初末皆生日干，首尾有助，其事顺遂';
+  // 走向只报生克事实，「先难后易／须防反噬／不宜强求／其事顺遂」属断语，已删（2026-11-03）
+  if(rc==='克'&&(rm==='生'||rm==='比'))      s2='初传'+BRAN[r.chu]+'克日干而末传'+BRAN[r.mo]+'生日干 —— 古谓先难后易';
+  else if((rc==='生'||rc==='比')&&rm==='克') s2='初传'+BRAN[r.chu]+'生日干而末传'+BRAN[r.mo]+'克日干 —— 古谓先易后难';
+  else if(rc==='克'&&rm==='克')             s2='初末皆克日干，古谓首尾受制';
+  else if(rc==='生'&&rm==='生')             s2='初末皆生日干，古谓首尾相生';
   else                                      s2='三传'+BRAN[r.chu]+'→'+BRAN[r.zhang]+'→'+BRAN[r.mo]+'，初'+chuanRel(rc)+'，末'+chuanRel(rm)+'，走向平平，未见显要转折';
   out.lines.push(s2+'。');
   out.items.push({k:'三传',v:BRAN[r.chu]+'→'+BRAN[r.zhang]+'→'+BRAN[r.mo],
@@ -1645,13 +1903,16 @@ function panding(r,qtype,nm){
     out.items.push({k:'年命',v:'本命'+BRAN[nm.benBr]+'·行年'+BRAN[nm.xingBr],
                     note:(nm.benInChuan?'本命入传':'本命不入传')+'·'+(nm.xingInChuan?'行年入传':'行年未入传')});
   }
+  // 判据来源声明：哪些有原句、哪些是本页自定，一并摆出来，不藏
+  if(!out.note) out.note='判据来源：各行末尾〔〕内为出典（《大六壬指南》卷三会纂为主，'+
+    '《玉成歌》《六壬说约》为旁证）。全页仅三项无文献支撑，已标〔自定〕：'+SRC.pos+'、'+SRC.band+'、天将吉凶分值。';
   return out;
 }
 // a=类神五行，b=本命五行；返回以「类神」为主语的短语
 function wxRelNote(a,b){
   var rr=wxRel(a,b);
-  if(rr==='生')   return '类神生本命，于我有助';
-  if(rr==='克')   return '类神克本命，于我有损';
+  if(rr==='生')   return '类神生本命（本命得生）';
+  if(rr==='克')   return '类神克本命（本命受克）';
   if(rr==='被生') return '本命生类神，求得之而有所耗';
   if(rr==='被克') return '本命克类神，我所求者反受我制';
   if(rr==='比')   return '类神与本命比和';
@@ -1685,11 +1946,13 @@ function yingqi(r,qtype,nm,verdictOk){
   var fast=(wx0==='旺'||wx0==='相');
 
   // ⓪ 前提：类神空亡且判难 —— 不作「填实即应」的承诺
-  if(brKong(r,b0)&&verdictOk===false){
-    out.win='恐无定期';
+  // 2026-11-03：条件去掉「且判难」。「判难」这个结论已不再对外给出，
+  // 空亡本身即足以拒绝指日期（事体不实），不必再挂靠一个已被证伪的三态判定。
+  if(brKong(r,b0)){
+    out.win='无定期';
     out.speed='虚';
-    out.lines.push('类神空亡且已判难。历来「空亡多应虚空，少应填实」，'+
-      '本页不取「出空即应」一说 —— 事体本自不足，强指一日反成虚妄。');
+    out.lines.push('类神落旬空。历来「空亡多应虚空，少应填实」，'+
+      '本页不取「出空即应」一说 —— 空则事体不实，强指一日反成虚妄。');
     out.items.push({k:'应期',v:'无定期',note:'类神空亡，事体不实'});
     out.note='此为一派之说：另派主张「出旬填实即应」。本页择前者，故不给日期。';
     return out;
@@ -1732,9 +1995,21 @@ function yingqi(r,qtype,nm,verdictOk){
   out.speed=spd;
   out.lines.push(where+'；'+win+'。'+(src?'（'+src+'）':''));
   out.lines.push('旺相者应速、休囚者应迟 —— 本案类神'+wx0+'于月令，故作'+spd+'论。');
+  // ⑥ 专法优先：卷三每事类各有专法，应期亦然。婚姻章的应期口径与本页通用口径**不同** ——
+  //    古籍明说「末传合处验成期」，不是初传、也不是类神。既知有专法，就不该假装通用法则够用。
+  //    这里并列给出，不覆盖通用结论：两条路都摆出来，读者自择。
+  if(qtype&&qtype.key==='hun'){
+    var moH=HE6[r.mo];
+    out.lines.push('婚姻章另有专法：「末传合处验成期」—— 本课末传'+BRAN[r.mo]+
+      '，其合在'+BRAN[moH]+'，专占婚姻者可先取此日为成期。'+
+      '〔卷三·婚姻章〕此与本页「类神为主」的通用口径并存，非一概替换。');
+    out.items.push({k:'专法·末传合处',v:BRAN[moH],note:'婚姻章专法：末传'+BRAN[r.mo]+'之合'});
+  }
   out.items.push({k:'应期',v:win,note:src||'类神方位'});
   out.items.push({k:'迟速',v:spd,note:'类神'+wx0+'于月令'});
-  out.note='应期三种古法并存，本页取「类神为主、初传为辅」一派；末传只在吉凶已萌时方用。';
+  out.note='应期三种古法并存，本页取「类神为主、初传为辅」一派；末传只在吉凶已萌时方用。'+
+    '窗口分级（年／月／日躔／旬／日／时）与卷三行人章「更详年月节旬候，日辰正时鳞次透」相合 —— '+
+    '此项本轮已回查原文，不再是通说推定。';
   return out;
 }
 // ─── 年命（本命 · 行年） ───────────────────────────────────────────
@@ -1758,7 +2033,9 @@ function nianming(r,by,bm,bd,sex){
   if(xuSui<1) xuSui=1;
   // 行年：男一岁寅(2)顺行 → mod(xuSui+1,12)；女一岁申(8)逆行 → mod(9-xuSui,12)
   var xing=female?mod(9-xuSui,12):mod(xuSui+1,12);
-  var hm=r.heavenMap||{},g=r.generals||{},kv=r.kvmWang||[];
+  var hm=r.heavenMap||{},kv=r.kvmWang||[];
+  // 本命/行年是地盘位 → 天将须按地盘口径 genByEarth 查（generals 的键是天盘支）
+  var g=r.genByEarth||r.generals||{};
   var dayE=r.dayElem||ELEM_S[r.dsb.stem];
   var chuan=[r.chu,r.zhang,r.mo];
   return{
@@ -1787,26 +2064,46 @@ function nianming(r,by,bm,bd,sex){
 //    按「线 A 不动校准」的约定，本表先只用于展示层；统一计分口径留到「线 B」断法重构。
 //
 // ⚠️ 来源声明：以下为六壬类神取用的通说整理，未经逐条回查课经原文，各家或有差异。
+// ⚠️ 2026-11-02 依《指南》卷三会纂逐章校订（对账见 references/卷三对账.md）。
+//   本轮改了三处**取错类神**的地方，每处都附原句，不是照通说重排：
+//     bing  原取「日干为身宫」＝根本没取类神 → 改取官鬼（虎鬼），吉将改青龙（生龙）
+//     song  原六亲为空（无类神）           → 改取官鬼（课传官鬼断输赢）
+//     hun   原「不分性别统列妻财」          → 加 liuM/liuF 双取（男占财、女占官）
+//   其余各条只补出典，不动取法。
 var LEISHEN={
   cai :{liu:'妻财',jiang:['青龙','太常','六合'],taboo:['玄武','天空'],
+        src:'卷三·求财章「贵坐生合求财吉，财逢空墓最为难」「玄武防失内争畏，龙生值喜徐徐收」',
         note:'以妻财爻（日干所克者）为正类神；青龙、太常为财帛之神，六合主交易合伙。玄武主盗损暗昧，天空主虚浮落空。'},
   guan:{liu:'官鬼',jiang:['青龙','贵人','太常'],taboo:['天空','玄武','白虎'],
+        src:'卷三·仕宦章「欲问前程有与无，日辰虚实定荣枯」「鬼曜逢虎号催官，禄神临支当替役」',
         note:'以官鬼爻（克日干者）为正类神；青龙主升迁、贵人主提携、太常主印绶俸禄。天空主失职落空，玄武主暗昧，白虎主压力刑伤。'},
-  hun :{liu:'妻财',jiang:['六合','天后','青龙'],taboo:['玄武','天空','白虎'],
-        note:'古法男占妻取妻财、女占夫取官鬼；本页未分占者性别，暂统列妻财。六合为媒合、天后为妻位、青龙主喜庆。玄武主暧昧不明，天空主虚，白虎主凶暴。'},
-  bing:{liu:'',jiang:['太阴','天后'],taboo:['白虎','螣蛇'],
-        note:'以日干为身宫；白虎为病丧之神，螣蛇主惊疑怪异，太阴、天后主暗疾。占病重在看日干是否入墓绝、白虎所临何处。'},
-  song:{liu:'',jiang:['贵人','太阴'],taboo:['白虎','玄武','勾陈'],
-        note:'勾陈主争讼纠缠，朱雀主口舌词讼；贵人主官方得力，太阴主暗中化解。白虎主刑伤，玄武主暗证不明。'},
+  // hun 双取：男占妻以妻财，女占夫以官鬼 —— 原句「夫卜妻姻成不成，财居旬后总无情。
+  //   女推夫婿将何断，鬼坐天中同此祥」，这是两套类神，不是一套。取哪套由占者性别定。
+  hun :{liu:'妻财',liuM:'妻财',liuF:'官鬼',jiang:['六合','天后','青龙'],taboo:['玄武','天空','白虎'],
+        src:'卷三·婚姻章「夫卜妻姻成不成，财居旬后总无情；女推夫婿将何断，鬼坐天中同此祥」「末传合处验成期」',
+        note:'男占妻取妻财、女占夫取官鬼（两套类神，不可混用）。六合为媒合、天后为妻位、青龙主喜庆。玄武主暧昧不明，天空主虚，白虎主刚猛。'},
+  // bing 原写「以日干为身宫」，等于没取类神。古籍取的是虎鬼 —— 病源在白虎乘官鬼；
+  //   有无生机看青龙（龙乘生气），解厄看子孙爻。故吉将只能是青龙／贵人（贵医），不能是太阴天后（那是暗疾）。
+  bing:{liu:'官鬼',jiang:['青龙','贵人'],taboo:['天空','螣蛇'],
+        src:'卷三·疾病章「病症之源寻虎鬼，沉疴之际看生龙」「福德（子孙爻）加临名解厄，贵医年命病全安」',
+        note:'以白虎乘官鬼（虎鬼）为病源、青龙（龙乘生气）为生机；子孙爻解厄，贵人主良医。螣蛇主惊疑怪异、病势反复，天空主虚（病不实或误诊）。'},
+  song:{liu:'官鬼',jiang:['贵人','太阴'],taboo:['白虎','玄武','勾陈'],
+        src:'卷三·占讼章「占讼日辰分主客，课传官鬼断输赢」「子孙制鬼患有救，父母化官祸无伤」',
+        note:'古法以官鬼爻定输赢（日上有鬼则客受制，支上有鬼则主受制）；勾陈主争讼纠缠，朱雀主口舌词讼；贵人主官方得力，太阴主暗中化解。白虎主刑伤，玄武主暗证不明。'},
   shi :{liu:'',jiang:['六合'],taboo:['玄武','天空'],
-        note:'玄武为贼盗、主失物；六合主物可寻、有人归还；天空主散失难觅。另看支上神与玄武所临之方，以定物之所在。'},
+        src:'卷三·贼盗章「卜赃失得凭财断」「玄武来方看所伫，地支临处知贼去」',
+        note:'玄武为贼盗、主失物；六合主物可寻；天空主散失。另看支上神与玄武所临之方，以定物之所在。'},
   chu :{liu:'',jiang:['青龙','六合'],taboo:['白虎','螣蛇','玄武'],
-        note:'以日马（驿马）为正类神；青龙主路途顺畅，六合主同行得助。白虎主险阻，螣蛇主惊扰，玄武主途中失盗。'},
+        src:'卷三·出行章「出行先看天干踪」「更忌驿马居天中，劝君不必似萍踪」',
+        note:'以日马（驿马）为正类神，兼看天上日干所临之地；青龙主路途顺畅，六合主同行得助。白虎主险阻，螣蛇主惊扰，玄武主途中失盗。'},
   xue :{liu:'父母',jiang:['朱雀','青龙','贵人'],taboo:['天空','螣蛇'],
+        src:'卷三·选举「帘幕贵逢黄榜策，魁罡将遇青云客」「墓神覆日文理差，罗网缠身书旨晦」',
         note:'朱雀为文书之神，父母爻（生我者）为印绶功名；青龙主喜庆，贵人主提携。天空主落第落空，螣蛇主临场惊乱。'},
   tao :{liu:'',jiang:['六合','天后','太阴'],taboo:['天空','玄武'],
+        src:'卷三·婚姻章「四课无遥婚必舛」「狡童佚女奸淫许」（狡童初合末后、佚女初后末合）',
         note:'桃花（日支三合局之沐浴位）为正类神；六合主媒合，天后主姻缘，太阴主私情暗恋。天空主落空，玄武主暧昧不明。'},
   gui :{liu:'',jiang:['贵人','青龙','太阴'],taboo:['玄武','天空'],
+        src:'卷三·趋谒章「干谒之利三六合，彼我两仪欲相洽」「引从告谒往必晤，任信寻访必难谐」',
         note:'以天乙贵人为主类神；青龙主得力相助，太阴主暗中扶助。玄武主小人暗算，天空主虚言无实。'}
 };
 // 五行 → 地支（0子1丑2寅3卯4辰5巳6午7未8申9酉10戌11亥）
@@ -1924,951 +2221,63 @@ function genAdvice(r,qtype){
   var moShengZhang=SHENG[zhangE]===moE;   // 末传生中传
   
   var html='';
-  
-  // ── 财运类 ──
-  if(qtype.key==='cai'){
-    html+='<hr class="dv"><p><strong>【财运详解】</strong></p>';
-    html+='<p style="font-size:.8rem;color:var(--dim);line-height:1.7">财运占断首看青龙（财星）、太常（饮食宴请之财）、六合（合作生财）、贵人（贵人助力之财）。玄武主欺诈盗贼，天空主虚空徒劳，白虎主破财血光。</p>';
-    
-    // 初传详解
-    html+='<div style="margin:12px 0;padding:10px;background:rgba(200,152,42,.08);border-radius:6px;border-left:3px solid var(--gold2)">';
-    html+='<p style="font-weight:600;margin-bottom:8px">◆ 初传 '+BRAN[chu]+'（'+chuJ+'·'+chuE+'）—— 财运之始</p>';
-    html+='<div style="font-size:.85rem;line-height:1.8">';
-    if(chuJ==='青龙'){
-      html+='<p><span style="color:var(--green)">✓✓ 青龙临初传，财星发用</span></p>';
-      html+='<p>青龙为财星、吉神，主财富、喜庆。临初传发用，说明财运已动，有进财机会。青龙主动态之财，财来寻人，非人寻财。</p>';
-      if(chuE==='木') html+='<p>初传属木，木主生发。财源有生长之象，适合开拓新领域、新发展。宜东向求财。</p>';
-      else if(chuE==='火') html+='<p>初传属火，火主礼、主急。财来得快但易散，宜及时把握。宜南向求财。</p>';
-      else if(chuE==='土') html+='<p>初传属土，土主信、主稳。财运平稳，宜踏实经营、不动产。宜本地求财。</p>';
-      else if(chuE==='金') html+='<p>初传属金，金主义、主刚。财运需通过正当竞争或决断获得。宜西向求财。</p>';
-      else if(chuE==='水') html+='<p>初传属水，水主智、主动。财运流动性强，宜灵活应对、贸易往来。宜北向求财。</p>';
-    }
-    else if(chuJ==='太常'){
-      html+='<p><span style="color:var(--green)">✓ 太常临初传，饮食宴请之财</span></p>';
-      html+='<p>太常主饮食、宴请、馈赠。临初传，说明财运来自饭局应酬、人际交往，或通过馈赠、赠与获得。适合从事餐饮、服务行业。</p>';
-    }
-    else if(chuJ==='六合'){
-      html+='<p><span style="color:var(--green)">✓ 六合临初传，合作生财</span></p>';
-      html+='<p>六合主和合、合作、媒介。临初传，说明财运来自合作、合伙、中介。适合与人合伙做生意或通过中介渠道获利。</p>';
-    }
-    else if(chuJ==='贵人'){
-      html+='<p><span style="color:var(--green)">✓ 贵人临初传，贵人助力之财</span></p>';
-      html+='<p>贵人主贵人相助。临初传，说明有贵人提携、帮助，可能是领导、长辈或有地位之人带来财运。适合寻求贵人帮助。</p>';
-    }
-    else if(chuJ==='太阴'){
-      html+='<p><span style="color:var(--green)">✓ 太阴临初传，暗中生财</span></p>';
-      html+='<p>太阴主暗中、隐秘、女性。临初传，说明财运来自暗中、私下交易或女性贵人帮助。适合低调行事。</p>';
-    }
-    else if(chuJ==='玄武'){
-      html+='<p><span style="color:var(--red)">✗✗ 玄武临初传，欺诈盗贼之财</span></p>';
-      html+='<p>玄武主暗昧、欺诈、盗贼。临初传，说明财运有欺诈、被盗风险，或来自不正当渠道。求财需防被骗、防盗，不宜投机取巧。</p>';
-    }
-    else if(chuJ==='白虎'){
-      html+='<p><span style="color:var(--red)">✗✗ 白虎临初传，破财血光</span></p>';
-      html+='<p>白虎主血光、凶灾、冲突。临初传，说明求财之路多阻碍、竞争或有破财风险。需谨慎行事，防意外损失。</p>';
-    }
-    else if(chuJ==='天空'){
-      html+='<p><span style="color:var(--red)">✗✗ 天空临初传，虚空徒劳</span></p>';
-      html+='<p>天空主虚空、欺诈、不实。临初传，说明财运不真实、机会虚假，可能只是"镜花水月"或徒劳无功。不宜盲目投入。</p>';
-    }
-    else if(chuJ==='勾陈'){
-      html+='<p><span style="color:var(--red)">✗ 勾陈临初传，迟滞牵绊</span></p>';
-      html+='<p>勾陈主迟滞、牵绊、纠纷。临初传，说明财运进展缓慢、有阻力或有债务纠纷。宜耐心等待，不宜急躁。</p>';
-    }
-    else if(chuJ==='螣蛇'){
-      html+='<p><span style="color:var(--red)">✗ 螣蛇临初传，反复虚惊</span></p>';
-      html+='<p>螣蛇主虚惊、怪异、反复。临初传，说明财运反复不定、有惊吓或意外变故。需灵活应对，防情绪波动。</p>';
-    }
-    else{
-      html+='<p>'+chuJ+'临初传，财运平稳，无明显吉凶。</p>';
-    }
-    html+='</div></div>';
-    
-    // 中传详解
-    html+='<div style="margin:12px 0;padding:10px;background:rgba(200,152,42,.05);border-radius:6px;border-left:3px solid var(--dim)">';
-    html+='<p style="font-weight:600;margin-bottom:8px">◆ 中传 '+BRAN[zhang]+'（'+zhongJ+'·'+zhangE+'）—— 财运之中</p>';
-    html+='<div style="font-size:.85rem;line-height:1.8">';
-    html+='<p>中传主事之中途发展，代表财运的进展过程。</p>';
-    if(zhangKeMo) html+='<p style="color:var(--red)">⚠ 中传克末传，中途有阻，财路不畅。</p>';
-    if(moShengZhang) html+='<p style="color:var(--green)">✓ 末传生中传，后期助力显现。</p>';
-    if(zhongJ==='青龙'){
-      html+='<p><span style="color:var(--green)">✓ 青龙临中传</span>，财路亨通，中途有贵人助力或新财源。</p>';
-    }
-    else if(zhongJ==='六合'){
-      html+='<p><span style="color:var(--green)">✓ 六合临中传</span>，中途有合作机会，宜与人共事。</p>';
-    }
-    else if(zhongJ==='勾陈'||zhongJ==='白虎'){
-      html+='<p><span style="color:var(--red)">✗ '+zhongJ+'临中传</span>，中途有阻滞、纠纷或竞争，需耐心应对。</p>';
-    }
-    else{
-      html+='<p>'+zhongJ+'临中传，中途运势平稳。</p>';
-    }
-    html+='</div></div>';
-    
-    // 末传详解
-    html+='<div style="margin:12px 0;padding:10px;background:rgba(200,152,42,.08);border-radius:6px;border-left:3px solid var(--gold2)">';
-    html+='<p style="font-weight:600;margin-bottom:8px">◆ 末传 '+BRAN[mo]+'（'+moJ+'·'+moE+'）—— 财运之终</p>';
-    html+='<div style="font-size:.85rem;line-height:1.8">';
-    html+='<p>末传主事之结局，代表财运的最终走向。</p>';
-    if(moJ==='青龙'){
-      html+='<p><span style="color:var(--green)">✓✓ 青龙临末传，财星归库</span></p>';
-      html+='<p>青龙临末传，大吉之象。财运圆满，终可得财，财可归库。</p>';
-    }
-    else if(moJ==='贵人'||moJ==='太常'||moJ==='六合'){
-      html+='<p><span style="color:var(--green)">✓ '+moJ+'临末传</span>，结局有助，财可归库。</p>';
-    }
-    else if(moJ==='天空'){
-      html+='<p><span style="color:var(--red)">✗✗ 天空临末传，虚空落空</span></p>';
-      html+='<p>天空临末传，结局虚空，财运可能落空或得而复失。</p>';
-    }
-    else if(moJ==='玄武'){
-      html+='<p><span style="color:var(--red)">✗✗ 玄武临末传，暗中损失</span></p>';
-      html+='<p>玄武临末传，财来财去，难聚财，需防盗被骗。</p>';
-    }
-    else if(moJ==='白虎'){
-      html+='<p><span style="color:var(--red)">✗✗ 白虎临末传，结局有损</span></p>';
-      html+='<p>白虎临末传，财运不佳或有破财之虞。</p>';
-    }
-    else{
-      html+='<p>'+moJ+'临末传，结局平稳。</p>';
-    }
-    html+='</div></div>';
-    
-    // 综合判断
-    html+='<div style="margin:16px 0;padding:12px;background:rgba(74,138,74,.1);border-radius:6px;border:1px solid rgba(74,138,74,.3)">';
-    html+='<p style="font-weight:600;margin-bottom:10px;color:var(--green)">【综合财运建议】</p>';
-    html+='<div style="font-size:.85rem;line-height:1.9">';
-    if(chuJ==='青龙'&&moJ==='青龙'){
-      html+='<p>首尾皆见青龙，大吉之象！财运亨通，宜大胆进取，把握良机。</p>';
-    }
-    else if(chuJ==='青龙'||moJ==='青龙'){
-      html+='<p>青龙入传，财运有根，宜积极把握机会。</p>';
-    }
-    else if(chuJ==='白虎'||moJ==='白虎'||chuJ==='天空'||moJ==='天空'){
-      html+='<p>白虎或天空入传，财运有损或有虚，宜保守谨慎，不宜冒险投机。</p>';
-    }
-    else{
-      html+='<p>财运平平，需看具体时机和努力程度。</p>';
-    }
-    html+='<p style="margin-top:10px;color:var(--dim);font-size:.78rem">建议：求财需脚踏实地，占卦仅供参考，最终还需看个人努力和时机。</p>';
-    html+='</div></div>';
 
-    // ═══ 财运五大维度深化分析 ═══
-    html+='<div style="margin:14px 0;padding:14px;background:rgba(180,120,40,.06);border-radius:8px;border:1px solid rgba(180,120,40,.2)">';
-    html+='<p style="font-weight:600;margin-bottom:10px;color:var(--gold2)">【财运五维深度分析】</p>';
-    html+='<div style="font-size:.83rem;line-height:1.85">';
+  /* ── 三传象意：只列盘面事实 + 古书象意 ─────────────────────────────
+     2026-11-03 重写。原实现是「天将套话 → 直接下结论」：九个事类各写一套
+     初/中/末传的 if-else 断语（「青龙临末传，吉象。财运圆满，终可得财」），
+     共 120 余条。这批断语与顶部旧判词同源同理，已被 105 课人工标注检验否掉：
+     命中 42.3%（95%CI 30.8%~53.7%，含 50%），与抛硬币无显著差别。
+     功效分析（cases/power_analysis.js）另证：现有样本量下任何规则都证明不了自己。
+     → 故整体撤除，改为：
+       ① 逐传列事实（支、五行、天将、与日干生克）—— 可自行核对；
+       ② 逐传附天将象意（TJ_DESC），明确标注为**古书通说，非本页判断**；
+       ③ 保留各事类「取何类神」的说明 —— 那是方法，不是结论。
+     判断权交还读者。 */
+  var REL={'生':'生日干','克':'克日干','被生':'日干生之','被克':'日干克之','比':'与日干比和','无关':'与日干无涉'};
+  var SEQ=['初传','中传','末传'];
+  var BRS=[chu,zhang,mo], ELS=[chuE,zhangE,moE], JNS=[chuJ,zhongJ,moJ];
 
-    // 维度1：求财时机
-    html+='<p style="font-weight:600;margin-top:6px">① 求财时机：';
-    var csc=isKongWang(r.chu,r)?'空':'实',zsc=isKongWang(r.zhang,r)?'空':'实',msc=isKongWang(r.mo,r)?'空':'实';
-    html+='<span style="color:var(--dim);font-weight:400">初'+csc+'·中'+zsc+'·末'+msc+'</span></p>';
-    if(csc==='空'&&zsc==='实'){
-      html+='<p>初传空亡，主开始时机未到，须耐心等待；中传实，有实质进展，逢冲月（'+BRAN[(r.zhang+6)%12]+'月）方为进财之时。</p>';
-    } else if(csc==='空'&&msc==='空'){
-      html+='<p>三传两空，财运虚耗之象，不宜大额投入，防破财空忙。</p>';
-    } else if(csc==='实'&&msc==='空'){
-      html+='<p>首实尾空，财来而难聚，得财后需防盗、防骗，及时落袋为安。</p>';
-    } else if(csc==='实'&&zsc==='实'&&msc==='实'){
-      html+='<p>三传皆实，三步皆有实质，财运持续，宜稳中求进。</p>';
-    } else {
-      html+='<p>时机状态正常，财运随大运而行，宜把握时机。</p>';
-    }
-
-    // 维度2：五行财气流向
-    html+='<p style="font-weight:600;margin-top:8px">② 财气五行流向：</p>';
-    var stemElem=ELEM_S[r.dsb.stem];
-    var cElem=ELEM[r.chu],zElem=ELEM[r.zhang],mElem=ELEM[r.mo];
-    html+='<p>日干'+STEM[r.dsb.stem]+'（'+stemElem+'），三传：'+cElem+'→'+zElem+'→'+mElem+'</p>';
-    // 方向复核：SHENG[传]===日干 ⟺ 日干生传（耗泄）；SHENG[日干]===传 ⟺ 传生日干（大吉）。两者此前写反
-    var shengStem=(SHENG[stemElem]===cElem)?'生':'克',shengZ=(SHENG[stemElem]===zElem)?'生':'克',shengM=(SHENG[stemElem]===mElem)?'生':'克';
-    var sc=(SHENG[stemElem]===cElem?'生助日干，大吉':SHENG[cElem]===stemElem?'日干生传，耗泄':'克日干，损耗');
-    var sz=(SHENG[stemElem]===zElem?'生助日干，大吉':SHENG[zElem]===stemElem?'日干生传，耗泄':'克日干，损耗');
-    var sm=(SHENG[stemElem]===mElem?'生助日干，大吉':SHENG[mElem]===stemElem?'日干生传，耗泄':'克日干，损耗');
-    html+='<p style="font-size:.78rem">初传'+cElem+'<'+sc+'>；中传'+zElem+'<'+sz+'>；末传'+mElem+'<'+sm+'>。</p>';
-    var cnt=([sc,sz,sm].filter(function(v){return v.indexOf('大吉')>=0||v.indexOf('生助')>=0;})).length;
-    if(cnt>=2) html+='<p style="color:var(--green)">整体财气得势，财运旺盛，宜进取求财。</p>';
-    else if(cnt===1) html+='<p style="color:var(--dim)">财气一般，吉凶参半，宜守成稳健。</p>';
-    else html+='<p style="color:var(--red)">财气受制，求财费力，防耗损透支。</p>';
-
-    // 维度3：禄神状态
-    html+='<p style="font-weight:600;margin-top:8px">③ 禄神 '+BRAN[r.luBr]+'（俸禄）状态：</p>';
-    var luInTr=[r.chu,r.zhang,r.mo].indexOf(r.luBr)>=0;
-    var luInKw=isKongWang(r.luBr,r);
-    if(luInKw) html+='<p>禄神临空亡，主俸禄落空，有职无薪或收入不如预期之象。</p>';
-    else if(luInTr) html+='<p>禄神入传，俸禄有根，财禄可期，宜脚踏实地求稳定收入。</p>';
-    else html+='<p>禄神不在三传，俸禄之力稍弱，须靠自身能力额外生财。</p>';
-
-    // 维度4：驿马/桃花
-    html+='<p style="font-weight:600;margin-top:8px">④ 驿马 '+BRAN[r.yima]+' / 桃花 '+BRAN[r.taohua]+' 状况：</p>';
-    var ymInTr=[r.chu,r.zhang,r.mo].indexOf(r.yima)>=0;
-    var thInTr=[r.chu,r.zhang,r.mo].indexOf(r.taohua)>=0;
-    if(ymInTr) html+='<p style="color:var(--orange)">驿马入传：财动之象，宜主动出击、出差贸易、外向求财。</p>';
-    else html+='<p>驿马不在三传：财不宜大动，守成为上。</p>';
-    if(thInTr) html+='<p style="color:#e879f9">桃花入传：财运与感情/娱乐相关，可能靠人脉、酒席、异性缘获利，亦主"财色相随"。</p>';
-
-    // 维度5：特殊格局助断
-    html+='<p style="font-weight:600;margin-top:8px">⑤ 特殊格局助断：</p>';
-    if(r.chu===r.zhang&&r.zhang===r.mo){
-      html+='<p>三传归一：财运专一，同路发展；亦主财路固定，缺乏变化。</p>';
-    } else if(r.chu===r.mo){
-      html+='<p>首尾相同：财来去同路，须防循环往复，得财后易散去。</p>';
-    } else if(r.deBr===r.luBr){
-      html+='<p>德禄相聚：吉上吉，财运有德有禄，可得意外之喜。</p>';
-    } else if(chuJ==='青龙'&&zhongJ==='青龙'&&moJ==='青龙'){
-      html+='<p>三传皆青龙：大吉之极，财星三重，三传皆财，宜全力进取！</p>';
-    } else if(chuJ==='白虎'||chuJ==='玄武'||chuJ==='天空'){
-      html+='<p>初传见凶将，防破财之兆，详见上方初传详解。</p>';
-    } else {
-      html+='<p>无特殊格局，以三传天将五行综合论断即可。</p>';
-    }
-    html+='</div></div>';
-
-    // ═══ 化解建议 ═══
-    (function(){
-      var risks=[];
-      if(chuJ==='玄武') risks.push({j:'破财',s:'防被盗、被骗、避免投机理财，可将大额资金转为定存或购置固定资产保值。'});
-      if(chuJ==='白虎') risks.push({j:'耗损',s:'防意外支出、避免冒险投资，可提前做好预算、留有余钱应急。'});
-      if(chuJ==='天空') risks.push({j:'落空',s:'防虚假信息、不轻信高收益承诺，投资前务必核实项目真实性。'});
-      if(chuJ==='勾陈') risks.push({j:'阻滞',s:'防债务纠纷、合同纠纷，签合同前务必仔细审阅条款。'});
-      if(isKongWang(r.chu,r)) risks.push({j:'空忙',s:'时机未到，勿急于行动，可做准备工作，待逢冲之月再动。'});
-      if(luInKw) risks.push({j:'禄空',s:'收入可能打折，宜拓展副业或技能，避免单一收入来源。'});
-      if(risks.length===0) return'';
-      var h='<div style="margin:14px 0;padding:14px;background:rgba(200,80,48,.07);border-radius:8px;border:1px solid rgba(200,80,48,.2)">';
-      h+='<p style="font-weight:600;margin-bottom:8px;color:var(--red)">【财运化解与趋吉建议】</p>';
-      for(var ri=0;ri<risks.length;ri++){
-        h+='<p style="font-size:.82rem;margin-bottom:5px"><span style="color:var(--red)">▸ '+risks[ri].j+'风险：</span>'+risks[ri].s+'</p>';
-      }
-      h+='<p style="font-size:.78rem;color:var(--dim);margin-top:6px">化解核心原则：凶将临身则避其锋芒，吉将临身则乘势而上。空亡之支逢冲方验；凶将之支宜静不宜动。</p>';
-      h+='</div>';
-      return h;
-    })()+
-
-    // 投资方向建议
-    (function(){
-      var dirs=[];
-      if(chuJ==='青龙'||chuJ==='六合') dirs.push({d:'合作/合伙',n:'宜与可靠之人合伙，共担风险。'});
-      if(chuJ==='太常') dirs.push({d:'餐饮/销售',n:'饮食宴请之财，宜做销售、餐饮、服务行业。'});
-      if(chuJ==='太阴'||zhongJ==='太阴') dirs.push({d:'暗财/副业',n:'暗中获利之象，宜做副业、投资、兼职。'});
-      if(chuJ==='玄武') dirs.push({d:'规避风险',n:'防投机、防被骗，宜守不宜攻，远离高风险理财。'});
-      if([chu,zhang,mo].indexOf(r.yima)>=0) dirs.push({d:'主动出击',n:'驿马入传，宜出差、贸易、外向求财。'});
-      if([chu,zhang,mo].indexOf(r.taohua)>=0) dirs.push({d:'人脉变现',n:'桃花入传，宜借人脉、酒席、社交场合获利。'});
-      if(dirs.length===0) return'';
-      var h='<div style="margin:14px 0;padding:14px;background:rgba(74,138,74,.07);border-radius:8px;border:1px solid rgba(74,138,74,.2)">';
-      h+='<p style="font-weight:600;margin-bottom:8px;color:var(--green)">【求财方向与行动建议】</p>';
-      for(var di=0;di<dirs.length;di++){
-        h+='<p style="font-size:.82rem;margin-bottom:5px"><span style="color:var(--gold2)">▸ '+dirs[di].d+'：</span>'+dirs[di].n+'</p>';
-      }
-      h+='</div>';
-      return h;
-    })();
+  var sp=(typeof LEISHEN==='object'&&LEISHEN&&LEISHEN[qtype.key])||null;
+  html+='<hr class="dv">';
+  html+='<p><strong>◆ 三传与天将象意</strong></p>';
+  if(sp&&sp.note){
+    html+='<p style="font-size:.78rem;color:var(--dim);line-height:1.75;text-indent:0">'+
+      '<b>取类</b>（古法取用神的路数，不是结论）：'+sp.note+'</p>';
   }
-  
-  // ── 事业类 ──
-  else if(qtype.key==='guan'){
-    html+='<p><strong>【事业判断要点】</strong></p>';
-    html+='<p>事业首看青龙、贵人。青龙主喜庆升迁，贵人主贵人相助。白虎主竞争压力，勾陈主阻滞拖延。</p>';
-    
-    html+='<p><strong>◆ 初传 '+BRAN[chu]+'（'+chuJ+'·'+chuE+'）—— 事之始</strong></p>';
-    if(chuJ==='青龙'){
-      html+='<span style="color:var(--green)">青龙临初传，事业运势开启，有升迁、晋升或新机遇之兆，宜积极表现。</span>';
-    }
-    else if(chuJ==='贵人'){
-      html+='<span style="color:var(--green)">贵人临初传，有贵人相助，可能是领导、长辈或有地位之人提携，宜主动寻求帮助。</span>';
-    }
-    else if(chuJ==='太阴'){
-      html+='<span style="color:var(--green)">太阴临初传，有暗中助力或女性贵人，宜低调行事，静待时机。</span>';
-    }
-    else if(chuJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎临初传，竞争激烈或有冲突阻碍，需有心理准备，宜沉着应对。</span>';
-    }
-    else if(chuJ==='勾陈'){
-      html+='<span style="color:var(--red)">勾陈临初传，事业进展缓慢或有纠纷牵绊，需耐心等待，不宜急躁。</span>';
-    }
-    else if(chuJ==='天空'){
-      html+='<span style="color:var(--red)">天空临初传，机遇不实或有人口是心非，需辨别真伪，不宜轻信承诺。</span>';
-    }
-    else{
-      html+=chuJ+'临初传，事业运势平稳，按部就班即可。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>◆ 中传 '+BRAN[zhang]+'（'+zhongJ+'·'+zhangE+'）—— 事之中</strong></p>';
-    if(zhongJ==='六合'){
-      html+='<span style="color:var(--green)">六合临中传，中途有合作机会，宜与人共事或寻求团队支持。</span>';
-    }
-    else if(zhongJ==='勾陈'){
-      html+='<span style="color:var(--red)">勾陈临中传，中途有阻滞或纠纷，需耐心应对。</span>';
-    }
-    else if(zhongJ==='青龙'||zhongJ==='贵人'){
-      html+='<span style="color:var(--green)">'+zhongJ+'临中传，中途运势好转，有助力或新机遇。</span>';
-    }
-    else{
-      html+=zhongJ+'临中传，中途运势平稳。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>◆ 末传 '+BRAN[mo]+'（'+moJ+'·'+moE+'）—— 事之终</strong></p>';
-    if(moJ==='青龙'){
-      html+='<span style="color:var(--green)">青龙临末传，事业有成正果，升迁或成功在望。</span>';
-    }
-    else if(moJ==='贵人'){
-      html+='<span style="color:var(--green)">贵人临末传，最终得贵人相助，事业有成。</span>';
-    }
-    else if(moJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎临末传，结局有阻或有损，需谨慎收尾。</span>';
-    }
-    else if(moJ==='天空'){
-      html+='<span style="color:var(--red)">天空临末传，结局虚空，可能事与愿违。</span>';
-    }
-    else{
-      html+=moJ+'临末传，结局平稳。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>【综合事业建议】</strong></p>';
-    if(chuJ==='青龙'||chuJ==='贵人'||moJ==='青龙'||moJ==='贵人'){
-      html+='<span style="color:var(--green)">青龙或贵人入传，事业运势良好，宜积极进取，把握机遇。</span>';
-    }
-    else if(chuJ==='白虎'||moJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎入传，竞争压力较大，需沉着应对，不宜冒进。</span>';
-    }
-    else{
-      html+='事业运势平平，需看个人努力和时机。';
-    }
-    html+='</p>';
+  if(sp&&sp.src){
+    html+='<p style="font-size:.78rem;color:var(--dim);line-height:1.75;text-indent:0">'+
+      '<b>出典</b>（原句照录，供自读）：'+sp.src+'</p>';
   }
-  
-  // ── 感情类 ──
-  else if(qtype.key==='hun'||qtype.key==='tao'){
-    html+='<hr class="dv"><p><strong>【感情运势详解】</strong></p>';
-    html+='<p style="font-size:.8rem;color:var(--dim);line-height:1.7">感情占断首看六合（主和合姻缘）、天后（主阴柔庇护）、太阴（主暗合暗恋）。玄武主暗昧不明或第三者，白虎主冲突刑克，朱雀主口舌是非，天空主虚空不成。</p>';
-    
-    // 初传详解
-    html+='<div style="margin:12px 0;padding:10px;background:rgba(200,152,42,.08);border-radius:6px;border-left:3px solid var(--gold2)">';
-    html+='<p style="font-weight:600;margin-bottom:8px">◆ 初传 '+BRAN[chu]+'（'+chuJ+'·'+chuE+'）—— 感情之始</p>';
-    html+='<div style="font-size:.85rem;line-height:1.8">';
-    if(chuJ==='六合'){
-      html+='<p><span style="color:var(--green)">✓ 六合临初传，缘分已动</span></p>';
-      html+='<p>六合为和合之神，主姻缘、合作、媒介。临初传发用，说明缘分已开始启动，有媒人介绍或自然相遇之象。感情发展顺利，双方情投意合。</p>';
-      if(chuE==='木') html+='<p>初传属木，木主仁慈、生发，感情自然生长，有"树生连理"之象。</p>';
-      else if(chuE==='水') html+='<p>初传属水，水主智慧、流动，感情如水到渠成，顺其自然。</p>';
-      else if(chuE==='火') html+='<p>初传属火，火主礼、热情，感情来得热烈但需防"火速成火熄"。</p>';
-    }
-    else if(chuJ==='天后'){
-      html+='<p><span style="color:var(--green)">✓ 天后临初传，女性贵人庇护</span></p>';
-      html+='<p>天后为阴柔之神，主女性、婚姻、感情。临初传，说明有女性贵人帮助，或对方温柔体贴。适合女性主动或寻求女性长辈帮助。</p>';
-    }
-    else if(chuJ==='太阴'){
-      html+='<p><span style="color:var(--green)">✓ 太阴临初传，暗中相合</span></p>';
-      html+='<p>太阴主暗中之事、隐秘、女性。临初传，说明可能是暗恋、暗中交往，或有不公开的感情。发展顺利但不宜高调。</p>';
-    }
-    else if(chuJ==='青龙'){
-      html+='<p><span style="color:var(--green)">✓ 青龙临初传，喜庆之象</span></p>';
-      html+='<p>青龙为吉神，主喜庆、财富、姻缘。临初传，说明感情有喜讯，可能是婚嫁、订婚或其他好消息。适合主动推进。</p>';
-    }
-    else if(chuJ==='玄武'){
-      html+='<p><span style="color:var(--red)">✗ 玄武临初传，暗昧不明</span></p>';
-      html+='<p>玄武主暗昧、隐私、盗贼、欺骗。临初传，说明感情有隐情、不透明，可能存在第三者或对方不诚实。需仔细了解对方背景，防被骗。</p>';
-    }
-    else if(chuJ==='白虎'){
-      html+='<p><span style="color:var(--red)">✗ 白虎临初传，冲突刑克</span></p>';
-      html+='<p>白虎主血光、凶灾、冲突。临初传，说明感情有阻碍、冲突或刑克，可能是家庭反对、异地恋、或性格不合。需有心理准备，慎重对待。</p>';
-    }
-    else if(chuJ==='朱雀'){
-      html+='<p><span style="color:var(--red)">✗ 朱雀临初传，口舌是非</span></p>';
-      html+='<p>朱雀主口舌、是非、文书。临初传，说明感情中有言语争执、误解或有人搬弄是非。需加强沟通，避免争吵。</p>';
-    }
-    else if(chuJ==='天空'){
-      html+='<p><span style="color:var(--red)">✗ 天空临初传，虚空不成</span></p>';
-      html+='<p>天空主虚空、欺诈、不实。临初传，说明感情不真实、有欺骗或落空之象。可能对方并非真心，或只是"镜花水月"。</p>';
-    }
-    else if(chuJ==='勾陈'){
-      html+='<p><span style="color:var(--red)">✗ 勾陈临初传，阻滞牵绊</span></p>';
-      html+='<p>勾陈主迟滞、牵绊、纠纷。临初传，说明感情进展缓慢、有阻力或牵绊。可能是有旧情未了、或有其他人事纠纷。</p>';
-    }
-    else if(chuJ==='螣蛇'){
-      html+='<p><span style="color:var(--red)">✗ 螣蛇临初传，反复虚惊</span></p>';
-      html+='<p>螣蛇主虚惊、怪异、反复。临初传，说明感情反复不定、有惊吓或意外变故。需保持冷静，防情绪波动。</p>';
-    }
-    else{
-      html+='<p>'+chuJ+'临初传，感情运势平稳，无明显吉凶。</p>';
-    }
-    html+='</div></div>';
-    
-    // 中传详解
-    html+='<div style="margin:12px 0;padding:10px;background:rgba(200,152,42,.05);border-radius:6px;border-left:3px solid var(--dim)">';
-    html+='<p style="font-weight:600;margin-bottom:8px">◆ 中传 '+BRAN[zhang]+'（'+zhongJ+'·'+zhangE+'）—— 感情之中</p>';
-    html+='<div style="font-size:.85rem;line-height:1.8">';
-    html+='<p>中传主事之中途发展，代表感情的进展过程。</p>';
-    if(zhongJ==='六合'||zhongJ==='天后'||zhongJ==='太阴'){
-      html+='<p><span style="color:var(--green)">✓ '+zhongJ+'临中传</span>，感情中途发展顺利，有贵人助力或暗中相合。</p>';
-    }
-    else if(zhongJ==='白虎'){
-      html+='<p><span style="color:var(--red)">✗ 白虎临中传</span>，中途有冲突、危机或阻碍，需冷静应对。</p>';
-    }
-    else if(zhongJ==='朱雀'){
-      html+='<p><span style="color:var(--red)">✗ 朱雀临中传</span>，中途有口舌是非，需加强沟通，避免争执。</p>';
-    }
-    else if(zhongJ==='玄武'){
-      html+='<p><span style="color:var(--red)">✗ 玄武临中传</span>，中途有暗昧之事，可能有第三者或对方不诚实。</p>';
-    }
-    else if(zhongJ==='天空'){
-      html+='<p><span style="color:var(--red)">✗ 天空临中传</span>，中途有落空之象，需防事与愿违。</p>';
-    }
-    else{
-      html+='<p>'+zhongJ+'临中传，中途运势平稳，按部就班。</p>';
-    }
-    // 生克关系
-    if(zhangKeMo) html+='<p style="color:var(--red)">⚠ 中传克末传，中途有阻，结局可能受影响。</p>';
-    if(moShengZhang) html+='<p style="color:var(--green)">✓ 末传生中传，后期有助力，转机在即。</p>';
-    html+='</div></div>';
-    
-    // 末传详解
-    html+='<div style="margin:12px 0;padding:10px;background:rgba(200,152,42,.08);border-radius:6px;border-left:3px solid var(--gold2)">';
-    html+='<p style="font-weight:600;margin-bottom:8px">◆ 末传 '+BRAN[mo]+'（'+moJ+'·'+moE+'）—— 感情之终</p>';
-    html+='<div style="font-size:.85rem;line-height:1.8">';
-    html+='<p>末传主事之结局，代表感情的最终走向。</p>';
-    if(moJ==='六合'){
-      html+='<p><span style="color:var(--green)">✓✓ 六合临末传，姻缘可成</span></p>';
-      html+='<p>六合临末传，大吉之象。感情圆满，可成姻缘。适合推进婚姻大事。</p>';
-    }
-    else if(moJ==='天后'){
-      html+='<p><span style="color:var(--green)">✓✓ 天后临末传，感情和谐</span></p>';
-      html+='<p>天后临末传，结局有女性贵人庇护，感情和谐圆满。</p>';
-    }
-    else if(moJ==='青龙'){
-      html+='<p><span style="color:var(--green)">✓✓ 青龙临末传，喜庆圆满</span></p>';
-      html+='<p>青龙临末传，感情有喜庆结局，可能是婚嫁或其他好消息。</p>';
-    }
-    else if(moJ==='白虎'){
-      html+='<p><span style="color:var(--red)">✗✗ 白虎临末传，结局有损</span></p>';
-      html+='<p>白虎临末传，结局有冲突、刑克或分离之象。需慎重对待。</p>';
-    }
-    else if(moJ==='天空'){
-      html+='<p><span style="color:var(--red)">✗✗ 天空临末传，虚空不成</span></p>';
-      html+='<p>天空临末传，结局虚空，感情可能落空或不成。</p>';
-    }
-    else if(moJ==='玄武'){
-      html+='<p><span style="color:var(--red)">✗✗ 玄武临末传，暗昧不明</span></p>';
-      html+='<p>玄武临末传，结局有暗昧、不诚实，可能因第三者或欺骗而分离。</p>';
-    }
-    else{
-      html+='<p>'+moJ+'临末传，结局平稳，无大吉凶。</p>';
-    }
-    html+='</div></div>';
-    
-    // 综合判断
-    html+='<div style="margin:16px 0;padding:12px;background:rgba(74,138,74,.1);border-radius:6px;border:1px solid rgba(74,138,74,.3)">';
-    html+='<p style="font-weight:600;margin-bottom:10px;color:var(--green)">【综合感情建议】</p>';
-    html+='<div style="font-size:.85rem;line-height:1.9">';
-    if(chuJ==='六合'&&moJ==='六合'){
-      html+='<p>首尾皆见六合，大吉之象！缘分天定，姻缘可成，宜积极推进，把握良机。</p>';
-    }
-    else if(chuJ==='六合'||moJ==='六合'||chuJ==='天后'||moJ==='天后'){
-      html+='<p>六合或天后入传，感情运势良好，有和合之象。宜主动推进，把握时机。</p>';
-    }
-    else if(chuJ==='青龙'||moJ==='青龙'){
-      html+='<p>青龙入传，有喜庆之兆。感情有喜讯，适合推进婚姻大事。</p>';
-    }
-    else if(chuJ==='白虎'||moJ==='白虎'){
-      html+='<p>白虎入传，感情有冲突、阻碍。需有心理准备，慎重对待，避免冲动。</p>';
-    }
-    else if(chuJ==='玄武'||moJ==='玄武'){
-      html+='<p>玄武入传，感情有暗昧不明之处。需仔细了解对方背景，防被骗或第三者。</p>';
-    }
-    else if(chuJ==='天空'||moJ==='天空'){
-      html+='<p>天空入传，感情有虚空不实之象。可能对方并非真心，需谨慎对待。</p>';
-    }
-    else{
-      html+='<p>感情运势平平，无明显吉凶。需看双方努力和具体情况。</p>';
-    }
-    html+='<p style="margin-top:10px;color:var(--dim);font-size:.78rem">建议：感情之事需双方真诚相待，占卦仅供参考，最终还需看个人努力和缘分。</p>';
-    html+='</div></div>';
+  html+='<p style="font-size:.72rem;color:var(--faint);line-height:1.75;text-indent:0">'+
+    '下表逐传列出盘面事实与古书象意。象意是大六壬系统为天将、生克配的固定意象 —— '+
+    '其中「主吉庆」「主凶丧」「主血光」这类话，是古人给该天将下的<b>固定标签</b>，'+
+    '<b>不是说您这件事会怎样</b>。本页不据象意断成败（理由见页末「为何不再断吉凶」）。</p>';
 
-    // ═══ 感情五维深度分析 ═══
-    html+='<div style="margin:14px 0;padding:14px;background:rgba(180,120,40,.06);border-radius:8px;border:1px solid rgba(180,120,40,.2)">';
-    html+='<p style="font-weight:600;margin-bottom:10px;color:var(--gold2)">【感情五维深度分析】</p>';
-    html+='<div style="font-size:.83rem;line-height:1.85">';
-
-    // 维度1：干上神与支上神关系
-    var ganShang=lessons[0].u;
-    var ganShangJ=r.generals[ganShang]?r.generals[ganShang].jiang:'-';
-    var zhiShang=lessons[2].u;
-    var zhiShangJ=r.generals[zhiShang]?r.generals[zhiShang].jiang:'-';
-    html+='<p style="font-weight:600">① 干上神 vs 支上神关系：</p>';
-    html+='<p>干上神 '+BRAN[ganShang]+'（'+ganShangJ+'）——代表本人/求测人状态</p>';
-    html+='<p>支上神 '+BRAN[zhiShang]+'（'+zhiShangJ+'）——代表对方/事之状态</p>';
-    var gsElem=ELEM[ganShang],zsElem=ELEM[zhiShang];
-    // 方向复核：SHENG[干]===支 ⟺ 支生干（对方主动）；SHENG[支]===干 ⟺ 干生支（我方主动）。此前两者写反
-    if(SHENG[zsElem]===gsElem) html+='<p>干生支：我方主动付出，感情由我方推动。</p>';
-    else if(SHENG[gsElem]===zsElem) html+='<p>支生干：对方主动，感情由对方推动，我方处于被动接受状态。</p>';
-    else if(KE[gsElem]===zsElem) html+='<p>干克支：我方主导，感情由我方掌控，须防强势给对方压力。</p>';
-    else if(KE[zsElem]===gsElem) html+='<p>支克干：对方主导，我方处于被动，感情由对方掌控。</p>';
-    else html+='<p>干支比和：双方关系平等，感情较为平衡稳定。</p>';
-
-    // 维度2：三传走势与感情走向
-    html+='<p style="font-weight:600;margin-top:10px">② 感情走势（三传）：</p>';
-    var chuLove=chuJ,zhangLove=zhongJ,moLove=moJ;
-    if(chuLove==='六合'||chuLove==='天后'||chuLove==='太阴'||chuLove==='青龙'){
-      html+='<p>初传 '+chuLove+'：感情有良好起点，开局顺利。</p>';
-    } else if(chuLove==='玄武'||chuLove==='白虎'){
-      html+='<p>初传 '+chuLove+'：感情起点有问题（暗昧/冲突），开局需要谨慎。</p>';
-    } else {
-      html+='<p>初传 '+chuLove+'：感情起点一般，随其自然发展。</p>';
-    }
-    if(zhangLove==='六合'||zhangLove==='天后'){
-      html+='<p>中传 '+zhangLove+'：感情中期发展良好，有深入可能。</p>';
-    } else if(zhangLove==='勾陈'||zhangLove==='白虎'){
-      html+='<p>中传 '+zhangLove+'：感情中期遇阻或有矛盾，需要耐心经营。</p>';
-    } else {
-      html+='<p>中传 '+zhangLove+'：感情中期发展平稳。</p>';
-    }
-    if(moLove==='六合'||moLove==='天后'||moLove==='青龙'){
-      html+='<p>末传 '+moLove+'：感情结局圆满，大吉之象！</p>';
-    } else if(moLove==='玄武'||moLove==='天空'){
-      html+='<p>末传 '+moLove+'：感情结局不明或落空，需有心理准备。</p>';
-    } else {
-      html+='<p>末传 '+moLove+'：感情结局平稳，无大吉凶。</p>';
-    }
-
-    // 维度3：桃花/驿马/阴差
-    html+='<p style="font-weight:600;margin-top:10px">③ 桃花/驿马分析：</p>';
-    var thBr=r.taohua,ymBr=r.yima;
-    var thInTr=[chu,zhang,mo].indexOf(thBr)>=0;
-    var ymInTr=[chu,zhang,mo].indexOf(ymBr)>=0;
-    html+='<p>桃花 '+BRAN[thBr]+' '+(thInTr?'<span style="color:#e879f9">【入传】</span>感情/魅力因素活跃，异性缘旺，防烂桃花或感情用事。':'不在三传，感情因素一般。')+'</p>';
-    html+='<p>驿马 '+BRAN[ymBr]+' '+(ymInTr?'<span style="color:var(--orange)">【入传】</span>感情有变动之象，可能是异地恋、离别重逢或感情迁移。':'不在三传，感情相对稳定。')+'</p>';
-
-    // 维度4：空亡的影响
-    html+='<p style="font-weight:600;margin-top:10px">④ 空亡对感情的影响：</p>';
-    var cKv=isKongWang(chu,r),zKv=isKongWang(zhang,r),mKv=isKongWang(mo,r);
-    if(cKv) html+='<p>初传 '+BRAN[chu]+' 空亡：感情开始时缺乏实质，或对方态度不明确，"落花有意流水无情"之象。逢冲月方有实质进展。</p>';
-    if(zKv) html+='<p>中传 '+BRAN[zhang]+' 空亡：感情发展中段有虚化之象，防中途生变或停滞不前。</p>';
-    if(mKv) html+='<p>末传 '+BRAN[mo]+' 空亡：感情结局有落空之象，可能无果或结果与预期不符。</p>';
-    if(!cKv&&!zKv&&!mKv) html+='<p>三传均不临空亡，感情发展有实质基础，非空中楼阁。</p>';
-
-    // 维度5：格局深度
-    html+='<p style="font-weight:600;margin-top:10px">⑤ 感情格局深度判断：</p>';
-    if(chu===zhang&&zhang===mo){
-      html+='<p>三传归一：感情专注专一，同一状态贯穿始终；亦主感情僵化，缺乏进展。</p>';
-    } else if(chu===mo&&chu!==zhang){
-      html+='<p>首尾相同：感情起点与终点相似，有"回到原点"之象，或复合之兆。</p>';
-    } else if(chuJ==='六合'&&zhongJ==='六合'&&moJ==='六合'){
-      html+='<p>三传皆六合：感情三步皆和合，大吉之极，缘分深厚，必成姻缘之象。</p>';
-    } else if(chuJ==='玄武'&&moJ==='玄武'){
-      html+='<p>首尾皆玄武：感情暗昧重重，第三者介入风险高，须防欺骗与隐瞒。</p>';
-    } else if(chuJ==='白虎'&&moJ==='白虎'){
-      html+='<p>首尾皆白虎：感情冲突刑克贯穿始终，须防分手或重大矛盾。</p>';
-    } else if(chuJ==='朱雀'&&moJ==='朱雀'){
-      html+='<p>首尾皆朱雀：感情口舌是非贯穿始末，沟通不畅，须防误会升级。</p>';
-    } else if(ganShang===zhiShang){
-      html+='<p>干上神=支上神：我与对方状态相同，感情同心之象。</p>';
-    } else if(KE[gsElem]===zsElem||KE[zsElem]===gsElem){
-      html+='<p>干支相克：感情中有主导权之争，须防强势一方造成矛盾。</p>';
-    } else {
-      html+='<p>无特殊格局，以三传天将综合论断即可。</p>';
-    }
-    html+='</div></div>';
-
-    // ═══ 感情化解建议 ═══
-    (function(){
-      var issues=[];
-      if(chuJ==='玄武'||zhongJ==='玄武') issues.push({j:'第三者介入',s:'仔细了解对方背景，防隐瞒欺骗；如已婚，防婚外情。'});
-      if(chuJ==='白虎'||zhongJ==='白虎') issues.push({j:'冲突刑克',s:'防激烈争吵或肢体冲突，遇事冷静沟通，可寻求长辈调解。'});
-      if(chuJ==='朱雀') issues.push({j:'口舌是非',s:'防误会升级，重要事宜以文字确认，避免电话/口头冲突。'});
-      if(chuJ==='天空') issues.push({j:'感情不实',s:'防"镜花水月"，核实对方真实意图，勿轻信承诺。'});
-      if(chuJ==='勾陈') issues.push({j:'阻滞牵绊',s:'可能有旧情未了或债务纠纷，需先理清再推进感情。'});
-      if(cKv) issues.push({j:'感情虚化',s:'开始时机未到，勿急于表白或确认关系，等待逢冲之月。'});
-      if(thInTr&&chuJ==='玄武') issues.push({j:'烂桃花',s:'桃花逢玄武，感情中有欺骗成分，勿被外表迷惑，务必核实身份。'});
-      if(issues.length===0) return'';
-      var h='<div style="margin:14px 0;padding:14px;background:rgba(200,80,48,.07);border-radius:8px;border:1px solid rgba(200,80,48,.2)">';
-      h+='<p style="font-weight:600;margin-bottom:8px;color:var(--red)">【感情化解与趋吉建议】</p>';
-      for(var ri=0;ri<issues.length;ri++){
-        h+='<p style="font-size:.82rem;margin-bottom:5px"><span style="color:var(--red)">▸ '+issues[ri].j+'：</span>'+issues[ri].s+'</p>';
-      }
-      h+='<p style="font-size:.78rem;color:var(--dim);margin-top:6px">化解核心：凶将临身则静心观察，吉将临身则乘势而上；空亡逢冲方验；感情之事尤忌冲动决定。</p>';
-      h+='</div>';
-      return h;
-    })()+
-
-    // 复合/暗恋/明恋/婚姻判断
-    (function(){
-      var judge='';
-      if(chuJ==='玄武'&&zhongJ!=='玄武'&&moJ!=='玄武') judge='<p>此卦有暗恋之象（玄武在初），对方态度不明。</p>';
-      if(chuJ==='六合'&&moJ==='青龙') judge='<p>此卦有婚嫁之兆（六合→青龙），宜推进婚姻。</p>';
-      if(chuJ==='白虎'&&moJ==='天空') judge='<p>此卦有分手/分离之兆（白虎→天空），须有心理准备。</p>';
-      if(chuJ==='白虎'&&moJ==='青龙') judge='<p>此卦有先难后易之象（白虎→青龙），经历波折后终有转机，勿轻言放弃。</p>';
-      if(ganShang===zhiShang) judge+='<p>干上神=支上神：我与对方状态同步，感情同心之象。</p>';
-      if([chu,zhang,mo].indexOf(r.taohua)>=0) judge+='<p>桃花入传，异性缘活跃，感情事有外部因素参与。</p>';
-      if(judge) return'<div style="margin:14px 0;padding:14px;background:rgba(74,138,74,.07);border-radius:8px;border:1px solid rgba(74,138,74,.2)">'+'<p style="font-weight:600;margin-bottom:8px;color:var(--green)">【感情专项判断】</p>'+judge+'</div>';
-      return'';
-    })();
+  html+='<div style="overflow-x:auto"><table class="gtbl" style="min-width:380px">'+
+        '<tr><th>传</th><th>支</th><th>五行</th><th>天将</th><th>与日干</th></tr>';
+  for(var gi=0;gi<3;gi++){
+    html+='<tr><td>'+SEQ[gi]+'</td><td>'+BRAN[BRS[gi]]+'</td><td>'+ELS[gi]+'</td><td>'+JNS[gi]+
+          '</td><td>'+(REL[wxRel(ELS[gi],r.dayElem)]||'—')+'</td></tr>';
   }
-  else if(qtype.key==='bing'){
-    html+='<p><strong>【健康判断要点】</strong></p>';
-    html+='<p>健康首看太阴、天后、青龙（主吉庆康复）。白虎主血光手术，勾陈主疾病缠绵，螣蛇主虚惊。</p>';
-    
-    html+='<p><strong>◆ 初传 '+BRAN[chu]+'（'+chuJ+'·'+chuE+'）—— 病之始</strong></p>';
-    if(chuJ==='太阴'||chuJ==='天后'){
-      html+='<span style="color:var(--green)">'+chuJ+'临初传，病情有转机或有贵人照拂。</span>';
-    }
-    else if(chuJ==='青龙'){
-      html+='<span style="color:var(--green)">青龙临初传，身体康复有望，病情向好。</span>';
-    }
-    else if(chuJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎临初传，病情较重或有手术之象，需谨慎治疗。</span>';
-    }
-    else if(chuJ==='勾陈'){
-      html+='<span style="color:var(--red)">勾陈临初传，病情缠绵难愈，需耐心调养。</span>';
-    }
-    else if(chuJ==='螣蛇'){
-      html+='<span style="color:var(--red)">螣蛇临初传，病情反复或虚惊，需心理疏导。</span>';
-    }
-    else{
-      html+=chuJ+'临初传，病情平稳。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>◆ 中传 '+BRAN[zhang]+'（'+zhongJ+'·'+zhangE+'）—— 病之中</strong></p>';
-    if(zhongJ==='青龙'){
-      html+='<span style="color:var(--green)">青龙临中传，医治顺利，病情好转。</span>';
-    }
-    else if(zhongJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎临中传，中途病情加重或有变化。</span>';
-    }
-    else{
-      html+=zhongJ+'临中传，中途病情平稳。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>◆ 末传 '+BRAN[mo]+'（'+moJ+'·'+moE+'）—— 病之终</strong></p>';
-    if(moJ==='青龙'||moJ==='太阴'){
-      html+='<span style="color:var(--green)">'+moJ+'临末传，终得康复或暗中渐愈。</span>';
-    }
-    else if(moJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎临末传，结局不佳，需谨慎。</span>';
-    }
-    else{
-      html+=moJ+'临末传，结局平稳，耐心调养。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>【综合健康建议】</strong></p>';
-    if(chuJ==='白虎'||moJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎入传，健康有虞，宜及时就医，不可拖延。</span>';
-    }
-    else if(chuJ==='青龙'||moJ==='青龙'){
-      html+='<span style="color:var(--green)">青龙入传，健康有吉兆，积极治疗可愈。</span>';
-    }
-    else{
-      html+='健康运势平平，需注意调养。';
-    }
-    html+='</p>';
+  html+='</table></div>';
+
+  html+='<div style="margin:10px 0;font-size:.85rem;line-height:1.85">';
+  for(var gj=0;gj<3;gj++){
+    html+='<p style="margin:5px 0;text-indent:0"><strong>'+SEQ[gj]+' '+BRAN[BRS[gj]]+
+          '（'+JNS[gj]+'·'+ELS[gj]+'）</strong>：'+(TJ_DESC[JNS[gj]]||'（此将无象意条目）')+'</p>';
   }
-  
-  // ── 失物类 ──
-  else if(qtype.key==='shi'){
-    html+='<p><strong>【失物判断要点】</strong></p>';
-    html+='<p>失物首看玄武（主盗贼）、螣蛇（主虚惊）。六合主可寻，天空主难觅。</p>';
-    
-    html+='<p><strong>◆ 初传 '+BRAN[chu]+'（'+chuJ+'·'+chuE+'）—— 失物之始</strong></p>';
-    if(chuJ==='玄武'){
-      html+='<span style="color:var(--red)">玄武临初传，可能被人盗走或藏匿，找回难度较大。</span>';
-    }
-    else if(chuJ==='螣蛇'){
-      html+='<span style="color:var(--red)">螣蛇临初传，可能是自己随手放置忘记，虚惊一场。</span>';
-    }
-    else if(chuJ==='六合'){
-      html+='<span style="color:var(--green)">六合临初传，物可寻，可能有人帮忙找到。</span>';
-    }
-    else if(chuJ==='天空'){
-      html+='<span style="color:var(--red)">天空临初传，物已失难觅，可能被人捡走。</span>';
-    }
-    else{
-      html+=chuJ+'临初传，失物运势需综合判断。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>◆ 中传 '+BRAN[zhang]+'（'+zhongJ+'·'+zhangE+'）—— 寻物之中</strong></p>';
-    if(zhongJ==='六合'){
-      html+='<span style="color:var(--green)">六合临中传，中途有人帮助，有希望找到。</span>';
-    }
-    else if(zhongJ==='玄武'){
-      html+='<span style="color:var(--red)">玄武临中传，物在暗处，需仔细寻找。</span>';
-    }
-    else{
-      html+=zhongJ+'临中传，寻物中途平稳。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>◆ 末传 '+BRAN[mo]+'（'+moJ+'·'+moE+'）—— 寻物之终</strong></p>';
-    if(moJ==='六合'){
-      html+='<span style="color:var(--green)">六合临末传，物可复得，最终能找到。</span>';
-    }
-    else if(moJ==='天空'){
-      html+='<span style="color:var(--red)">天空临末传，物难寻，可能已失。</span>';
-    }
-    else{
-      html+=moJ+'临末传，寻物结局需综合判断。';
-    }
-    html+='</p>';
-    
-    // 方位提示
-    html+='<p><strong>【失物方位提示】</strong></p>';
-    var dirMap={0:'北',1:'东北偏北',2:'东北偏东',3:'东',4:'东南偏东',5:'东南偏南',6:'南',7:'西南偏南',8:'西南偏西',9:'西',10:'西北偏西',11:'西北偏北'};
-    html+='<p>根据初传方位，物可能在 <span class="hl">'+dirMap[chu]+'</span> 方或与 <span class="hl">'+BRAN[chu]+'</span> 相关之处（如'+(chu===0?'水边、井旁':chu===1?'土中、仓库':chu===2?'山林、木器':chu===3?'门窗、林木':chu===4?'土堆、堤坝':chu===5?'炉灶、光明处':chu===6?'道路、马厩':chu===7?'田园、庭院':chu===8?'金属、刀剑':chu===9?'金银、酒器':chu===10?'土窑、坟墓':chu===11?'水井、沟渠':'')+'）。</p>';
-  }
-  
-  // ── 出行类 ──
-  else if(qtype.key==='chu'){
-    html+='<p><strong>【出行判断要点】</strong></p>';
-    html+='<p>出行首看六合（主顺利）、青龙（主吉庆）。白虎主险阻，天空主变数，勾陈主延滞。</p>';
-    
-    html+='<p><strong>◆ 初传 '+BRAN[chu]+'（'+chuJ+'·'+chuE+'）—— 出行之始</strong></p>';
-    if(chuJ==='六合'){
-      html+='<span style="color:var(--green)">六合临初传，出行顺利，一路平安。</span>';
-    }
-    else if(chuJ==='青龙'){
-      html+='<span style="color:var(--green)">青龙临初传，出行有吉庆，旅途愉快。</span>';
-    }
-    else if(chuJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎临初传，出行有险阻，需小心谨慎。</span>';
-    }
-    else if(chuJ==='天空'){
-      html+='<span style="color:var(--red)">天空临初传，出行有变数，可能临时改变计划。</span>';
-    }
-    else if(chuJ==='勾陈'){
-      html+='<span style="color:var(--red)">勾陈临初传，出行有延滞，可能延误行程。</span>';
-    }
-    else{
-      html+=chuJ+'临初传，出行运势平稳。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>◆ 中传 '+BRAN[zhang]+'（'+zhongJ+'·'+zhangE+'）—— 旅途之中</strong></p>';
-    if(zhongJ==='青龙'){
-      html+='<span style="color:var(--green)">青龙临中传，旅途顺利，一路顺风。</span>';
-    }
-    else if(zhongJ==='勾陈'){
-      html+='<span style="color:var(--red)">勾陈临中传，旅途有延滞，需耐心。</span>';
-    }
-    else{
-      html+=zhongJ+'临中传，旅途平稳。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>◆ 末传 '+BRAN[mo]+'（'+moJ+'·'+moE+'）—— 抵达之终</strong></p>';
-    if(moJ==='青龙'){
-      html+='<span style="color:var(--green)">青龙临末传，抵达顺利，有喜庆之事。</span>';
-    }
-    else if(moJ==='天空'){
-      html+='<span style="color:var(--red)">天空临末传，抵达后可能有变数。</span>';
-    }
-    else{
-      html+=moJ+'临末传，抵达平稳。';
-    }
-    html+='</p>';
-    
-    // 驿马状况
-    var yimaBr=r.yima;
-    var yimaJ=r.generals[yimaBr]?r.generals[yimaBr].jiang:'';
-    html+='<p><strong>【驿马 · '+BRAN[yimaBr]+'（'+yimaJ+'）】</strong>：';
-    if(yimaBr===chu||yimaBr===zhang||yimaBr===mo){
-      html+='<span style="color:var(--orange)">驿马入传，速动之象，宜立即出行或加速进程。</span>';
-    } else {
-      html+='驿马不在三传，动意不强，可从容安排。';
-    }
-    html+='</p>';
-    // 天气预兆（基于三传地支五行与月令关系）
-    var MOON_WEATHER={'木':'多风','火':'晴热','土':'阴燥','金':'干燥','水':'多雨'};
-    var moonElem='土';
-    var mx=0;for(var mi=0;mi<[chu,zhang,mo,r.dayBr,r.dayLodge].length;mi++){var me=ELEM[[chu,zhang,mo,r.dayBr,r.dayLodge][mi]];if(me)moonElem=me;}
-    html+='<p style="font-size:.78rem;color:var(--dim)">出行期间天气预兆：<span style="color:var(--gold2)">'+MOON_WEATHER[moonElem]+'</span>（三传主导五行）</p>';
-    // 综合建议
-    html+='<p><strong>【综合出行建议】</strong></p>';
-    if(chuJ==='六合'||chuJ==='青龙'||moJ==='青龙'){
-      html+='<span style="color:var(--green)">六合或青龙入传，出行大吉，宜出发。</span>';
-    }
-    else if(chuJ==='白虎'||moJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎入传，出行有险，宜推迟或谨慎。</span>';
-    }
-    else if(chuJ==='螣蛇'){
-      html+='<span style="color:var(--orange)">螣蛇临出行，须防路途有惊有变，随机应变。</span>';
-    }
-    else if(chuJ==='玄武'){
-      html+='<span style="color:var(--blue)">玄武临出行，防行李遗失或遭窃，贵重物品妥善保管。</span>';
-    }
-    else{
-      html+='出行运势平稳，可按时出发。';
-    }
-    html+='</p>';
+  html+='</div>';
+
+  // 旬空与神煞：纯事实，不带评断
+  var kwa=r.kvmWang||[],kwTxt=[BRAN[kwa[0]],BRAN[kwa[1]]],kwIn=[];
+  for(var gk=0;gk<3;gk++){ if(BRS[gk]===kwa[0]||BRS[gk]===kwa[1]) kwIn.push(SEQ[gk]); }
+  html+='<p style="font-size:.75rem;color:var(--dim);text-indent:0">本旬空亡：'+kwTxt.join('、')+
+        (kwIn.length?('；三传中 '+kwIn.join('、')+' 落空'):'；三传不落空')+'。</p>';
+  if(r.ss&&r.ss.length){
+    var sn=[]; for(var gs=0;gs<r.ss.length;gs++) sn.push(r.ss[gs].n);
+    html+='<p style="font-size:.75rem;color:var(--dim);text-indent:0">本课神煞：'+sn.join('、')+'。</p>';
   }
 
-  // ── 诉讼类 ──
-  else if(qtype.key==='song'){
-    html+='<p><strong>【诉讼判断要点】</strong></p>';
-    html+='<p>诉讼首看勾陈（主争斗）、朱雀（主口舌）、白虎（主凶伤）。青龙、贵人主胜诉。</p>';
-    
-    html+='<p><strong>◆ 初传 '+BRAN[chu]+'（'+chuJ+'·'+chuE+'）—— 诉讼之始</strong></p>';
-    if(chuJ==='勾陈'){
-      html+='<span style="color:var(--red)">勾陈临初传，诉讼缠绵，久拖不决。</span>';
-    }
-    else if(chuJ==='朱雀'){
-      html+='<span style="color:var(--red)">朱雀临初传，口舌是非多，需防争执。</span>';
-    }
-    else if(chuJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎临初传，诉讼激烈，可能有凶伤。</span>';
-    }
-    else if(chuJ==='青龙'||chuJ==='贵人'){
-      html+='<span style="color:var(--green)">'+chuJ+'临初传，诉讼有贵人助，胜诉有望。</span>';
-    }
-    else{
-      html+=chuJ+'临初传，诉讼运势平稳。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>◆ 末传 '+BRAN[mo]+'（'+moJ+'·'+moE+'）—— 诉讼之终</strong></p>';
-    if(moJ==='青龙'||moJ==='贵人'){
-      html+='<span style="color:var(--green)">'+moJ+'临末传，最终胜诉。</span>';
-    }
-    else if(moJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎临末传，最终败诉或有损失。</span>';
-    }
-    else{
-      html+=moJ+'临末传，结局需综合判断。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>【综合诉讼建议】</strong></p>';
-    if(chuJ==='青龙'||moJ==='青龙'||chuJ==='贵人'||moJ==='贵人'){
-      html+='<span style="color:var(--green)">青龙或贵人入传，胜诉有望，宜积极应诉。</span>';
-    }
-    else if(chuJ==='白虎'||moJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎入传，诉讼不利，宜和解或退让。</span>';
-    }
-    else{
-      html+='诉讼运势平平，需看证据和律师。';
-    }
-    html+='</p>';
-  }
-  
-  // ── 学业类 ──
-  else if(qtype.key==='xue'){
-    html+='<p><strong>【学业判断要点】</strong></p>';
-    html+='<p>学业首看青龙、贵人（主金榜题名）。朱雀主文书考试，六合主合作学习。</p>';
-    
-    html+='<p><strong>◆ 初传 '+BRAN[chu]+'（'+chuJ+'·'+chuE+'）—— 考试之始</strong></p>';
-    if(chuJ==='青龙'||chuJ==='贵人'){
-      html+='<span style="color:var(--green)">'+chuJ+'临初传，考试顺利，有金榜题名之兆。</span>';
-    }
-    else if(chuJ==='朱雀'){
-      html+='<span style="color:var(--green)">朱雀临初传，文书运旺，考试发挥好。</span>';
-    }
-    else if(chuJ==='勾陈'){
-      html+='<span style="color:var(--red)">勾陈临初传，学业有阻，需加倍努力。</span>';
-    }
-    else{
-      html+=chuJ+'临初传，考试运势平稳。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>◆ 末传 '+BRAN[mo]+'（'+moJ+'·'+moE+'）—— 考试之终</strong></p>';
-    if(moJ==='青龙'||moJ==='贵人'){
-      html+='<span style="color:var(--green)">'+moJ+'临末传，最终成绩理想。</span>';
-    }
-    else if(moJ==='白虎'){
-      html+='<span style="color:var(--red)">白虎临末传，成绩不理想。</span>';
-    }
-    else{
-      html+=moJ+'临末传，成绩平稳。';
-    }
-    html+='</p>';
-    
-    html+='<p><strong>【综合学业建议】</strong></p>';
-    if(chuJ==='青龙'||moJ==='青龙'||chuJ==='贵人'||moJ==='贵人'){
-      html+='<span style="color:var(--green)">青龙或贵人入传，学业运势良好，宜积极备考。</span>';
-    }
-    else{
-      html+='学业运势平平，需努力准备。';
-    }
-    html+='</p>';
-  }
-
-  // ── 人际关系/贵人相助类 ──
-  else if(qtype.key==='gui'){
-    html+='<p><strong>【人际关系·贵人相助判断要点】</strong></p>';
-    html+='<p>贵人相助首看三传是否见贵人、青龙、太阴；忌玄武、天空（主小人）。初传为事之起点，即贵人缘起；中传为过程，末传为结果。</p>';
-
-    html+='<p><strong>◆ 初传 '+BRAN[chu]+'（'+chuJ+'·'+chuE+'）—— 缘分之始</strong></p>';
-    if(chuJ==='贵人'){
-      html+='<span style="color:var(--green)">贵人临初传，开局即得助力！近期有望遇到能提携、帮助您的贵人，宜主动社交、表达诚意。</span>';
-    }
-    else if(chuJ==='青龙'||chuJ==='太阴'||chuJ==='太常'){
-      html+='<span style="color:var(--green)">'+chuJ+'临初传，虽非贵人本人，但有吉祥助力暗中相助，人际关系良好。</span>';
-    }
-    else if(chuJ==='玄武'||chuJ==='天空'){
-      html+='<span style="color:var(--red)">'+chuJ+'临初传，须防遇人不淑或背后有小人在暗中作梗，合作须谨慎。</span>';
-    }
-    else if(chuJ==='螣蛇'||chuJ==='勾陈'){
-      html+='<span style="color:var(--orange)">'+chuJ+'临初传，人际有纠结缠绕之感，可能遇到表面帮助实则牵绊之人，当谨慎辨识。</span>';
-    }
-    else{
-      html+=chuJ+'临初传，人际缘分平平，需主动创造机会。';
-    }
-    html+='</p>';
-
-    html+='<p><strong>◆ 中传 '+BRAN[zhang]+'（'+zhongJ+'·'+zhangE+'）—— 关系发展</strong></p>';
-    if(zhongJ==='贵人'){
-      html+='<span style="color:var(--green)">中传见贵人，人际发展中有重要助力介入，事半功倍。</span>';
-    }
-    else if(zhongJ==='六合'||zhongJ==='太阴'){
-      html+='<span style="color:var(--green)">'+zhongJ+'临中传，关系向融洽、合作方向发展，贵人缘渐入佳境。</span>';
-    }
-    else if(zhongJ==='玄武'){
-      html+='<span style="color:var(--red)">玄武临中传，关系中有暗昧、隐瞒或暗中利益牵扯，须留意。</span>';
-    }
-    else{
-      html+=zhongJ+'临中传，人际发展平稳。';
-    }
-    html+='</p>';
-
-    html+='<p><strong>◆ 末传 '+BRAN[mo]+'（'+moJ+'·'+moE+'）—— 结果预断</strong></p>';
-    if(moJ==='贵人'||moJ==='青龙'||moJ==='太阴'){
-      html+='<span style="color:var(--green)">末传得'+moJ+'相助，结果有贵人收尾，大吉！贵人运从始至终贯穿，得善果。</span>';
-    }
-    else if(moJ==='六合'){
-      html+='<span style="color:var(--green)">六合临末传，人际圆满，得合作伙伴或朋友之助，结果和合吉利。</span>';
-    }
-    else if(moJ==='玄武'||moJ==='白虎'){
-      html+='<span style="color:var(--red)">'+moJ+'临末传，人际结果有损，可能遇小人或关系破裂，须及时止损。</span>';
-    }
-    else{
-      html+=moJ+'临末传，结果需综合全局判断，无明显吉凶偏向。';
-    }
-    html+='</p>';
-
-    // 综合建议
-    if(chuJ==='贵人'||zhongJ==='贵人'||moJ==='贵人'){
-      html+='<p style="color:var(--green)"><strong>◆ 综合论断：</strong>三传见贵人，整体贵人运旺盛，宜积极社交、主动寻求合作机会，近期有贵人现身的强烈信号。</p>';
-    }
-    else if((chuJ==='玄武'||chuJ==='天空')&&(moJ==='玄武'||moJ==='天空')){
-      html+='<p style="color:var(--red)"><strong>◆ 综合论断：</strong>初末见阴害之神，贵人运欠佳，须防小人作祟，合作前宜多考察对方底细，勿轻信口头承诺。</p>';
-    }
-    else if(chuJ==='青龙'||zhongJ==='青龙'||moJ==='青龙'||chuJ==='太阴'||zhongJ==='太阴'||moJ==='太阴'){
-      html+='<p style="color:var(--green)"><strong>◆ 综合论断：</strong>有吉祥之神眷顾，虽非直接贵人，但暗中有助，人际缘分不错，宜广结善缘。</p>';
-    }
-    else{
-      html+='<p style="color:var(--orange)"><strong>◆ 综合论断：</strong>贵人运一般，无明显吉凶信号。机遇需要自己主动争取，同时注意防范表面友好实则利用之人。</p>';
-    }
-  }
-
-  // 其他类型
-  else{
-    html+='<p><strong>◆ 初传 '+BRAN[chu]+'（'+chuJ+'）</strong>：'+(TJ_DESC[chuJ]||'—')+'</p>';
-    html+='<p><strong>◆ 中传 '+BRAN[zhang]+'（'+zhongJ+'）</strong>：'+(TJ_DESC[zhongJ]||'—')+'</p>';
-    html+='<p><strong>◆ 末传 '+BRAN[mo]+'（'+moJ+'）</strong>：'+(TJ_DESC[moJ]||'—')+'</p>';
-  }
-  
   return html;
 }
 
@@ -2885,9 +2294,12 @@ function renderFortuneCard(r,ft){
   // 分数（fortune.score）仍在，但只用于内部排序与 calibrate/sensitivity 的体检 —— 页面不再暴露。
   var pd=r.panding||panding(r,r.qtype,r.nm);
   var yq=r.yingqi||yingqi(r,r.qtype,r.nm,pd.ok);
-  var col= pd.ok===true?'var(--gold2)' : pd.ok===false?'var(--red)' : 'var(--dim)';
-  sym.textContent = pd.ok===true?'◆' : pd.ok===false?'▲' : '◇';
-  sym.style.color=col;
+  // 不再按「可／难／遽断」三态染色与配符号：颜色是最强的吉凶暗示，
+  // 而三态已被 105 课检验否掉（42.3%，与抛硬币无显著差别；见 LS_HEAD 留档）。
+  // 统一用正文色，符号用中性的 ◈，不表达任何倾向。
+  var col='var(--text)';
+  sym.textContent='◈';
+  sym.style.color='var(--dim)';
   rslt.textContent=pd.verdict;
   rslt.style.color=col;
   if(tags){
@@ -2946,12 +2358,25 @@ function renderPillars(r){
     '<div class="pl"><div class="pl-l">月柱</div><div class="pl-v">'+STEM[r.msb.stem]+BRAN[r.msb.branch]+'</div></div>'+
     '<div class="pl"><div class="pl-l">日柱 <span style="font-size:.6rem;color:#6a5a48">(占时)</span></div><div class="pl-v pl-v-y">'+STEM[r.dsb.stem]+BRAN[r.dsb.branch]+'</div></div>'+
     '<div class="pl"><div class="pl-l">时柱</div><div class="pl-v">'+STEM[r.hsb.stem]+BRAN[r.hsb.branch]+'</div></div>'+
-    '<div class="pl"><div class="pl-l">空亡</div><div class="pl-v" style="color:var(--red);font-size:1.1rem">'+BRAN[kv1]+' '+BRAN[kv2]+'</div></div>'+
+    // 空亡是旬空事实，不是「凶」—— 不再染红（2026-11-03 中性化）
+    '<div class="pl"><div class="pl-l">空亡</div><div class="pl-v" style="color:var(--text);font-size:1.1rem">'+BRAN[kv1]+' '+BRAN[kv2]+'</div></div>'+
     '</div>'+
+    // 月将行（2026-11-15 加强）：原先是 .78rem 灰字里一个小色字，占事核对月将最费眼。
+    //   现单独一行、加粗放大，自动推定给出换将中气与约期依据；点击月将名跳回选择器。
+    //   临近换将边界（±3 天）追加提醒 —— 卷四实测自动推定吻合率仅 78%，误差集中在边界。
+    '<div style="text-align:center;font-size:.95rem;margin:6px 0 2px">'+
+    '月将 <b style="color:var(--gold2);font-size:1.25rem;cursor:pointer" '+
+    'title="点击跳到月将选择，可手动指定或改回自动" '+
+    'onclick="var e=document.getElementById(\'iyj\');e.scrollIntoView({behavior:\'smooth\',block:\'center\'});e.focus()">'+
+    r.yj.name+'</b>（'+BRAN[r.yj.branch]+'宫）'+
+    '&nbsp;&middot;&nbsp;'+
+    (r.yjManual?'<span style="color:var(--fire);font-weight:bold">手动指定</span>'
+               :r.yj.zhong+'（约'+r.yj.m+'月'+r.yj.d+'日）后换将')+
+    '</div>'+
+    (r.yjEdge?('<div style="text-align:center;color:var(--fire);font-size:.78rem;margin:0 0 4px">'+
+      '⚠ 占日临近换将边界（'+r.yj.zhong+'约'+r.yj.m+'月'+r.yj.d+'日），古今历法换将口径或有差异，建议点击上方月将名手动指定核对</div>'):'')+
     '<div style="text-align:center;color:var(--faint);font-size:.78rem">'+
-    '月将 <span style="color:var(--gold2)">'+r.yj.name+'</span> · '+(r.yjManual?'<span style="color:var(--fire)">手动指定</span>':r.yj.zhong+'后')+'（'+BRAN[r.yj.branch]+'宫）'+
-    '&nbsp;&middot;&nbsp; 起课法 <span style="color:var(--gold2)">'+r.zongmen+'</span>'+
-    '&nbsp;&middot;&nbsp; <span style="color:var(--dim)">空亡示事难成，逢冲则验</span>'+
+    '起课法 <span style="color:var(--gold2)">'+r.zongmen+'</span>'+
     (r.solar?('<div style="margin-top:5px;font-size:.72rem;color:var(--dim)">&#9728; 真太阳时 '+
       r.solar.m+'月'+r.solar.d+'日 '+('0'+r.solar.hh).slice(-2)+':'+('0'+r.solar.mm).slice(-2)+
       '（校正 '+sgn(r.solar.delta)+Math.abs(r.solar.delta)+' 分：经度 '+sgn(Math.round(r.solar.dl))+Math.abs(Math.round(r.solar.dl))+
@@ -3065,15 +2490,17 @@ function renderTrans(r){
 }
 
 function renderGenerals(r){
-  var g=r.generals;
+  var g=r.genByEarth||r.generals;   // 表格按地盘位逐行列出
   var dir=r.shun?'顺':'逆';
   var el=document.getElementById('gnEl');
-  var h='<div style="font-size:.72rem;color:var(--faint);margin-bottom:7px">贵人临'+BRAN[r.grBr]+'宫 · <span style="color:var(--gold2)">'+dir+'行</span>布将</div>'+
+  var h='<div style="font-size:.72rem;color:var(--faint);margin-bottom:7px">贵人乘'+BRAN[r.grBr]+'（临'+BRAN[r.grEarth]+'宫） · <span style="color:var(--gold2)">'+dir+'行</span>布将</div>'+
     '<table class="gtbl"><thead><tr><th>地</th><th>肖</th><th>天盘</th><th>天将</th><th>五行</th><th>旺相</th></tr></thead><tbody>';
   for(var eb=0;eb<12;eb++){
     var item=g[eb];
     if(!item) continue;
-    var col=item.jiang==='贵人'?'var(--gold2)':item.jiang==='白虎'?'var(--red)':item.jiang==='青龙'?'var(--green)':'var(--text)';
+    // 天将不再按「贵人金／白虎红／青龙绿」染色：那是最直白的吉凶暗示。
+    // 天将只是盘面信息，吉凶评价已被证否（见 LS_HEAD 留档），故统一正文色。
+    var col='var(--text)';
     h+='<tr><td>'+BRAN[eb]+'</td><td>'+ANIM[eb]+'</td><td style="color:var(--gold2)">'+BRAN[item.heaven]+'</td><td style="color:'+col+'">'+item.jiang+'</td><td><span class="et '+elemClass(ELEM[eb])+'">'+ELEM[eb]+'</span></td><td>'+r.wx(eb)+'</td></tr>';
   }
   h+='</tbody></table>';
@@ -3122,10 +2549,13 @@ function renderLeishen(r){
   var dayE=r.dayElem||ELEM_S[r.dsb.stem];
   var h='<div class="sep">&#9670; 类神 · '+qt.l+' &#9670;</div>';
   h+='<p style="font-size:.78rem;color:var(--dim);text-indent:0;line-height:1.8">';
-  if(L.liu&&liuWx(dayE,L.liu)){
-    var lw=liuWx(dayE,L.liu);
+  var useLiu=L.liu;
+  if(L.liuF) useLiu=(r.gender==='f')?L.liuF:(L.liuM||L.liu);   // 婚姻类男占财、女占官
+  if(useLiu&&liuWx(dayE,useLiu)){
+    var lw=liuWx(dayE,useLiu);
     var brs=(WX_BR[lw]||[]).map(function(b){return BRAN[b];}).join('、');
-    h+='正类神：<strong>'+L.liu+'（'+lw+'）</strong>，临 '+brs+'。';
+    h+='正类神：<strong>'+useLiu+'（'+lw+'）</strong>，临 '+brs+'。';
+    if(L.liuF) h+='<span style="color:var(--faint)">（按'+(r.gender==='f'?'女占夫':'男占妻')+'取——古籍男女两套类神）</span>';
   } else {
     h+='本占不以六亲为类神，以神煞与天将为主。';
   }
@@ -3140,7 +2570,9 @@ function renderLeishen(r){
      (hitJ.length?'喜用入传：'+hitJ.join('、')+'　':'喜用未入传　')+
      (hitT.length?'忌神入传：'+hitT.join('、'):'忌神未入传')+'</p>';
   h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0;line-height:1.7">'+L.note+'</p>';
-  h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0">线 C 起类神即<b>判词的主线判据</b>（⑨），上面「综合判断」里的成/难之判由此而出，并非附注。</p>';
+  if(L.src) h+='<p style="font-size:.7rem;color:var(--faint);text-indent:0;line-height:1.7">出典：'+L.src+'</p>';
+  h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0">类神是断法的主线（⑨），顶部「课象摘要」即由类神一项引出 —— '+
+    '但本页<b>只呈现其象，不再据此定成败</b>（理由见页末「为何不再断吉凶」）。</p>';
   return h;
 }
 
@@ -3175,12 +2607,13 @@ function renderInterp(r,q,ft){
   var chuJ=r.generals[r.chu]?r.generals[r.chu].jiang:'';
   var zhongJ=r.generals[r.zhang]?r.generals[r.zhang].jiang:'';
   var moJ=r.generals[r.mo]?r.generals[r.mo].jiang:'';
-  var ganJ=r.generals[r.dayLodge]?r.generals[r.dayLodge].jiang:'';
-  var zhiJ=r.generals[r.dayBr]?r.generals[r.dayBr].jiang:'';
+  // 干上/支上是地盘位（寄宫、日支）→ 用 genByEarth；三传是天盘支 → 用 generals
+  var gE=r.genByEarth||r.generals;
+  var ganJ=(gE[r.dayLodge]&&gE[r.dayLodge].jiang)||'';
+  var zhiJ=(gE[r.dayBr]&&gE[r.dayBr].jiang)||'';
   var chuE=r.chuElem||ELEM[r.chu]||'土';
   var zhangE=r.zhangElem||ELEM[r.zhang]||'土';
   var moE=r.moElem||ELEM[r.mo]||'土';
-  var zhiJ=r.generals[r.dayBr]?r.generals[r.dayBr].jiang:'';
   
   // 五行属性
   var chuE=ELEM[r.chu]||'土';
@@ -3209,12 +2642,20 @@ function renderInterp(r,q,ft){
     var qa=genAdvice(r,r.qtype);
     qSection='<hr class="dv">'+
       '<p><strong>◆ 针对您的问题：「</strong><span class="hl">'+escHtml(q)+'</span><strong>」</strong></p>'+
+      // 2026-11-03：这一段原本是「一事一断」的吉凶建议（红字凶／绿字吉＋✓✗ 标记），
+      // 与顶部判词同源同理，已一并中性化。下面这些是**古书象意通说**（如「古以青龙主财喜」），
+      // 不是本页的结论 —— 本页不再声称据此可知成败。
+      '<p style="font-size:.72rem;color:var(--faint);background:rgba(138,128,112,.08);'+
+      'border-left:2px solid var(--border);padding:6px 9px;line-height:1.75;text-indent:0">'+
+      '以下为<b>课象与古书象意摘录</b>，非本页的吉凶结论：如「青龙临初传」「中传克末传」为盘面事实，'+
+      '「财星发用」「财路不畅」等为古书通说之象意。本页<b>不据此断言成败</b> —— '+
+      '此类套话式推断经 105 课检验与实测无相关性（命中 42.3%，与抛硬币无显著差别），故仅存其象，不取其断。</p>'+
       (r.qtype?'<p>系统识别为 <span class="hl">【'+r.qtype.l+'】</span> 类问题：</p>'+qa:
         '<p>（未能精确识别问题类型，以下为通用解读）</p>');
   }
 
   var ganTip='';
-  if(r.deBr===r.dayLodge) ganTip='德神临干上，大吉之象';
+  if(r.deBr===r.dayLodge) ganTip='德神临干上';
   else if(r.deBr===r.chu) ganTip='德发于初传，事情有德相助';
   else if(r.luBr===r.chu) ganTip='禄发于初传，有俸禄俸位之象';
   else ganTip='德禄不在关键位置';
@@ -3234,19 +2675,21 @@ function renderInterp(r,q,ft){
     '<p><strong>◆ 起课法详解：</strong></p>'+
     '<p><span class="hl">'+r.zongmen+'</span></p>'+
     '<p style="font-size:.78rem;color:var(--dim);line-height:1.7">'+
-    (r.zongmen==='贼克法'?'贼克者，以下犯上也。初传取贼克之神发用，主事有外来之变，须防人暗算或突生枝节。贼克法主急、主动，事情来得快且明显。':
+    (r.zongmen==='贼克法'?'贼克者，以下犯上也。初传取贼克之神发用，古谓主外来之变、事发急而显。':
     r.zongmen==='比用法'?'比用者，择与日干阴阳相比者发用。二克二贼，须分阴阳，取与日干同性者为主，主事有选择余地，可择机而动。':
     r.zongmen.indexOf('涉害法')===0?
       (r.zongmen.indexOf('见机')>=0?'涉害者，与日干俱比（或俱不比）而无可独取也。取地盘四孟上神发用，曰见机。事有多端而先机已露，宜见机而作，先发者制人。':
        r.zongmen.indexOf('察微')>=0?'涉害者，与日干俱比（或俱不比）而无可独取也。孟上无取，乃取四仲上神发用，曰察微。事隐而微，须细察其几，不可躁进。':
        r.zongmen.indexOf('复等')>=0?'涉害者，与日干俱比而俱在孟位，曰复等，取四课中先见者发用。两雄相争，惟在前者有得。':
        '涉害者，与日干俱比（或俱不比）而无可独取也。以地盘孟仲季定之：先取孟上神曰见机，孟上无取则取仲上神曰察微，季位不取。主事艰辛，须历尽风霜而后得，乃苦尽甘来之象。'):
-    r.zongmen==='遥克法'?'遥克者，四课无克，取遥克日干之上神。事无近忧，但有远虑，须防暗中牵连，或事从他方来。':
-    r.zongmen==='昂星法'?'昂星者，无克无遥，取酉金为用。酉为西方金，主肃杀、决断。昂星法主事无头绪，须待时而动，或借外力。':
+    r.zongmen==='遥克法'?'遥克者，四课无克，取遥克日干之上神。古谓无近忧而有远虑，事或从他方来。':
+    // ⚠️ 2026-11-02 修：原写「昂星法」（昂≠昴），与九宗门里设的 '昴星法' 对不上，
+    //    导致昴星课的解读文字永远为空。
+    r.zongmen==='昴星法'?'昴星者，无克无遥，取酉金为用。酉为西方金，主肃杀、决断。昴星法主事无头绪，须待时而动，或借外力。':
     r.zongmen==='伏吟法'?'伏吟者，天盘与地盘相同，天地不交，事多阻滞不前。主事迟滞、反复、难有进展，须耐心等待或另寻出路。':
-    r.zongmen==='反吟法'?'反吟者，天盘与地盘对冲，反复往来，事多反复。主事有变、有动、有反复，须防事与愿违或中途生变。':
+    r.zongmen==='反吟法'?'反吟者，天盘与地盘对冲，反复往来，事多反复。古谓事有反覆、动而不居。':
     r.zongmen==='别责法'?'别责者，四课不全，取日干合神之上神。主事有缺憾、不完整，须借他人之力或另辟蹊径。':
-    r.zongmen==='八专法'?'八专者，干支同位，阴阳不分，事有专一之象。主事专一、专注，但亦主偏颇、固执，须防一意孤行。':'')+
+    r.zongmen==='八专法'?'八专者，干支同位，阴阳不分，事有专一之象。古谓事专一，亦主偏执。':'')+
     '</p>'+
     
     '<hr class="dv">'+
@@ -3262,23 +2705,23 @@ function renderInterp(r,q,ft){
     chuE==='土'?'主信实、稳重、迟滞':
     chuE==='金'?'主义气、决断、肃杀':'主智慧、流动、隐秘')+'）</p>'+
     '<p><strong>【临初传之象】</strong>'+
-    (chuJ==='贵人'?'贵人发用，主有贵人相助，事有靠山，宜主动寻求帮助。贵人为天将之首，遇事逢之，多逢吉庆。':
-    chuJ==='青龙'?'青龙发用，主喜庆进财，有吉庆之事临门。青龙主财禄，遇之者宜进取，有意外之喜。':
-    chuJ==='六合'?'六合发用，主和合、合作、姻缘，宜与人共事或寻求合作。六合主和，遇之者多贵人助力。':
-    chuJ==='太阴'?'太阴发用，主暗中有人相助，或女性贵人，宜低调行事。太阴主阴私，遇之者宜静不宜动。':
-    chuJ==='天后'?'天后发用，主有女性贵人庇护，感情和顺，宜寻求女性帮助。天后主恩泽，遇之者多庇佑。':
-    chuJ==='太常'?'太常发用，主饮食宴请、馈赠之财，有应酬或赠与之事。太常主常，遇之者多平稳吉庆。':
-    chuJ==='朱雀'?'朱雀发用，主文书口舌，有信息往来或口舌是非。朱雀主言，遇之者须防口舌，宜谨慎言语。':
-    chuJ==='螣蛇'?'螣蛇发用，主虚惊怪异，有惊恐或突发变故。螣蛇主惊，遇之者宜稳重，防虚惊。':
-    chuJ==='勾陈'?'勾陈发用，主争斗迟滞，有纠纷或拖延。勾陈主滞，遇之者宜耐心，防争执。':
-    chuJ==='天空'?'天空发用，主虚诈空亡，有人口是心非或计划落空。天空主空，遇之者宜谨慎，防受骗。':
-    chuJ==='白虎'?'白虎发用，主凶丧血光，有灾祸或冲突。白虎主凶，遇之者宜谨慎，防意外。':
-    chuJ==='玄武'?'玄武发用，主盗贼隐私，有暗算或失物。玄武主暗，遇之者宜防小人，防盗。':'')+'</p>'+
+    (chuJ==='贵人'?'贵人发用，古谓有贵人相助、事有靠山。贵人为天将之首。':
+    chuJ==='青龙'?'青龙发用，古谓主喜庆进财。青龙主财禄。':
+    chuJ==='六合'?'六合发用，古谓主和合、合作、姻缘。六合主和。':
+    chuJ==='太阴'?'太阴发用，古谓主暗昧阴私，或应女性贵人。':
+    chuJ==='天后'?'天后发用，古谓有女性庇护、感情和顺。天后主恩泽。':
+    chuJ==='太常'?'太常发用，古谓主饮食宴请、馈赠。太常主常。':
+    chuJ==='朱雀'?'朱雀发用，古谓主文书口舌、信息往来。朱雀主言。':
+    chuJ==='螣蛇'?'螣蛇发用，古谓主虚惊怪异、突发变故。螣蛇主惊。':
+    chuJ==='勾陈'?'勾陈发用，古谓主争斗迟滞、纠纷拖延。勾陈主滞。':
+    chuJ==='天空'?'天空发用，古谓主虚诈、口是心非。天空主空。':
+    chuJ==='白虎'?'白虎发用，古谓主刚猛、血光冲突。白虎主刚。':
+    chuJ==='玄武'?'玄武发用，古谓主盗贼隐私、暗昧失物。玄武主暗。':'')+'</p>'+
     '<p><strong>【旺相休囚死】</strong>初传'+BRAN[r.chu]+'于当前月令为<span class="hl">'+wx(r.chu)+'</span>状态，'+
-    (wx(r.chu)==='旺'?'气势正盛，力量最强，宜进取。':
-    wx(r.chu)==='相'?'气势次旺，有助力，可为。':
-    wx(r.chu)==='休'?'气势休养，力量平平，宜守。':
-    wx(r.chu)==='囚'?'气势受困，力量不足，不宜妄动。':'气势衰竭，最弱，须防损失。')+'</p>'+
+    (wx(r.chu)==='旺'?'气势正盛，力量最强。':
+    wx(r.chu)==='相'?'气势次旺。':
+    wx(r.chu)==='休'?'气势休养，力量平平。':
+    wx(r.chu)==='囚'?'气势受困，力量不足。':'气势衰竭，力量最弱。')+'</p>'+
     '</div></details>'+
     
     // 中传天将详解
@@ -3287,9 +2730,9 @@ function renderInterp(r,q,ft){
     '<div style="padding:8px;background:var(--surf);border-radius:6px;margin-top:6px;font-size:.85rem;line-height:1.7">'+
     '<p><strong>【天将含义】</strong>'+(TJ_DESC[zhongJ]||'—')+'</p>'+
     '<p><strong>【五行属性】</strong>'+zhangE+'（'+(zhangE==='木'?'主生发':zhangE==='火'?'主礼义':zhangE==='土'?'主信实':zhangE==='金'?'主义气':'主智慧')+'）</p>'+
-    '<p><strong>【临中传之象】</strong>中传主事之中途变化，'+(zhongJ==='青龙'||zhongJ==='贵人'||zhongJ==='六合'?'中途有贵人助力，进展顺利。':
-    zhongJ==='白虎'||zhongJ==='玄武'||zhongJ==='勾陈'?'中途有阻滞、变故，须谨慎应对。':
-    zhongJ==='天空'?'中途有变数，或有人口是心非。':'中途运势平稳，按部就班。')+'</p>'+
+    '<p><strong>【临中传之象】</strong>中传主事之中途变化，'+(zhongJ==='青龙'||zhongJ==='贵人'||zhongJ==='六合'?'古谓中途得助。':
+    zhongJ==='白虎'||zhongJ==='玄武'||zhongJ==='勾陈'?'古谓中途有阻滞变故。':
+    zhongJ==='天空'?'古谓中途有变数。':'中途无特异之象。')+'</p>'+
     '<p><strong>【旺相休囚死】</strong>中传'+BRAN[r.zhang]+'于当前月令为<span class="hl">'+wx(r.zhang)+'</span>状态。</p>'+
     '</div></details>'+
     
@@ -3299,11 +2742,11 @@ function renderInterp(r,q,ft){
     '<div style="padding:8px;background:var(--surf);border-radius:6px;margin-top:6px;font-size:.85rem;line-height:1.7">'+
     '<p><strong>【天将含义】</strong>'+(TJ_DESC[moJ]||'—')+'</p>'+
     '<p><strong>【五行属性】</strong>'+moE+'（'+(moE==='木'?'主生发':moE==='火'?'主礼义':moE==='土'?'主信实':moE==='金'?'主义气':'主智慧')+'）</p>'+
-    '<p><strong>【临末传之象】</strong>末传主事之结局，'+(moJ==='青龙'||moJ==='贵人'?'结局吉庆，有贵人相助，事业有成。':
-    moJ==='六合'?'结局圆满，和合之象。':
-    moJ==='白虎'?'结局有损，须防意外。':
-    moJ==='天空'?'结局虚空，可能落空。':
-    moJ==='玄武'?'结局不明，须防暗算。':'结局平稳，无大吉凶。')+'</p>'+
+    '<p><strong>【临末传之象】</strong>末传主事之结局，'+(moJ==='青龙'||moJ==='贵人'?'古谓结局得助。':
+    moJ==='六合'?'古谓和合之象。':
+    moJ==='白虎'?'古谓结局见刚猛之象。':
+    moJ==='天空'?'古谓结局虚空。':
+    moJ==='玄武'?'古谓结局不明。':'无特异之象。')+'</p>'+
     '<p><strong>【旺相休囚死】</strong>末传'+BRAN[r.mo]+'于当前月令为<span class="hl">'+wx(r.mo)+'</span>状态。</p>'+
     '</div></details>'+
     
@@ -3315,12 +2758,12 @@ function renderInterp(r,q,ft){
     // 三传生克关系
     '<p><strong>【三传生克】</strong></p>'+
     '<p style="font-size:.8rem;color:var(--dim);line-height:1.7">'+
-    (KE[r.chuElem]===r.zhangElem?'初传克中传（'+r.chuElem+'克'+r.zhangElem+'），事有阻碍，中途有变，须防不测。':'')+
-    (KE[r.zhangElem]===r.moElem?'中传克末传（'+r.zhangElem+'克'+r.moElem+'），结局有损，事成不易。':'')+
+    (KE[r.chuElem]===r.zhangElem?'初传克中传（'+r.chuElem+'克'+r.zhangElem+'），古谓事有阻碍、中途有变。':'')+
+    (KE[r.zhangElem]===r.moElem?'中传克末传（'+r.zhangElem+'克'+r.moElem+'），古谓结局见克。':'')+
     (KE[r.moElem]===r.chuElem?'末传克初传（'+r.moElem+'克'+r.chuElem+'），首尾相克，事有反复。':'')+
     // 与上文 zhangShengChu/moShengZhang 同一口径：SHENG[X]===Y ⟺ Y 生 X，故「中传生初传」判 SHENG[初]===中
-    (SHENG[r.chuElem]===r.zhangElem?'中传生初传（'+r.zhangElem+'生'+r.chuElem+'），中途有助，宜借力。':'')+
-    (SHENG[r.zhangElem]===r.moElem?'末传生中传（'+r.moElem+'生'+r.zhangElem+'），结局有助，后劲足。':'')+
+    (SHENG[r.chuElem]===r.zhangElem?'中传生初传（'+r.zhangElem+'生'+r.chuElem+'），古谓中途见生。':'')+
+    (SHENG[r.zhangElem]===r.moElem?'末传生中传（'+r.moElem+'生'+r.zhangElem+'），古谓结局见生。':'')+
     (r.chuElem===r.zhangElem&&r.zhangElem===r.moElem?'三传五行相同（皆'+r.chuElem+'），事专一，但亦主固执。':'')+
     (r.chuElem===r.zhangElem||r.zhangElem===r.moElem||r.chuElem===r.moElem?'有五行相同之传，主事有延续性。':'')+
     '</p>'+
@@ -3337,7 +2780,7 @@ function renderInterp(r,q,ft){
       var ys=getYongshen(r,r.qtype);
       var focusStr=ys.focus.map(function(b){return BRAN[b];}).join('、');
       return'<hr class="dv">'+'<p><strong>◆ 用神选取：</strong></p>'+'<p>本课用神为 <span class="hl">【'+ys.label+'】</span>。<span style="font-size:.82rem;color:var(--dim)">'+ys.desc+'</span></p>'+
-      '<p>关键神将：<span class="hl">'+focusStr+'</span>。'+(ys.desc.indexOf('注：')>=0?'<span style="color:var(--red);font-size:.78rem"> 用神临空亡，事有落空之象，逢冲方验！</span>':'')+'</p>';
+      '<p>关键神将：<span class="hl">'+focusStr+'</span>。'+(ys.desc.indexOf('注：')>=0?'<span class="kx" style="font-size:.78rem"> 用神临空亡（古谓事有落空之象，逢冲方验）</span>':'')+'</p>';
     })()+
 
     // ═══ 六亲分析 ═══
@@ -3353,11 +2796,11 @@ function renderInterp(r,q,ft){
         {l:'德神 '+BRAN[r.deBr],lq:lq[r.deBr],e:ELEM[r.deBr]},
         {l:'禄神 '+BRAN[r.luBr],lq:lq[r.luBr],e:ELEM[r.luBr]}
       ];
-      var h='<div style="overflow-x:auto"><table class="gtbl" style="min-width:420px"><tr><th>位置</th><th>六亲</th><th>五行</th><th>吉凶提示</th></tr>';
+      // 2026-11-03：表头「吉凶提示」→「象意」；六亲不再按吉凶分红绿（十神本无吉凶，吉凶是断出来的）。
+      var h='<div style="overflow-x:auto"><table class="gtbl" style="min-width:420px"><tr><th>位置</th><th>六亲</th><th>五行</th><th>象意（古书通说）</th></tr>';
       for(var ri=0;ri<rows.length;ri++){
         var rw=rows[ri];
-        var jx=(rw.lq==='正财'||rw.lq==='偏财'||rw.lq==='正官'||rw.lq==='正印'||rw.lq==='比肩')?'color:var(--green)':
-                (rw.lq==='劫财'||rw.lq==='七杀'||rw.lq==='伤官')?'color:var(--red)':'color:var(--dim)';
+        var jx='color:var(--text)';
         var jxTip=(rw.lq==='正官'?'事业官运':rw.lq==='正财'?'钱财姻缘':rw.lq==='偏财'?'意外横财':rw.lq==='正印'?'文书长辈':rw.lq==='偏印'?'次级庇护':rw.lq==='比肩'?'同辈助力':rw.lq==='劫财'?'竞争破耗':rw.lq==='伤官'?'才华表达':rw.lq==='食神'?'福气食禄':'一般关系');
         h+='<tr><td>'+rw.l+'</td><td style="'+jx+'">'+rw.lq+'</td><td>'+rw.e+'</td><td style="font-size:.72rem;color:var(--dim)">'+jxTip+'</td></tr>';
       }
@@ -3394,38 +2837,51 @@ function renderInterp(r,q,ft){
       for(var j=0;j<kt.length;j++) txt+='<span style="color:var(--gold2)">【'+kt[j].name+'】</span>'+escHtml(kt[j].note||'')+'。 ';
       return tags+txt+'</p>';
     })()+
+    // 课名（九宗门 / 课经诸格）：纯分类标签，不进吉凶分值（见 ketiGe 注释）
+    (function(){
+      var ge=ketiGe(r);
+      if(!ge.length) return '';
+      var tags='<div class="ss-tags" style="margin-top:6px">';
+      for(var i=0;i<ge.length;i++)
+        tags+='<span class="ss-tg" style="cursor:default;border-color:rgba(192,160,64,.45)" title="'+escHtml(ge[i].note||'')+'">'+ge[i].name+'</span>';
+      return '<p style="margin-top:10px"><strong>◆ 课名（课体）：</strong></p>'+tags+
+        '<p style="font-size:.8rem;color:var(--dim);line-height:1.7;margin-top:4px">'+
+        '九宗门定取传之法，课经诸格定课之名义；同一课可兼数名，古书择其一而称之。</p>';
+    })()+
     '<p><strong>◆ 特殊格局：</strong></p>'+
     '<p style="font-size:.8rem;color:var(--dim);line-height:1.7">'+
-    (r.chu===r.mo&&r.chu!==r.zhang?'<span style="color:var(--gold2)">【首尾相同】</span>初末相同，事有回旋，终归原点，须防循环往复。 ':'')+
-    (KE[chuE]===r.dayElem?'<span style="color:var(--red)">【初传克日】</span>初传克日干，有耗损、压力，来自外部阻碍。 ':'')+
+    // 2026-11-03 中性化：删去「吉象／凶象重重／须防大灾大患／吉祥如意／宜积极行动」，
+    // 课象事实（何人临何传）保留，象意一律加「古谓」并降为描述。配色统一 .kx（正文色）。
+    (r.chu===r.mo&&r.chu!==r.zhang?'<span class="kx">【首尾相同】</span>初末相同，终归原点。 ':'')+
+    (KE[chuE]===r.dayElem?'<span class="kx">【初传克日】</span>初传克日干，古谓耗损、受阻之象。 ':'')+
     // 方向复核：初传生日干 ⟺ SHENG[日干]===初传（此前写成 SHENG[初传]===日干，实际判的是日干生初传）
-    (SHENG[r.dayElem]===chuE?'<span style="color:var(--green)">【初传生日】</span>初传生日干，外来滋养，有助力。 ':'')+
-    (chuE===r.dayElem?'<span style="color:var(--green)">【初传扶日】</span>初传五行与日干相同，本气相扶。 ':'')+
-    (SHENG[chuE]===r.dayElem?'<span style="color:var(--orange)">【日干生初传】</span>日干生初传，自身付出，有消耗但亦主慷慨。 ':'')+
-    (KE[r.dayElem]===chuE?'<span style="color:var(--orange)">【日干克初传】</span>日干克初传，可主动掌控局面，耗力但不被动。 ':'')+
-    (r.chu===r.dayBr?'<span style="color:var(--gold2)">【初传临日支】</span>初传临支，事与本地、本身相关，亲力亲为。 ':'')+
-    (chuJ&&chuJ===moJ&&chuJ!==zhongJ?'<span style="color:var(--gold2)">【首尾天将同】</span>天将首尾呼应，事有始有终，善始善终之象。 ':'')+
-    (chuJ==='贵人'&&moJ==='贵人'?'<span style="color:var(--green)">【双贵拱照】</span>贵人临初末，大吉之象，多有贵人相助。 ':'')+
-    (chuJ==='白虎'&&moJ==='白虎'?'<span style="color:var(--red)">【双虎并临】</span>白虎临初末，凶象重重，须防大灾大患。 ':'')+
-    (chuJ==='白虎'?'<span style="color:var(--red)">【白虎发用】</span>白虎为初传，事发突然，须防意外伤害。 ':'')+
-    (chuJ==='贵人'?'<span style="color:var(--green)">【贵人发用】</span>贵人为初传，开局得助，宜积极行动。 ':'')+
-    (chuJ==='青龙'?'<span style="color:var(--green)">【青龙发用】</span>青龙为初传，吉祥如意，财喜临门。 ':'')+
-    (chuJ==='玄武'?'<span style="color:var(--blue)">【玄武发用】</span>玄武为初传，主暗昧、盗匪、暧昧不明之事。 ':'')+
+    (SHENG[r.dayElem]===chuE?'<span class="kx">【初传生日】</span>初传生日干，古谓得助之象。 ':'')+
+    (chuE===r.dayElem?'<span class="kx">【初传扶日】</span>初传五行与日干相同，本气相扶。 ':'')+
+    (SHENG[chuE]===r.dayElem?'<span class="kx">【日干生初传】</span>日干生初传，古谓付出、耗泄之象。 ':'')+
+    (KE[r.dayElem]===chuE?'<span class="kx">【日干克初传】</span>日干克初传，古谓可制之象。 ':'')+
+    (r.chu===r.dayBr?'<span class="kx">【初传临日支】</span>初传临支，事与本地、本身相关。 ':'')+
+    (chuJ&&chuJ===moJ&&chuJ!==zhongJ?'<span class="kx">【首尾天将同】</span>天将首尾呼应，古谓事有始终。 ':'')+
+    (chuJ==='贵人'&&moJ==='贵人'?'<span class="kx">【双贵拱照】</span>贵人临初末，古谓得助之象。 ':'')+
+    (chuJ==='白虎'&&moJ==='白虎'?'<span class="kx">【双虎并临】</span>白虎临初末，古谓凶险之象。 ':'')+
+    (chuJ==='白虎'?'<span class="kx">【白虎发用】</span>白虎为初传，古谓事发突然之象。 ':'')+
+    (chuJ==='贵人'?'<span class="kx">【贵人发用】</span>贵人为初传，古谓开局得助之象。 ':'')+
+    (chuJ==='青龙'?'<span class="kx">【青龙发用】</span>青龙为初传，古谓财喜之象。 ':'')+
+    (chuJ==='玄武'?'<span class="kx">【玄武发用】</span>玄武为初传，古谓暗昧、不明之象。 ':'')+
 
     // 同上：末传生日干 ⟺ SHENG[日干]===末传；另一向为「日干生末传」，结果耗泄
-    (SHENG[r.dayElem]===moE?'<span style="color:var(--green)">【末传生日】</span>末传生日干，结果有滋养，大吉收尾。 ':'')+
-    (SHENG[moE]===r.dayElem?'<span style="color:var(--orange)">【日干生末传】</span>日干生末传，结局自身付出，有耗泄之象。 ':'')+
-    (KE[moE]===r.dayElem?'<span style="color:var(--red)">【末传克日】</span>末传克日干，结果耗损，需防后患。 ':'')+
-    (r.chu===r.mo&&r.zhang!==r.chu?'<span style="color:var(--gold2)">【循环课】</span>天盘循环，首尾同宫，事反复循环。 ':'')+
+    (SHENG[r.dayElem]===moE?'<span class="kx">【末传生日】</span>末传生日干，古谓收尾得助之象。 ':'')+
+    (SHENG[moE]===r.dayElem?'<span class="kx">【日干生末传】</span>日干生末传，古谓收尾耗泄之象。 ':'')+
+    (KE[moE]===r.dayElem?'<span class="kx">【末传克日】</span>末传克日干，古谓收尾受损之象。 ':'')+
+    (r.chu===r.mo&&r.zhang!==r.chu?'<span class="kx">【循环课】</span>天盘循环，首尾同宫，事反复循环。 ':'')+
     // 以下四项为「神煞类象」。2026-11-01 线 A 曾把它们降级为描述式措辞，
     // 因为当时这些象不进 fortune() —— 文案承诺的象不参与判定，属自相矛盾。
     // 线 B 已在 fortune ⑩ 兑现（德神发用 +1.0、德神临干 +0.6、禄神发用 +0.8、
     // 驿马/桃花发用各 +0.6），故此处不再标注「不参与评分」。
     // ⚠️ 措辞仍保持描述式：进分只表示它参与权衡，不表示它能单独定吉凶。
-    (r.deBr===r.chu?'<span style="color:var(--green)">【德神发用】</span>德神居初传，古谓有德相助之象。 ':'')+
-    (r.luBr===r.chu?'<span style="color:var(--orange)">【禄神发用】</span>禄神居初传，古谓财禄临身之象。 ':'')+
-    (r.yima===r.chu?'<span style="color:var(--orange)">【驿马发用】</span>驿马为初传，主动、出行之象。 ':'')+
-    (r.taohua===r.chu?'<span style="color:#e879f9">【桃花发用】</span>桃花为初传，主感情缘动之象。 ':'')+
+    (r.deBr===r.chu?'<span class="kx">【德神发用】</span>德神居初传，古谓有德相助之象。 ':'')+
+    (r.luBr===r.chu?'<span class="kx">【禄神发用】</span>禄神居初传，古谓财禄临身之象。 ':'')+
+    (r.yima===r.chu?'<span class="kx">【驿马发用】</span>驿马为初传，主动、出行之象。 ':'')+
+    (r.taohua===r.chu?'<span class="kx">【桃花发用】</span>桃花为初传，主感情缘动之象。 ':'')+
     '</p>'+
     qSection+
     renderLeishen(r)+
@@ -3434,13 +2890,21 @@ function renderInterp(r,q,ft){
     '<p style="font-size:.78rem;color:var(--faint);text-indent:0;line-height:1.8">'+
     '附注：本页面为六壬算法教学演示版，融合九宗门起传、月将节气定位、贵人顺逆排将、十二天将、神煞、长生十二宫、德禄等核心要素。'+
     '完整六壬占断需结合占者行年、事情原委、方位、神煞细目等因素综合判断，此处解读仅供兴趣参考。'+
-    '<br><span style="color:var(--gold2)">关于判词与应期</span>：本页<b>不给吉凶档位与分数</b>，只给判词与应期 —— '+
-    '判词由「类神是否入传、旺衰、空亡、所乘天将、与日干生克、三传走向」逐条推出，'+
+    '<br><span style="color:var(--gold2)">关于课象与应期</span>：本页<b>不给吉凶档位与分数，也不下「成／不成」的结论</b>，'+
+    '只给课象与应期 —— 顶部一行是<b>课象摘要</b>（类神何支、入传与否、旺衰、与日干生克、所乘天将、空墓），'+
     '下方「判据明细」每条都可在盘上自行复核；应期本「类神为主、初传为辅」一派，'+
     '兼取「旺相应速、休囚应迟」之通例。'+
-    '⚠ 判词措辞与应期口径同属<b>通说整理</b>，已标注所本之书（《六壬金铰剪》《大六壬说约》《玉成歌》），'+
-    '但未逐句回查原典；应期诸家分歧尤大，此处是一次<b>站队</b>，不是定论。'+
-    (r.nm?'已填年命，年命与类神之生克亦计入评分；未填则该项不计。':'')+
+    '<br><span style="color:var(--gold2)">为何不再断吉凶</span>：2026-11-03 用 105 课人工标注检验原判词，'+
+    '命中 30/71 = <b>42.3%</b>（95%CI 30.8%~53.7%，含 50%），与抛硬币<b>无显著差别</b>；'+
+    '14 条判据逐条检验全部 |z|<1.3。功效分析另证：现有样本量下任何规则都证明不了自己不是运气。'+
+    '故断法层降级为<b>课象呈现</b>，判断权交还读者 —— 这不是偷懒，是数据不支持时唯一诚实的做法。'+
+    '<br><span style="color:var(--gold2)">出典</span>：2026-11-02 起，断法层已按《大六壬指南》卷三会纂（22 事类口诀）<b>逐条回查原文</b>，'+
+    '凡有原句者，判词行末以〔〕标出章次与原句；<b>无原句者直标「通说，非原句」</b>，不编出处。'+
+    '全页仅三项确无文献支撑，已标〔自定〕：入传位置分值、三态带宽、天将吉凶分值。'+
+    '「死墓绝空」四项中，本页只取可机械判的<b>空、墓</b>两项作为课象陈述（不再据此定成败），'+
+    '「死」只保留月令一义，「绝」因判据不成立而<b>登记不收</b>（理由见源码注释）。'+
+    '应期诸家分歧尤大，此处是一次<b>站队</b>，不是定论；婚姻占另有「末传合处验成期」专法，已并列给出。'+
+    (r.nm?'已填年命，年命与类神之生克已在课象中列出；未填则无此项。':'')+
     '</p>';
 }
 
@@ -3480,6 +2944,11 @@ function divine(){
   r.raw={y:parseInt(document.getElementById('iy').value,10),m:parseInt(document.getElementById('im').value,10),d:parseInt(document.getElementById('id').value,10)};
   r.question=q;
   r.qtype=detectQ(q);
+  // 占者性别：卷三婚姻章「男占妻取财、女占夫取鬼」是两套类神，必须分。
+  // 取命盘区已有的性别下拉（起课人即占者）；未开命盘时该值仍在 DOM 里，默认「男」。
+  // ⚠️ 代人占（替他人问婚姻）时应手动改这一项，否则类神取错 —— 页面已在类神区标注取法。
+  var gxEl=document.getElementById('ibsex');
+  r.gender=(gxEl&&gxEl.value==='女')?'f':'m';
   // 年命：线 A 时刻意放在 fortune() 之后挂上（用代码顺序表达「不参与评分」）；
   // 线 B 起年命参与评分（取「类神 ↔ 年命」的生克与入传，见 fortune ⑪），故须先算再传。
   if(document.getElementById('cbMingpan').checked){
@@ -3649,8 +3118,11 @@ document.getElementById('btnExport').addEventListener('click',function(){
     chuan:{chu:BRAN[r.chu],zhang:BRAN[r.zhang],mo:BRAN[r.mo],chuJiang:r.generals[r.chu]?r.generals[r.chu].jiang:'',zhangJiang:r.generals[r.zhang]?r.generals[r.zhang].jiang:'',moJiang:r.generals[r.mo]?r.generals[r.mo].jiang:''},
     generals:r.generals,
     shafa:r.ss.map(function(s){return s.n;}),
-    fortune:ft,
-    advice:ft.text
+    // 2026-11-03：不再导出五档档位。level='大凶' 这类标签本身就是吉凶结论，
+    // 与「本工具不作吉凶判断」直接冲突，且该档位已被 105 课检验证否（42.3%）。
+    // 只导出可复核的象力权重与文字提要，并写明口径，避免导出物被当成结论转述。
+    xiangli:{score:ft.score,parts:ft.parts,text:ft.text,
+             note:'象力权重仅供复核，非吉凶分；本工具不据此判定成败'}
   };
   var blob=new Blob([JSON.stringify(exp,null,2)],{type:'application/json'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -3665,7 +3137,7 @@ document.getElementById('btnTTS').addEventListener('click',function(){
   var r0=window._lastR;
   var pd=(r0&&r0.panding)||(r0?panding(r0,r0.qtype,r0.nm):{verdict:'',lines:[],items:[]});
   var yq=(r0&&r0.yingqi)||null;
-  var text='大六壬占断结果：'+pd.verdict+'。'+pd.lines.join('')
+  var text='大六壬课象：'+pd.verdict+'。'+pd.lines.join('')
     +(yq?('应期：'+yq.win+'。'):'');
   // 使用 render_ui 提示用户确认，或者直接用 tts 工具
   var el=document.getElementById('fcRslt');
@@ -3702,12 +3174,12 @@ globalThis.DLR={
   mod:mod,jdn:jdn,calc:calc,daySB:daySB,yearSB:yearSB,monthSB:monthSB,hourSB:hourSB,
   getYueJiang:getYueJiang,fortune:fortune,detectQ:detectQ,jqTime:jqTime,afterJQ:afterJQ,
   wxState:wxState,wxRel:wxRel,WX_SCORE:WX_SCORE,FT_TH:FT_TH,
-  keti:keti,ketiScore:ketiScore,liuqin5:liuqin5,KT_SCORE:KT_SCORE,
+  keti:keti,ketiGe:ketiGe,ketiScore:ketiScore,liuqin5:liuqin5,KT_SCORE:KT_SCORE,
   KT_SANHE_E:KT_SANHE_E,LQ5:LQ5,normQ:normQ,
   nianming:nianming,LEISHEN:LEISHEN,liuWx:liuWx,WX_BR:WX_BR,
   leishenBr:leishenBr,leishenScore:leishenScore,jiangBr:jiangBr,getYongshen:getYongshen,
-  LS_CAP:LS_CAP,LS_ZHU:LS_ZHU,LS_SHA:LS_SHA,LS_GANREL:LS_GANREL,
-  panding:panding,yingqi:yingqi,LS_ACT:LS_ACT,HE6:HE6,brKong:brKong,
+  LS_CAP:LS_CAP,LS_ZHU:LS_ZHU,LS_SHA:LS_SHA,LS_GANREL:LS_GANREL,SRC:SRC,
+  panding:panding,yingqi:yingqi,LS_HEAD:LS_HEAD,HE6:HE6,brKong:brKong,
   LQ_NAME:LQ_NAME,relPhrase:relPhrase,wxRelNote:wxRelNote,chuanRel:chuanRel,
   JIANGS_SCORE:JIANGS_SCORE,
   KE:KE,SHENG:SHENG,XI_MAP:XI_MAP,ELEM:ELEM,ELEM_S:ELEM_S,BRAN:BRAN,
