@@ -32,7 +32,12 @@ const allScripts = fs.readFileSync(HTML, 'utf8').match(/<script>([\s\S]*?)<\/scr
 let code = allScripts.reduce((a, b) => (b && b.length > (a ? a.length : 0)) ? b : a, null);
 if (code) code = code.replace(/^<script>/, '').replace(/<\/script>$/, '');
 if (!code) { console.error('未能在 index.html 中找到 <script>'); process.exit(1); }
-const ctx = vm.createContext({ document: stub(), window: stub(), console });
+const ctx = vm.createContext({
+  document: stub(), window: stub(), console,
+  // 页面顶层代码会跑 applyUrlParams()/initShare()，需要 location/navigator 桩（空 search → 直接返回）
+  location: { search: '', origin: 'http://localhost', pathname: '/index.html' },
+  navigator: {}
+});
 vm.runInContext(code, ctx);
 const DLR = ctx.DLR;
 if (!DLR) { console.error('脚本未导出 DLR，无法测试'); process.exit(1); }
@@ -44,7 +49,8 @@ const { STEM, BRAN, calc, daySB, hourSB, monthSB, yearSB, getYueJiang, jqTime, a
         XI_MAP, nianming, LEISHEN, liuWx, WX_BR,
         leishenBr, leishenScore, jiangBr, LS_CAP, JIANGS_SCORE,
         panding, yingqi, LS_HEAD, HE6, relPhrase, wxRelNote, chuanRel,
-        renderBaihua, JIANG_BAI, WX_BAI, TIANJIANG } = DLR;
+        renderBaihua, JIANG_BAI, WX_BAI, TIANJIANG,
+        encodeShare, parseShareQuery } = DLR;
 
 let pass = 0, fail = 0, warn = 0;
 const failures = [];
@@ -1218,6 +1224,52 @@ group('25. 51.la 统计码在位');
   // 不许出现两份（防止哪次合并把代码贴重了，PV 翻倍）
   ok((page.match(/LA\.init\(/g) || []).length === 1, 'LA.init 只出现一次');
 }
+
+// ───────────────────────────────────────────────
+// 26. 课例分享链接（2026-11-16）
+// 分享链接是给别人点的：编码/解析必须往返无损，脏参数必须被静默丢弃而非报错，
+// 初始化顺序必须保证 URL 参数覆盖「现在」默认值（反过来就会被 useNow 洗掉，这个 bug 真出过）。
+group('26. 课例分享链接');
+{
+  ok(typeof encodeShare === 'function' && typeof parseShareQuery === 'function',
+     'encodeShare/parseShareQuery 已导出');
+
+  // 往返测试：含中文问题、事类键、真太阳时三件套、月将手动值
+  const qtKey = DLR.qtChipList()[0].k;             // 用实际按钮清单里的键，不硬编码
+  const src = { y:2026, m:11, d:16, h:6, q:'明日出门办事顺利吗？', qt:qtKey,
+                s:1, tm:'09:45', lng:116.41, yj:10 };
+  const qs = encodeShare(src);
+  ok(qs.split('&').length === 10, '十项参数全部编码', qs.slice(0, 40) + '…');
+  const back = parseShareQuery(qs);
+  ok(back && back.y===2026 && back.m===11 && back.d===16 && back.h===6, '日期时辰往返一致');
+  ok(back.q === src.q, '中文问题往返无损');
+  ok(back.qt === qtKey, '事类键往返一致');
+  ok(back.s === true && back.tm==='09:45' && back.lng===116.41, '真太阳时三件套往返一致');
+  ok(back.yj === 10, '月将手动值往返一致');
+
+  // 脏数据丢弃
+  ok(parseShareQuery(encodeShare({y:2026,m:11,d:16,h:6,qt:'hacker'})).qt === null,
+     '非法事类键被丢弃');
+  ok(parseShareQuery(encodeShare({y:2026,m:11,d:16,h:99})) === null,
+     '时辰越界 → 整条链接判无效');
+  ok(parseShareQuery(encodeShare({y:2026,m:11,d:16,h:6,lng:999})) .lng === null,
+     '经度越界被丢弃');
+  ok(parseShareQuery('foo=1&bar=2') === null, '完全无关的参数 → null（不报错）');
+  ok(parseShareQuery('') === null, '空 query → null');
+
+  // 页面接线与初始化顺序
+  const page = fs.readFileSync(HTML, 'utf8');
+  ok(/id="btnShare"/.test(page), '复制链接按钮在位');
+  ok(/initShare\(\);\s*\napplyUrlParams\(\);/.test(code), 'initShare 与 applyUrlParams 已接入初始化');
+  const iUse = code.indexOf('useNow();'), iApply = code.indexOf('applyUrlParams();   //');
+  ok(iUse > 0 && iApply > iUse, 'applyUrlParams 排在 useNow 之后（否则 URL 参数被「现在」洗掉）');
+  ok(/_shareUrl=shareUrl\(\)/.test(code), 'divine 成功后生成分享链接');
+
+  // SEO（第二步一起做的：标题带关键词、描述说明功能与定位）
+  ok(/<title>大六壬在线起课/.test(page), 'title 含搜索关键词「大六壬在线起课」');
+  ok(/<meta name="description" content="[^"]{40,}"/.test(page), 'meta description 在位（≥40 字）');
+}
+
 
 
 // ───────────────────────────────────────────────

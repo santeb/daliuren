@@ -81,7 +81,10 @@ const ctx = vm.createContext({
   console: console,
   alert: function (m) { throw new Error('页面弹出了 alert：' + m); },
   Date: Date, Math: Math, JSON: JSON, isNaN: isNaN, parseFloat: parseFloat, parseInt: parseInt,
-  setTimeout: function () {}, clearTimeout: function () {}, speechSynthesis: undefined
+  setTimeout: function () {}, clearTimeout: function () {}, speechSynthesis: undefined,
+  // 分享链接回放需要：空 search → applyUrlParams 直接返回，不影响冒烟流程
+  location: { search: '', origin: 'http://localhost', pathname: '/index.html' },
+  navigator: {}
 });
 vm.runInContext(code, ctx);
 

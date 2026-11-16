@@ -8,7 +8,8 @@
 <meta charset="UTF-8">
 <meta name="author" content="santeb">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>大六壬 · 完整版</title>
+<title>大六壬在线起课｜排盘 · 三传 · 十二天将 · 白话课象</title>
+<meta name="description" content="免费在线大六壬排盘工具：输入时间自动起课，支持真太阳时校正、事类锁定、类神与神煞、应期推算，附白话解读与传统文献出处。内容仅供文化研究与娱乐参考。">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 字体异步加载：国内访问 Google Fonts 常超时，改为不阻塞首屏渲染 -->
 <link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Ma+Shan+Zheng&display=swap">
@@ -147,6 +148,15 @@ select.ipt option{background:var(--bg)}
 .ss-tg{background:rgba(180,120,40,.1);border:1px solid rgba(180,120,40,.2);border-radius:6px;padding:2px 8px;font-size:.7rem;color:var(--gold)}
 .ss-lbl{font-size:.72rem;color:var(--faint);margin-bottom:5px}
 .ss-grp{margin-bottom:8px}
+/* 手机小屏微调（2026-11-16 第二步）：只收紧留白与控件高度，不动布局逻辑 */
+@media(max-width:500px){
+  .hdr{padding:24px 14px 12px}
+  .btn{height:44px;padding:0 22px;font-size:1.2rem}
+  .btn2{height:44px;padding:0 14px;font-size:.9rem}
+  .cd,.fc{padding:14px 13px}
+  .cg{min-width:96px}
+  .row{gap:8px}
+}
 </style>
 <!-- 51.la 统计（2026-11-16 san 申请，应用名 daliuren）：守门员第 25 组锁此段防改版丢失 -->
 <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
@@ -189,6 +199,8 @@ select.ipt option{background:var(--bg)}
       </div>
       <button class="btn" id="btnDivine">起 课</button>
       <button class="btn2" id="btnNow">&#8635; 现在</button>
+      <!-- 分享链接（2026-11-16）：起课后把盘面参数编进 URL，复制给他人即可复现同一盘 -->
+      <button class="btn2" id="btnShare" style="display:none" title="复制本次起课的链接，对方打开即见同一盘面">&#9986; 复制链接</button>
     </div>
     <div class="row" style="margin-top:2px;gap:8px">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">
@@ -3191,6 +3203,60 @@ function escHtml(s){
 }
 
 // ─── 主函数 ───────────────────────────────────────────────
+// ─── 课例分享链接（2026-11-16）──────────────────────────────
+// 设计：把「能复现一盘」的最小参数集编进 URL query：年月日、时辰、真太阳时三件套（开关/时刻/经度）、
+//   月将手动值、事类键、问题原文。命盘/年命不编（涉及个人信息，且占者多半不想分享出去）。
+// encodeShare/parseShareQuery 是纯函数：node 里可做往返测试，DOM 只是薄胶水。
+var SHARE_KEYS=['y','m','d','h','q','qt','s','tm','lng','yj'];
+function encodeShare(o){
+  var p=[];
+  function put(k,v){ if(v!==null&&v!==undefined&&v!=='') p.push(k+'='+encodeURIComponent(v)); }
+  put('y',o.y);put('m',o.m);put('d',o.d);
+  put('h',(o.h>=0&&o.h<=11)?o.h:null);          // 时辰 0-11（子起）
+  put('q',(o.q||'').slice(0,120));              // 问题原文截断 120 字，防止链接过长
+  put('qt',(o.qt&&qtypeOf(o.qt))?o.qt:null);    // 事类键必须是已知键，垃圾键丢弃
+  put('s',o.s?1:null);                          // 真太阳时开关
+  put('tm',o.tm);
+  put('lng',(o.lng>=73&&o.lng<=135)?o.lng:null);// 经度限中国范围（与输入框 min/max 一致）
+  put('yj',(o.yj>=0&&o.yj<=11)?o.yj:null);
+  return p.join('&');
+}
+function parseShareQuery(qs){
+  // qs: 'a=1&b=2' 形式（不带 ?）。返回已验证的参数对象，非法字段一律丢弃而非报错——
+  // 分享链接是给别人点的，容忍脏数据比抛错友好。
+  if(!qs) return null;
+  var g={},segs=qs.split('&');
+  for(var i=0;i<segs.length;i++){
+    if(!segs[i]) continue;
+    var kv=segs[i].split('='),k=kv[0],v=decodeURIComponent(kv.slice(1).join('=')||'');
+    if(SHARE_KEYS.indexOf(k)>=0) g[k]=v;
+  }
+  var o={};
+  o.y=parseInt(g.y,10);o.m=parseInt(g.m,10);o.d=parseInt(g.d,10);o.h=parseInt(g.h,10);
+  if(!(o.y>=1900&&o.y<=2100)||!(o.m>=1&&o.m<=12)||!(o.d>=1&&o.d<=31)||
+     !(o.h>=0&&o.h<=11)) return null;            // 日期不完整 → 整条链接视为无效
+  o.q=(g.q||'').slice(0,120);
+  o.qt=qtypeOf(g.qt)?g.qt:null;
+  o.s=g.s==='1';
+  o.tm=/^\d{1,2}:\d{2}$/.test(g.tm||'')?g.tm:null;
+  o.lng=parseFloat(g.lng);
+  if(!(o.lng>=73&&o.lng<=135)) o.lng=null;
+  o.yj=(g.yj!==undefined&&g.yj!==''&&parseInt(g.yj,10)>=0&&parseInt(g.yj,10)<=11)?parseInt(g.yj,10):null;
+  return o;
+}
+function shareUrl(){
+  var el=function(id){return document.getElementById(id);};
+  var o={
+    y:el('iy').value,m:el('im').value,d:el('id').value,h:el('ih').value,
+    q:el('iq').value,qt:_qtPick,
+    s:el('cbSolar').checked?1:null,
+    tm:el('cbSolar').checked?el('itm').value:null,
+    lng:el('cbSolar').checked?el('ilng').value:null,
+    yj:el('iyj').value===''?null:el('iyj').value
+  };
+  return location.origin+location.pathname+'?'+encodeShare(o);
+}
+
 function divine(){
   var y=parseInt(document.getElementById('iy').value,10);
   var m=parseInt(document.getElementById('im').value,10);
@@ -3248,6 +3314,10 @@ function divine(){
   renderAll(r,q,r.fortune);
   // 若开启了年命则立即更新
   if(document.getElementById('cbMingpan').checked) updateMingpan(r);
+  // 分享链接：起课成功才亮出复制按钮
+  window._shareUrl=shareUrl();
+  var bs=document.getElementById('btnShare');
+  if(bs) bs.style.display='';
 }
 
 function useNow(){
@@ -3440,8 +3510,55 @@ document.getElementById('btnTTS').addEventListener('click',function(){
 var _origDivine=typeof divine!=='undefined'?divine:null;
 
 // 初始化
+// ─── 分享链接：复制按钮 + URL 参数回放 ─────────────────────
+function initShare(){
+  var bs=document.getElementById('btnShare');
+  if(!bs||!bs.addEventListener) return;
+  bs.addEventListener('click',function(){
+    if(!window._shareUrl){ alert('请先起一课，再复制链接'); return; }
+    var done=function(){
+      var old=bs.innerHTML;
+      bs.innerHTML='&#10003; 已复制';
+      setTimeout(function(){ bs.innerHTML=old; },2000);
+    };
+    // HTTPS（含 localhost）走 clipboard API；其余环境退回 execCommand
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(window._shareUrl).then(done,function(){fallbackCopy();done();});
+    }else{ fallbackCopy(); done(); }
+    function fallbackCopy(){
+      var ta=document.createElement('textarea');
+      ta.value=window._shareUrl; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); }catch(e){}
+      document.body.removeChild(ta);
+    }
+  });
+}
+function applyUrlParams(){
+  // 链接带参数 → 覆盖默认值并自动起课。命盘不回放（分享者个人信息不进 URL）。
+  var qs=(location.search||'').replace(/^\?/,'');
+  if(!qs) return;
+  var o=parseShareQuery(qs);
+  if(!o) return;                                  // 脏链接静默忽略，按正常空表进入
+  document.getElementById('iy').value=o.y;
+  document.getElementById('im').value=o.m;
+  document.getElementById('id').value=o.d;
+  document.getElementById('ih').value=o.h;
+  document.getElementById('iq').value=o.q||'';
+  document.getElementById('cbSolar').checked=o.s;
+  if(o.s){
+    if(o.tm) document.getElementById('itm').value=o.tm;
+    if(o.lng) document.getElementById('ilng').value=o.lng;
+  }
+  if(o.yj!==null&&o.yj!==undefined) document.getElementById('iyj').value=o.yj;
+  if(o.qt&&o.qt!==_qtPick){ _qtPick=o.qt; renderQChips(); }   // 重绘按钮让锁定态高亮
+  updateSolarHint();
+  divine();
+}
 renderQChips();     // 事类按钮（依赖 QTYPES，须在其定义后调用）
-useNow();
+useNow();           // 先填「现在」
+initShare();
+applyUrlParams();   // URL 有参数则覆盖 useNow 的值并自动起课 —— 必须排在 useNow 之后，否则日期被洗掉
 
 // 错误捕获
 window.onerror=function(msg,url,line){
@@ -3474,7 +3591,9 @@ globalThis.DLR={
   // 事类按钮（2026-11-16）：qtChipList/qtypeOf 供测试断言按钮清单与 qtype 映射一致
   qtChipList:qtChipList,qtypeOf:qtypeOf,setQtPick:setQtPick,renderQChips:renderQChips,
   // 白话解读（2026-11-16）：renderBaihua 是纯函数（只读 r 不出 DOM），可直接在 node 里断言
-  renderBaihua:renderBaihua,JIANG_BAI:JIANG_BAI,WX_BAI:WX_BAI
+  renderBaihua:renderBaihua,JIANG_BAI:JIANG_BAI,WX_BAI:WX_BAI,
+  // 分享链接（2026-11-16）：纯函数可往返测试；qchips 只读不出 DOM
+  encodeShare:encodeShare,parseShareQuery:parseShareQuery
 };
 
 })();
