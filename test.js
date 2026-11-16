@@ -36,10 +36,11 @@ if (!DLR) { console.error('脚本未导出 DLR，无法测试'); process.exit(1)
 const { STEM, BRAN, calc, daySB, hourSB, monthSB, yearSB, getYueJiang, jqTime, afterJQ,
         ELEM, ELEM_S, LU_BR, DE_LU, CHANGSHENG_ORDER, mod,
         fortune, wxState, wxRel, WX_SCORE, FT_TH, getYongshen,
-        keti, ketiScore, liuqin5, normQ, KT_SCORE, KT_SANHE_E, LQ5, QTYPES, KE, SHENG,
+        keti, ketiScore, liuqin5, normQ, KT_SCORE, KT_SANHE_E, LQ5, QTYPES, KE, SHENG, detectQ,
         XI_MAP, nianming, LEISHEN, liuWx, WX_BR,
         leishenBr, leishenScore, jiangBr, LS_CAP, JIANGS_SCORE,
-        panding, yingqi, LS_HEAD, HE6, relPhrase, wxRelNote, chuanRel } = DLR;
+        panding, yingqi, LS_HEAD, HE6, relPhrase, wxRelNote, chuanRel,
+        renderBaihua, JIANG_BAI, WX_BAI, TIANJIANG } = DLR;
 
 let pass = 0, fail = 0, warn = 0;
 const failures = [];
@@ -1094,6 +1095,107 @@ group('22. 神煞层（卷五重录）：下标锚点 + 出处纪律');
     for (const s of rr.ss) if ((s.d || '').indexOf('卷五') < 0) noSrc.push(s.n);
   }
   ok(noSrc.length === 0, '90 课抽样：ss tag 全部带卷五出处', noSrc.slice(0, 5).join(',') || '全带');
+}
+
+// ───────────────────────────────────────────────
+// 23. 事类按钮（2026-11-16）
+// 起因：detectQ 只做关键词子串匹配 —— 漏（口语说法一个词都不中）、误（单字词跨词命中）。
+// 按钮让用户直接点名事类。本组锁四件事：①按钮清单与 QTYPES 一一对应且恰有一个 other；
+// ②qtypeOf 键→标签映射；③词表不再含高危单字（「动」「判」），且误判源实测已消除；
+// ④词表兜底仍在（按钮不点也能识别常见问法）、词表内无重复词、字面量清单不硬编码进 HTML。
+group('23. 事类按钮：清单映射 + 关键词误判纪律');
+{
+  const list = DLR.qtChipList(), qtypeOf = DLR.qtypeOf;
+  const keys = Object.keys(QTYPES);
+  ok(list.length === keys.length + 1, '按钮数 = 事类数 + 1（通用）', list.length + '/' + (keys.length + 1));
+  ok(keys.every(k => list.some(c => c.k === k)), '每个 QTYPES 类都有对应按钮');
+  ok(list.filter(c => c.k === 'other').length === 1, '恰好一个「通用」按钮（key=other）');
+  ok(list[list.length - 1].k === 'other', '「通用」排在末位');
+  ok(list.every(c => c.l && typeof c.l === 'string'), '每个按钮都有中文标签');
+  ok(!('other' in QTYPES), 'other 不得混进 QTYPES（否则会被词表匹配到）');
+  ok(qtypeOf('cai') && qtypeOf('cai').key === 'cai' && qtypeOf('cai').l === QTYPES.cai.l, 'qtypeOf(cai) 取到财运');
+  ok(qtypeOf('other') && qtypeOf('other').l === '通用', 'qtypeOf(other) 返回「通用」标签');
+  ok(qtypeOf('nope') === null && qtypeOf('') === null && qtypeOf(null) === null, 'qtypeOf 对非法键返回 null');
+  // 关键词纪律：单字只允许语义专一的几个；其余一律 ≥2 字。
+  // 原「动」令「该不该动手」判成出行，原「判」令「我想判断一下」判成诉讼 —— 这两类跨词误中必须绝迹。
+  const ONE_OK = ['财', '钱', '婚', '病', '讼'];
+  let bad = [];
+  for (const k in QTYPES) for (const w of QTYPES[k].kw)
+    if (w.length === 1 && ONE_OK.indexOf(w) < 0) bad.push(k + ':' + w);
+  ok(bad.length === 0, '无高危单字关键词（只留 财/钱/婚/病/讼）', bad.join(',') || '全合规');
+  ok(detectQ('该不该动手') === null, '「该不该动手」不再误判为出行', JSON.stringify(detectQ('该不该动手')));
+  ok(detectQ('我想判断一下这事') === null, '「我想判断一下这事」不再误判为诉讼', JSON.stringify(detectQ('我想判断一下这事')));
+  ok(detectQ('最近求职能否成功') && detectQ('最近求职能否成功').key === 'guan', '词表兜底：求职 → 事业');
+  ok(detectQ('这次考试能过吗') && detectQ('这次考试能过吗').key === 'xue', '词表兜底：考试 → 学业');
+  let dup = [];
+  for (const k in QTYPES) {
+    const s = new Set(), d = new Set();
+    for (const w of QTYPES[k].kw) { if (s.has(w)) d.add(w); s.add(w); }
+    if (d.size) dup.push(k + ':' + [...d].join('/'));
+  }
+  ok(dup.length === 0, '各事类关键词无重复', dup.join(',') || '无重复');
+  // 注意：code 只是 <script> 内容，容器 id 在 body 里，须读整页
+  const page = fs.readFileSync(HTML, 'utf8');
+  ok(/id="qChips"/.test(page) && /renderQChips\(\);/.test(code), '页面含按钮容器与初始化渲染调用');
+  ok(/r\.qtManual=!!_qtPick/.test(code), 'divine 记录事类来源（手动锁定 / 自动识别）');
+  ok(/qtManual\?'按你锁定的事类'/.test(code), '解读区按来源区分措辞（手动 / 自动）');
+}
+
+// ───────────────────────────────────────────────
+// 24. 白话解读（2026-11-16）
+// 定位必须锁死：**只翻译，不下断语**。它是 B 方案（断法层降级为课象呈现）的延伸，
+// 最大的风险是「白话」变成把成／不成塞回来的后门。所以本组不只测「能渲染出东西」，
+// 更测「渲染出来的东西里不许有判断词」，且每一条都必须能追回 r 上的盘面事实。
+group('24. 白话解读：只翻译不下断语');
+{
+  // 天将白话表必须覆盖全部十二将，否则某些盘会掉字
+  const miss = TIANJIANG.filter(j => !JIANG_BAI[j]);
+  ok(miss.length === 0, '十二天将均有白话译名', miss.join(',') || '全覆盖');
+  ok(Object.keys(WX_BAI).length === 5 && ['旺','相','休','囚','死'].every(w => WX_BAI[w]),
+     '旺相休囚死五态均有白话');
+
+  const r = calc(2026, 11, 16, 6);
+  r.qtype = { key: 'cai', l: '财运' };
+  r.nm = null;
+  r.yingqi = yingqi(r, r.qtype, null, null);
+  const h = renderBaihua(r);
+
+  ok(typeof h === 'string' && h.indexOf('白话解读') >= 0, '渲染出白话解读区块');
+  ok(['①','②','③','④'].every(s => h.indexOf(s) >= 0), '四段齐全（走向/落点/时间/实话）');
+  ok(h.indexOf(BRAN[r.chu]) >= 0 && h.indexOf(BRAN[r.zhang]) >= 0 && h.indexOf(BRAN[r.mo]) >= 0,
+     '三传地支都出现在白话里');
+  ok(h.indexOf(ELEM[r.chu]) >= 0, '三传五行有白话标注');
+
+  // 核心纪律：不许出现任何判断词
+  const BAN = ['大吉','大凶','吉凶','顺利','不利','必成','必败','注定','一定会','恭喜','可惜'];
+  const hit = BAN.filter(w => h.indexOf(w) >= 0);
+  ok(hit.length === 0, '白话中无吉凶判断词', hit.join(',') || '干净');
+  ok(!/本课.{0,6}(成|败)/.test(h), '无「本课成/败」式断语');
+
+  // 每一句都要能追回盘面事实：类神、旺衰、天将、空亡必须与 leishenScore 一致
+  const ls = leishenScore(r, r.qtype, null);
+  ok(ls.brs.length === 0 || h.indexOf(BRAN[ls.brs[0]]) >= 0, '类神地支与 leishenScore 一致');
+  if (ls.detail[0]) ok(h.indexOf(ls.detail[0].wx) >= 0, '旺衰用词取自 wxState（不另立新词）');
+  if (r.yingqi.win) ok(h.indexOf(r.yingqi.win) >= 0, '应期窗口原样引用 yingqi 结果');
+
+  // 没指定事类时：必须给找回入口，且不能假装有类神
+  const r2 = calc(2026, 11, 16, 6);
+  r2.qtype = null; r2.nm = null; r2.yingqi = yingqi(r2, null, null, null);
+  const h2 = renderBaihua(r2);
+  ok(h2.indexOf('没取类神') >= 0, '无事类时明说「没取类神」');
+  ok(h2.indexOf('事类') >= 0, '无事类时指路到「事类」按钮');
+  ok(h2.indexOf('类神入传') < 0, '无事类时不输出「类神入传」');
+
+  // 页面接线
+  const page = fs.readFileSync(HTML, 'utf8');
+  ok(/renderBaihua\(r\)\+/.test(code), '解读区已接入 renderBaihua');
+  ok(/var JIANG_BAI=\{/.test(code) && /var WX_BAI=\{/.test(code), '两张白话词表在源码中');
+  // 位置纪律：白话解读须在附注（口径说明墙）之前，不能被它挡在后面。
+  // ⚠️ code 是 String.match 的数组（[0]=整段, [1]=脚本内容），数组的 indexOf 是按元素查找 → 永远 -1。
+  //    要查下标必须用 code[1]；正则 .test(code) 因为会把数组转字符串才「看起来能用」，别被骗。
+  const src = code[1];
+  const iBai = src.indexOf('renderBaihua(r)+'), iFu = src.indexOf('附注：本页面为六壬算法教学演示版');
+  ok(iBai > 0 && iFu > 0 && iBai < iFu, '白话解读排在附注之前', iBai + '/' + iFu);
 }
 
 // ───────────────────────────────────────────────

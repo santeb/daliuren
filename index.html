@@ -42,6 +42,13 @@ select.ipt option{background:var(--bg)}
 .txar{background:#0d0a06;border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-family:'Noto Serif SC',serif;font-size:.9rem;resize:vertical;min-height:52px;max-height:110px;transition:border-color .3s}
 .txar:focus{outline:none;border-color:var(--gold);box-shadow:0 0 12px rgba(180,120,40,.15)}
 .txar::placeholder{color:var(--faint);font-size:.8rem}
+/* 事类按钮（2026-11-16）：点一下锁定事类，绕开关键词匹配的漏判与误判 */
+.qchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:1px}
+.qchips-lbl{font-size:.7rem;color:var(--dim);letter-spacing:.06em}
+.qchip{background:#120d08;border:1px solid var(--border);border-radius:20px;padding:3px 11px;color:var(--dim);font-size:.75rem;letter-spacing:.04em;line-height:1.6;cursor:pointer;user-select:none;transition:all .2s}
+.qchip:hover{border-color:var(--gold2);color:var(--text)}
+.qchip.on{background:linear-gradient(135deg,rgba(200,152,42,.3),rgba(139,101,8,.3));border-color:var(--gold);color:#f2d9a0;box-shadow:0 0 10px rgba(180,120,40,.22)}
+.qchips-hint{font-size:.64rem;color:var(--faint)}
 .btn{background:linear-gradient(135deg,var(--gold),#8b6508);border:none;border-radius:8px;padding:0 30px;height:50px;color:#fff;font-family:'Ma Shan Zheng',cursive;font-size:1.35rem;cursor:pointer;letter-spacing:.2em;transition:all .3s;white-space:nowrap;box-shadow:0 4px 14px rgba(180,120,40,.22)}
 .btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(180,120,40,.35)}
 .btn2{background:linear-gradient(135deg,#3a2e1e,#2a2014);border:1px solid var(--border);border-radius:8px;padding:0 18px;height:50px;color:var(--dim);font-family:'Ma Shan Zheng',cursive;font-size:.95rem;cursor:pointer;letter-spacing:.1em;transition:all .25s;white-space:nowrap}
@@ -193,6 +200,8 @@ select.ipt option{background:var(--bg)}
     <div class="row" style="margin-bottom:0">
       <div class="qg"><lbl>所问何事</lbl>
         <textarea class="txar" id="iq" placeholder="例如：明日出门办事顺利吗？最近求职能否成功？与某人的感情发展如何？"></textarea>
+        <!-- 事类按钮：由 renderQChips() 按 QTYPES 生成，点选即锁定事类 -->
+        <div class="qchips" id="qChips"></div>
       </div>
     </div>
     <!-- 终身命盘开关 + 导出/TTS按钮 -->
@@ -1141,13 +1150,13 @@ function calc(y,m,d,hb,opt){
 
 // ─── 问题识别 ─────────────────────────────────────────────
 var QTYPES={
-  cai:{kw:['财','钱','财运','收入','奖金','投资','股票','生意','买卖','盈利','工资','加薪','基金','理财','债务','借钱','贷款','财运'],l:'财运'},
+  cai:{kw:['财','钱','财运','收入','奖金','投资','股票','生意','买卖','盈利','工资','加薪','基金','理财','债务','借钱','贷款'],l:'财运'},
   guan:{kw:['工作','升职','晋升','事业','求职','跳槽','面试','辞职','上司','老板','同事','职场','事业运','前途','贵人相助','靠山'],l:'事业'},
   hun:{kw:['婚','感情','恋爱','对象','分手','复合','婚姻','姻缘','异性缘','暧昧','争吵','和好','挽回'],l:'感情'},
   bing:{kw:['病','健康','身体','医院','手术','怀孕','生育','体质','不舒服','调理'],l:'健康'},
-  song:{kw:['讼','官司','诉讼','纠纷','法律','起诉','调解','仲裁','判','法官'],l:'诉讼'},
+  song:{kw:['讼','官司','诉讼','纠纷','法律','起诉','调解','仲裁','判决','审判','法官'],l:'诉讼'},
   shi:{kw:['失物','丢失','遗失','找东西','钥匙','证件','钱包','手机','东西','掉了'],l:'失物'},
-  chu:{kw:['出行','出门','远行','旅行','旅游','出差','飞机','火车','搬家','迁居','动','适合出行','能否出行','可不可以出行','要不要出门','回去','赶路','坐车','开车','路途','路程','上路','上路','启程'],l:'出行'},
+  chu:{kw:['出行','出门','远行','旅行','旅游','出差','飞机','火车','搬家','迁居','动身','回程','回去','赶路','坐车','开车','路途','路程','上路','启程','要不要走'],l:'出行'},
   xue:{kw:['考试','学习','升学','学业','答辩','考研','留学','考学','成绩'],l:'学业'},
   tao:{kw:['桃花','异性','追求','表白','暗恋','脱单','相亲','介绍对象'],l:'桃花'},
   gui:{kw:['贵人','助力','帮忙','帮助','提携','扶持','靠山','有无人帮','有没有人','能否遇到','能不能遇到'],l:'人际关系'}
@@ -1164,6 +1173,46 @@ function detectQ(q){
     if(sc>bs){bs=sc;best={key:qk,l:v.l};}
   }
   return bs>=1?best:null;
+}
+
+// ─── 事类按钮（2026-11-16）──────────────────────────────────
+// 起因：detectQ 只做关键字子串匹配，两个毛病方向相反 ——
+//   漏：「这次合作能不能成」「牙疼什么时候好」一个词都不中 → null；
+//   误：「该不该动手」命中原「动」→ 判成出行，「我想判断一下」命中原「判」→ 判成诉讼。
+// 按钮让用户直接点名事类（可用键即 QTYPES 的 key，「通用」用 other），零误判，
+// 同时把「本页按事类取类神」这个用法做进界面。不点按钮则仍走词表兜底。
+var _qtPick=null;                        // 手动锁定的事类键；null = 未锁，按词表识别
+function qtChipList(){                   // 按钮清单直接由 QTYPES 生成，杜绝两处清单打架
+  var out=[];
+  for(var k in QTYPES) out.push({k:k,l:QTYPES[k].l});
+  out.push({k:'other',l:'通用'});         // 通用：不取类神，只出三传/天将/神煞的通用象意
+  return out;
+}
+function qtypeOf(key){                   // 键 → {key,l}；other 不在 QTYPES 里，单独给标签
+  if(!key) return null;
+  if(key==='other') return {key:'other',l:'通用'};
+  return QTYPES[key]?{key:key,l:QTYPES[key].l}:null;
+}
+function setQtPick(k){
+  _qtPick=(_qtPick===k)?null:k;          // 再点一次同一键 = 取消锁定，退回词表识别
+  var els=document.querySelectorAll('.qchip');
+  for(var i=0;i<els.length;i++){
+    var kk=els[i].getAttribute?els[i].getAttribute('data-k'):null;
+    els[i].className='qchip'+(kk&&kk===_qtPick?' on':'');
+  }
+}
+function renderQChips(){
+  var box=document.getElementById('qChips');
+  if(!box||!box.addEventListener) return;
+  var list=qtChipList(),h='<span class="qchips-lbl">事类</span>';
+  for(var i=0;i<list.length;i++)
+    h+='<span class="qchip" data-k="'+escHtml(list[i].k)+'">'+escHtml(list[i].l)+'</span>';
+  h+='<span class="qchips-hint">点一个锁定事类；不点则按所问自动识别</span>';
+  box.innerHTML=h;
+  box.addEventListener('click',function(e){
+    var t=e.target,d=(t&&t.getAttribute)?t.getAttribute('data-k'):null;
+    if(d) setQtPick(d);                  // 只认 .qchip（带 data-k）；「事类」标签与提示语无此属性
+  });
 }
 
 // ─── 月令旺衰 / 五行生克关系 ──────────────────────────────
@@ -2094,7 +2143,12 @@ function yingqi(r,qtype,nm,verdictOk){
   out.win=win;
   out.speed=spd;
   out.lines.push(where+'；'+win+'。'+(src?'（'+src+'）':''));
-  out.lines.push('旺相者应速、休囚者应迟 —— 本案类神'+wx0+'于月令，故作'+spd+'论。');
+  // 2026-11-16 修：原句为「旺相者应速、休囚者应迟 —— 本案类神X于月令，故作迟论」。
+  // 但 spd 实际是由类神落在第几传决定的（见上面 pos 分支），与旺衰无关，
+  // 于是会写出「类神相 → 故作迟论」这种自相矛盾的句子（白话解读上线时被照抄才暴露）。
+  // 现按真实依据陈述，旺衰只作为并存的另一说列出，不冒充本页的裁断依据。
+  out.lines.push('迟速以类神落传之位为准，故判「'+spd+'」；「旺相速、休囚迟」为另一说，'+
+    '本案类神'+wx0+'于月令 —— 两说未必同向，本页取前者。');
   // ⑥ 专法优先：卷三每事类各有专法，应期亦然。婚姻章的应期口径与本页通用口径**不同** ——
   //    古籍明说「末传合处验成期」，不是初传、也不是类神。既知有专法，就不该假装通用法则够用。
   //    这里并列给出，不覆盖通用结论：两条路都摆出来，读者自择。
@@ -2743,7 +2797,13 @@ function renderInterp(r,q,ft){
 
   var qSection='';
   if(q){
-    var qa=genAdvice(r,r.qtype);
+    // 事类来源三分：按钮锁定 / 词表识别 / 都没识别出来（走通用）
+    // genAdvice 对 null qtype 直接返回 ''，故这里统一喂 {key:'other',l:'通用'} 兜底。
+    var qHead=r.qtype
+      ?('<p>'+(r.qtManual?'按你锁定的事类':'系统识别为')+
+        ' <span class="hl">【'+r.qtype.l+'】</span> 类问题：</p>')
+      :('<p>（未能精确识别问题类型，以下为通用解读 —— 可在输入框下的「事类」里点一个锁定）</p>');
+    var qa=genAdvice(r,r.qtype||{key:'other',l:'通用'});
     qSection='<hr class="dv">'+
       '<p><strong>◆ 针对您的问题：「</strong><span class="hl">'+escHtml(q)+'</span><strong>」</strong></p>'+
       // 2026-11-03：这一段原本是「一事一断」的吉凶建议（红字凶／绿字吉＋✓✗ 标记），
@@ -2754,11 +2814,9 @@ function renderInterp(r,q,ft){
       '以下为<b>课象与古书象意摘录</b>，非本页的吉凶结论：如「青龙临初传」「中传克末传」为盘面事实，'+
       '「财星发用」「财路不畅」等为古书通说之象意。本页<b>不据此断言成败</b> —— '+
       '此类套话式推断经 105 课检验与实测无相关性（命中 42.3%，与抛硬币无显著差别），故仅存其象，不取其断。</p>'+
-      (r.qtype?'<p>系统识别为 <span class="hl">【'+r.qtype.l+'】</span> 类问题：</p>'+qa:
-        '<p>（未能精确识别问题类型，以下为通用解读）</p>'+
-        // 2026-11-16 修复：此前 fallback 只输出提示语、qa 内容丢失（genAdvice 对 null qtype 直接返回 ''）。
-        // 改传通用键 other：LEISHEN 无此条目 → 自动跳过「取类/出典」，仍出三传表/天将象意/空亡/神煞通用部分。
-        genAdvice(r,{key:'other',l:'通用'}));
+      // 2026-11-16：原先此处内联三元判断事类来源，已提到函数上部统一算 qHead / qa。
+      // 通用键 other 在 LEISHEN 里没有条目 → 自动跳过「取类/出典」，仍出三传表/天将象意/空亡/神煞通用部分。
+      qHead+qa;
   }
 
   var ganTip='';
@@ -2993,6 +3051,9 @@ function renderInterp(r,q,ft){
     qSection+
     renderLeishen(r)+
     renderNianming(r)+
+    // 2026-11-16：白话解读放在解读内容的最末、附注之前 —— 附注是黑历史式的口径说明，
+    // 用户真正想看的「人话总结」不该被那面文字墙挡在后面。
+    renderBaihua(r)+
     '<div class="sep">◆ ◇ ◆</div>'+
     '<p style="font-size:.78rem;color:var(--faint);text-indent:0;line-height:1.8">'+
     '附注：本页面为六壬算法教学演示版，融合九宗门起传、月将节气定位、贵人顺逆排将、十二天将、神煞、长生十二宫、德禄等核心要素。'+
@@ -3013,6 +3074,112 @@ function renderInterp(r,q,ft){
     '应期诸家分歧尤大，此处是一次<b>站队</b>，不是定论；婚姻占另有「末传合处验成期」专法，已并列给出。'+
     (r.nm?'已填年命，年命与类神之生克已在课象中列出；未填则无此项。':'')+
     '</p>';
+}
+
+// ─── 白话解读（2026-11-16）────────────────────────────────
+// 起因：全页行话密度太高（天将／旺相休囚死／类神入传／旬空），普通读者读完仍不知在说什么。
+// 定位：**只翻译，不下断语**。每一句都必须对应 r 上已经算好的盘面事实，
+//   白话只换说法，不新增任何推断 —— 否则就是把 B 方案（断法层降级为课象呈现）偷偷推回来。
+// 因此本函数里禁止出现「吉／凶／成／败／顺利／不利」这类判断词，守门员第 24 组会拦。
+var JIANG_BAI={
+  '贵人':'有靠山、说得上话的人',
+  '螣蛇':'虚惊、事情突然拐弯',
+  '朱雀':'消息、文书、嘴上说的',
+  '六合':'谈得拢、能合作、感情上的合',
+  '勾陈':'拖、缠、扯不清',
+  '青龙':'钱财、喜庆、有进项',
+  '天空':'空的、不作数、话好听',
+  '白虎':'硬碰硬、来得急',
+  '太常':'吃饭、宴请、日常人情',
+  '玄武':'看不清、暗地里的事',
+  '太阴':'私下的、不摆明面',
+  '天后':'女性一方、恩惠照顾'
+};
+var WX_BAI={'旺':'当令，气最足','相':'次旺，气仍足','休':'气退了','囚':'受制，施展不开','死':'气最弱'};
+function renderBaihua(r){
+  var g=r.generals||{};
+  var chuJ=(g[r.chu]&&g[r.chu].jiang)||'',zJ=(g[r.zhang]&&g[r.zhang].jiang)||'',moJ=(g[r.mo]&&g[r.mo].jiang)||'';
+  var qt=r.qtype,ls=leishenScore(r,qt,r.nm),k;
+  var h='<div class="sep">&#9670; 白话解读 &#9670;</div>'+
+    '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;'+
+    'background:rgba(200,152,42,.04);font-size:.83rem;line-height:1.9;color:var(--text);text-indent:0">'+
+    '<p style="color:var(--faint);font-size:.7rem;margin:0 0 6px">'+
+    '把上面的行话翻成人话。翻的是盘上已经摆出来的象，不替你做判断。</p>';
+
+  // ① 三步走：每传一句「地支 + 五行 + 天将 + 白话象」，只摆事实
+  h+='<p style="margin:10px 0 4px"><strong>① 这盘从哪走到哪</strong></p>';
+  var seg=[[r.chu,chuJ,'开局'],[r.zhang,zJ,'中段'],[r.mo,moJ,'收尾']];
+  for(k=0;k<seg.length;k++){
+    var b=seg[k][0],j=seg[k][1],bai=JIANG_BAI[j]||'';
+    h+='<p style="margin:2px 0">'+seg[k][2]+'在 <b>'+BRAN[b]+'</b>（'+ELEM[b]+'），'+
+      (j?('乘 <b>'+j+'</b>'+(bai?(' —— '+bai+'那类象'):'')):'无天将')+'。</p>';
+  }
+  h+='<p style="margin:5px 0 0">三步的五行是 <b>'+ELEM[r.chu]+' → '+ELEM[r.zhang]+' → '+ELEM[r.mo]+'</b>。'+
+    '古法看这三步之间的生、克、比和来分起承转合，此处只把顺序摆出来。</p>';
+
+  // ② 事类落点：类神是哪几支、入不入传、旺衰、所乘天将、空亡
+  if(qt&&qt.key&&ls.brs.length){
+    h+='<p style="margin:12px 0 4px"><strong>② 你问的「'+escHtml(qt.l)+'」落在盘上哪</strong></p>';
+    var nm1=[];for(k=0;k<ls.brs.length;k++) nm1.push(BRAN[ls.brs[k]]);
+    h+='<p style="margin:2px 0">盘上代表「'+escHtml(qt.l)+'」的字是 <b>'+nm1.join('、')+'</b>'+
+      (ls.zhu?('（古法以「'+escHtml(ls.zhu)+'」为'+escHtml(qt.l)+'之类神）'):'')+'。</p>';
+    if(nm1.length>1)
+      h+='<p style="margin:2px 0;color:var(--dim);font-size:.77rem">'+
+        '古法取类神常常是一组字、不是一个字：一部分取自日干所对应的那类五行之支，'+
+        '一部分取自那个天将所临之支。所以一盘上有好几个字同时代表你问的这件事，是正常的。</p>';
+    if(ls.inC.length){
+      var nm2=[];for(k=0;k<ls.inC.length;k++) nm2.push(BRAN[ls.inC[k]]);
+      h+='<p style="margin:2px 0">其中 <b>'+nm2.join('、')+'</b> 走进了三传 —— 古法把这叫「类神入传」，'+
+        '意思就是这件事在盘上占着主线位置。</p>';
+    }else{
+      h+='<p style="margin:2px 0">但它们一个都没走进三传 —— 古法把这叫「类神不入传」，即事无主线。'+
+        '这只是个「象」，不是对结果的判断。</p>';
+    }
+    var d0=ls.detail[0];
+    if(d0){
+      h+='<p style="margin:2px 0">其中 <b>'+BRAN[d0.br]+'</b> 在本月月令里是 <b>'+d0.wx+'</b>'+
+        (WX_BAI[d0.wx]?('（'+WX_BAI[d0.wx]+'）'):'')+
+        '，头上顶的是 <b>'+(d0.jiang||'—')+'</b>'+
+        (JIANG_BAI[d0.jiang]?(' —— 古书主'+JIANG_BAI[d0.jiang]):'')+'。'+
+        (d0.kong?'<span style="color:var(--fire)">它落在旬空里：空的意思是「眼下抓不着」，事体不实。</span>'
+                :'不在旬空。')+'</p>';
+    }
+  }else if(qt&&qt.key){
+    h+='<p style="margin:12px 0 4px"><strong>② 你问的事</strong></p>'+
+      '<p style="margin:2px 0">这一事类在底本里没收到取类神之法，所以盘上没取类神 —— '+
+      '只能看三传本身的象。</p>';
+  }else{
+    h+='<p style="margin:12px 0 4px"><strong>② 你问的事</strong></p>'+
+      '<p style="margin:2px 0">这一盘没取类神 —— 因为没指定事类（或页面没认出来）。'+
+      '想看得具体一点，点一下输入框下面那排「事类」，再起一次。</p>';
+  }
+
+  // ③ 时间感：只复述 yingqi 已给出的窗口与迟速，不另下日期
+  var yq=r.yingqi;
+  if(yq&&yq.win){
+    // 迟速依据必须写对：yingqi 的 spd 由「类神落在第几传」决定，不是旺衰。
+    // 2026-11-16 之前这里照抄了 yingqi 的旧文案，于是出现「类神相 → 故作迟论」的矛盾句。
+    var b0=ls.inC.length?ls.inC[0]:(ls.brs.length?ls.brs[0]:r.chu);
+    var pi=[r.chu,r.zhang,r.mo].indexOf(b0),posTxt='';
+    if(pi===0) posTxt='它正排在三传第一步（初传）—— 古法认为起步就动，应得早';
+    else if(pi===1) posTxt='它排在三传第二步（中传）—— 古法认为要过一段才动';
+    else if(pi===2) posTxt='它排在三传第三步（末传）—— 古法认为排得靠后，应得晚';
+    else posTxt='它没排进三传 —— 古法认为没有落点，谈日期就没有凭据';
+    h+='<p style="margin:12px 0 4px"><strong>③ 什么时候</strong></p>'+
+      '<p style="margin:2px 0">应期大致 <b>'+escHtml(yq.win)+'</b>'+
+      (yq.speed?('，节奏偏<b>'+yq.speed+'</b>'):'')+'。'+
+      (posTxt?('为什么？'+posTxt+'。'):'')+'</p>'+
+      '<p style="margin:2px 0;color:var(--dim);font-size:.77rem">'+
+      '应期是三派并存的老争论：《大六壬说约》看初传、《六壬金铰剪》按太岁月建逐级发用、'+
+      '另一派专看类神。本页站「类神为主、初传为辅」这一队 —— 换流派，日期就不一样。</p>';
+  }
+
+  // ④ 一句实话：把「这是象不是结论」说在人话的位置上
+  h+='<p style="margin:12px 0 0;color:var(--dim);font-size:.77rem">'+
+    '<b>④ 一句实话</b>：上面全是「盘上摆着什么」，不是「事情会怎样」。'+
+    '本页始终不给成／不成的结论，只把象交给你自己用。</p>';
+
+  return h+'</div>';
 }
 
 function escHtml(s){
@@ -3050,7 +3217,9 @@ function divine(){
   r.solar=solar;
   r.raw={y:parseInt(document.getElementById('iy').value,10),m:parseInt(document.getElementById('im').value,10),d:parseInt(document.getElementById('id').value,10)};
   r.question=q;
-  r.qtype=detectQ(q);
+  // 事类：按钮锁定的优先（零误判），未锁才走关键词识别（detectQ 可能漏、可能误）
+  r.qtManual=!!_qtPick;
+  r.qtype=_qtPick?qtypeOf(_qtPick):detectQ(q);
   // 占者性别：卷三婚姻章「男占妻取财、女占夫取鬼」是两套类神，必须分。
   // 取命盘区已有的性别下拉（起课人即占者）；未开命盘时该值仍在 DOM 里，默认「男」。
   // ⚠️ 代人占（替他人问婚姻）时应手动改这一项，否则类神取错 —— 页面已在类神区标注取法。
@@ -3268,6 +3437,7 @@ document.getElementById('btnTTS').addEventListener('click',function(){
 var _origDivine=typeof divine!=='undefined'?divine:null;
 
 // 初始化
+renderQChips();     // 事类按钮（依赖 QTYPES，须在其定义后调用）
 useNow();
 
 // 错误捕获
@@ -3297,7 +3467,11 @@ globalThis.DLR={
   STEM:STEM,BRAN:BRAN,ELEM:ELEM,ELEM_S:ELEM_S,KE:KE,SHENG:SHENG,
   STEM_LODGE:STEM_LODGE,LU_BR:LU_BR,DE_LU:DE_LU,GR_D:GR_D,GR_N:GR_N,
   TIANJIANG:TIANJIANG,YUEJIANG:YUEJIANG,CHANGSHENG_ORDER:CHANGSHENG_ORDER,
-  QTYPES:QTYPES
+  QTYPES:QTYPES,
+  // 事类按钮（2026-11-16）：qtChipList/qtypeOf 供测试断言按钮清单与 qtype 映射一致
+  qtChipList:qtChipList,qtypeOf:qtypeOf,setQtPick:setQtPick,renderQChips:renderQChips,
+  // 白话解读（2026-11-16）：renderBaihua 是纯函数（只读 r 不出 DOM），可直接在 node 里断言
+  renderBaihua:renderBaihua,JIANG_BAI:JIANG_BAI,WX_BAI:WX_BAI
 };
 
 })();
