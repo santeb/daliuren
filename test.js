@@ -26,10 +26,14 @@ function stub() {
 }
 
 const HTML = path.join(__dirname, 'index.html');
-const code = fs.readFileSync(HTML, 'utf8').match(/<script>([\s\S]*?)<\/script>/);
+// ⚠️ 取「最长」的 <script> 块当引擎代码，而不是第一个：head 里可能有 51.la 等外部统计小脚本，
+// 它们比引擎短且在 node 里跑不了（LA is not defined）。匹配到统计脚本就是这类报错的信号。
+const allScripts = fs.readFileSync(HTML, 'utf8').match(/<script>([\s\S]*?)<\/script>/g) || [];
+let code = allScripts.reduce((a, b) => (b && b.length > (a ? a.length : 0)) ? b : a, null);
+if (code) code = code.replace(/^<script>/, '').replace(/<\/script>$/, '');
 if (!code) { console.error('未能在 index.html 中找到 <script>'); process.exit(1); }
 const ctx = vm.createContext({ document: stub(), window: stub(), console });
-vm.runInContext(code[1], ctx);
+vm.runInContext(code, ctx);
 const DLR = ctx.DLR;
 if (!DLR) { console.error('脚本未导出 DLR，无法测试'); process.exit(1); }
 
@@ -1191,12 +1195,30 @@ group('24. 白话解读：只翻译不下断语');
   ok(/renderBaihua\(r\)\+/.test(code), '解读区已接入 renderBaihua');
   ok(/var JIANG_BAI=\{/.test(code) && /var WX_BAI=\{/.test(code), '两张白话词表在源码中');
   // 位置纪律：白话解读须在附注（口径说明墙）之前，不能被它挡在后面。
-  // ⚠️ code 是 String.match 的数组（[0]=整段, [1]=脚本内容），数组的 indexOf 是按元素查找 → 永远 -1。
-  //    要查下标必须用 code[1]；正则 .test(code) 因为会把数组转字符串才「看起来能用」，别被骗。
-  const src = code[1];
+  // 注：code 现在是最长 <script> 块的整段字符串（见文件顶部提取逻辑），可直接 indexOf。
+  const src = code;
   const iBai = src.indexOf('renderBaihua(r)+'), iFu = src.indexOf('附注：本页面为六壬算法教学演示版');
   ok(iBai > 0 && iFu > 0 && iBai < iFu, '白话解读排在附注之前', iBai + '/' + iFu);
 }
+
+// ───────────────────────────────────────────────
+// 25. 51.la 统计码（2026-11-16）
+// 风险：改版或压缩时把统计段删掉，流量悄悄断更——这类丢失页面本身毫无异常，只有后台变空才发现。
+// 故锁三件事：SDK 脚本在 head、LA.init 的 id/ck 与申请到的值一致、且在 </head> 之前（head 内生效最稳）。
+group('25. 51.la 统计码在位');
+{
+  const page = fs.readFileSync(HTML, 'utf8');
+  const LA_ID = '3RqbDTFemGO9RZSb';
+  ok(page.indexOf('id="LA_COLLECT"') >= 0 && page.indexOf('sdk.51.la/js-sdk-pro.min.js') >= 0,
+     '51.la SDK 脚本在位');
+  const iInit = page.indexOf('LA.init({id:"' + LA_ID + '",ck:"' + LA_ID + '"})');
+  ok(iInit > 0, 'LA.init 的 id/ck 与申请值一致', iInit >= 0 ? LA_ID : '不匹配');
+  const iHead = page.indexOf('</head>');
+  ok(iInit > 0 && iHead > iInit, '统计脚本位于 </head> 之前');
+  // 不许出现两份（防止哪次合并把代码贴重了，PV 翻倍）
+  ok((page.match(/LA\.init\(/g) || []).length === 1, 'LA.init 只出现一次');
+}
+
 
 // ───────────────────────────────────────────────
 // Windows 控制台默认 GBK，而 ✗ / OK 不在 GBK 字符集中：一旦有断言失败、console.log 写出 ✗，

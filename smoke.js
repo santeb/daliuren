@@ -69,7 +69,10 @@ const document = {
 };
 
 const HTML = path.join(__dirname, 'index.html');
-const code = fs.readFileSync(HTML, 'utf8').match(/<script>([\s\S]*?)<\/script>/);
+// 取最长 <script> 块（head 里可能有 51.la 等统计小脚本，第一个未必是引擎代码）
+let code = (fs.readFileSync(HTML, 'utf8').match(/<script>([\s\S]*?)<\/script>/g) || [])
+  .reduce((a, b) => (b && b.length > (a ? a.length : 0)) ? b : a, null);
+if (code) code = code.replace(/^<script>/, '').replace(/<\/script>$/, '');
 if (!code) { console.error('未能在 index.html 中找到 <script>'); process.exit(1); }
 
 const ctx = vm.createContext({
@@ -80,7 +83,7 @@ const ctx = vm.createContext({
   Date: Date, Math: Math, JSON: JSON, isNaN: isNaN, parseFloat: parseFloat, parseInt: parseInt,
   setTimeout: function () {}, clearTimeout: function () {}, speechSynthesis: undefined
 });
-vm.runInContext(code[1], ctx);
+vm.runInContext(code, ctx);
 
 // ─── 冒烟 ─────────────────────────────────────────────────
 let pass = 0, fail = 0;
