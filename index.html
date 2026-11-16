@@ -62,9 +62,6 @@ select.ipt option{background:var(--bg)}
 .fc-lbl{font-size:.72rem;color:var(--faint);margin-bottom:4px;letter-spacing:.1em}
 /* 摘要变长后字号须下调，否则长课象会折行挤掉下面的判据区 */
 .fc-rslt{font-family:'Ma Shan Zheng',cursive;font-size:1.15rem;letter-spacing:.04em;margin-bottom:6px}
-.fc-disclaim{font-size:.7rem;color:var(--faint);line-height:1.7;margin:0 0 8px;
-  border-left:2px solid var(--border);padding-left:8px}
-.fc-disclaim b{color:var(--dim);font-weight:600}
 .fc-tags{display:flex;gap:7px;flex-wrap:wrap}
 .tg{display:inline-block;padding:2px 9px;border-radius:10px;border:1px solid;font-size:.7rem}
 /* 课象标记：统一正文色。2026-11-03 起不再用红/绿/金区分吉凶 ——
@@ -257,8 +254,6 @@ select.ipt option{background:var(--bg)}
       <div class="fc-bdy">
         <div class="fc-lbl">课象摘要</div>
         <div class="fc-rslt" id="fcRslt"></div>
-        <div class="fc-disclaim">本页呈现课象，<b>不作吉凶判断</b>：断法层经 105 课人工标注检验，
-          命中 42.3%，与抛硬币无显著差别，故不再输出「成／不成」结论，请自行读象。</div>
         <div class="fc-tags" id="fcTags"></div>
         <div class="fc-pan" id="fcPan"></div>
         <div class="fc-brk" id="fcBrk"></div>
@@ -2420,7 +2415,7 @@ function genAdvice(r,qtype){
   html+='<p style="font-size:.72rem;color:var(--faint);line-height:1.75;text-indent:0">'+
     '下表逐传列出盘面事实与古书象意。象意是大六壬系统为天将、生克配的固定意象 —— '+
     '其中「主吉庆」「主凶丧」「主血光」这类话，是古人给该天将下的<b>固定标签</b>，'+
-    '<b>不是说您这件事会怎样</b>。本页不据象意断成败（理由见页末「为何不再断吉凶」）。</p>';
+    '<b>不是说您这件事会怎样</b>。本页不据象意断成败。</p>';
 
   html+='<div style="overflow-x:auto"><table class="gtbl" style="min-width:380px">'+
         '<tr><th>传</th><th>支</th><th>五行</th><th>天将</th><th>与日干</th></tr>';
@@ -2745,7 +2740,7 @@ function renderLeishen(r){
   h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0;line-height:1.7">'+L.note+'</p>';
   if(L.src) h+='<p style="font-size:.7rem;color:var(--faint);text-indent:0;line-height:1.7">出典：'+L.src+'</p>';
   h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0">类神是断法的主线（⑨），顶部「课象摘要」即由类神一项引出 —— '+
-    '但本页<b>只呈现其象，不再据此定成败</b>（理由见页末「为何不再断吉凶」）。</p>';
+    '但本页<b>只呈现其象，不再据此定成败</b>。</p>';
   return h;
 }
 
@@ -3077,10 +3072,6 @@ function renderInterp(r,q,ft){
     '只给课象与应期 —— 顶部一行是<b>课象摘要</b>（类神何支、入传与否、旺衰、与日干生克、所乘天将、空墓），'+
     '下方「判据明细」每条都可在盘上自行复核；应期本「类神为主、初传为辅」一派，'+
     '兼取「旺相应速、休囚应迟」之通例。'+
-    '<br><span style="color:var(--gold2)">为何不再断吉凶</span>：2026-11-03 用 105 课人工标注检验原判词，'+
-    '命中 30/71 = <b>42.3%</b>（95%CI 30.8%~53.7%，含 50%），与抛硬币<b>无显著差别</b>；'+
-    '14 条判据逐条检验全部 |z|<1.3。功效分析另证：现有样本量下任何规则都证明不了自己不是运气。'+
-    '故断法层降级为<b>课象呈现</b>，判断权交还读者 —— 这不是偷懒，是数据不支持时唯一诚实的做法。'+
     '<br><span style="color:var(--gold2)">出典</span>：2026-11-02 起，断法层已按《大六壬指南》卷三会纂（22 事类口诀）<b>逐条回查原文</b>，'+
     '凡有原句者，判词行末以〔〕标出章次与原句；<b>无原句者直标「通说，非原句」</b>，不编出处。'+
     '全页仅三项确无文献支撑，已标〔自定〕：入传位置分值、三态带宽、天将吉凶分值。'+
