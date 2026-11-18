@@ -54,6 +54,8 @@ select.ipt option{background:var(--bg)}
 .btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(180,120,40,.35)}
 .btn2{background:linear-gradient(135deg,#3a2e1e,#2a2014);border:1px solid var(--border);border-radius:8px;padding:0 18px;height:50px;color:var(--dim);font-family:'Ma Shan Zheng',cursive;font-size:.95rem;cursor:pointer;letter-spacing:.1em;transition:all .25s;white-space:nowrap}
 .btn2:hover{background:linear-gradient(135deg,#4a3e2e,#3a3020);color:var(--text)}
+/* 专业模式开关激活态（2026-11-18）：与 .qchip.on 同一色系 */
+.btn2.on{border-color:var(--gold);color:#f2d9a0;box-shadow:0 0 10px rgba(180,120,40,.22)}
 .fc{display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 24px;margin:0 0 16px;box-shadow:0 4px 20px rgba(0,0,0,.35);animation:fadein .4s ease}
 @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .fc-in{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
@@ -242,6 +244,7 @@ select.ipt option{background:var(--bg)}
         <div id="mingpanResult" style="font-size:.72rem;color:var(--dim)"></div>
       </div>
       <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn2" id="btnPro" title="展开十二天将、神煞、核心术语等专业细节">&#9788; 专业模式</button>
         <button class="btn2" id="btnExport" title="导出JSON">&#8595; 导出</button>
         <button class="btn2" id="btnTTS" title="语音播报">&#9834; 播报</button>
       </div>
@@ -280,6 +283,14 @@ select.ipt option{background:var(--bg)}
     </div>
   </div>
 
+  <!-- 2026-11-18 首屏精简：课象解读（白话）上移到天地盘之后；
+       十二天将/神煞/核心术语包进 proWrap，默认收起，点「专业模式」展开 -->
+  <div class="cd">
+    <div class="ct">&#9998; 课象解读</div>
+    <div id="ipEl" class="itp"></div>
+  </div>
+
+  <div id="proWrap" style="display:none">
   <div class="bgrd">
     <div class="cd">
       <div class="ct">&#9733; 十二天将</div>
@@ -289,11 +300,6 @@ select.ipt option{background:var(--bg)}
       <div class="ct">&#9808; 神煞 &middot; 长生</div>
       <div id="ssEl"></div>
     </div>
-  </div>
-
-  <div class="cd">
-    <div class="ct">&#9998; 课象解读</div>
-    <div id="ipEl" class="itp"></div>
   </div>
 
   <div class="cd">
@@ -310,6 +316,7 @@ select.ipt option{background:var(--bg)}
       <div class="gi"><div class="gi-t">九宗门</div><div class="gi-d">六壬起三传之九种方法：贼克、比用、涉害、遥克、昴星、伏呬、反吟、别责、八专。</div></div>
     </div>
   </div>
+  </div><!-- /proWrap -->
 </div>
 
 <script>
@@ -3373,6 +3380,32 @@ document.getElementById('btnDivine').addEventListener('click',function(){
   try{ divine(); }catch(e){ console.error(e); alert('出错：'+e.message); }
 });
 document.getElementById('btnNow').addEventListener('click',useNow);
+
+// ── 专业模式开关（2026-11-18 首屏精简）──
+// 默认简洁首屏：排盘 + 四课三传 + 课象解读；
+// 十二天将/神煞/核心术语收在 proWrap 里，点「专业模式」展开。
+// 状态记 localStorage（dlr_pro），老手开一次以后一直展开。
+(function(){
+  var btn=document.getElementById('btnPro');
+  var wrap=document.getElementById('proWrap');
+  if(!btn||!wrap) return;
+  var on=false;
+  try{ on=localStorage.getItem('dlr_pro')==='1'; }catch(e){}
+  function apply(){
+    wrap.style.display=on?'block':'none';
+    if(on) btn.className='btn2 on'; else btn.className='btn2';
+  }
+  btn.addEventListener('click',function(){
+    on=!on;
+    try{ localStorage.setItem('dlr_pro',on?'1':'0'); }catch(e){}
+    apply();
+    // 展开/收起给个可见反馈：proWrap 在页面底部，不滚过去看起来像「没反应」
+    if(on&&wrap.scrollIntoView){
+      try{ wrap.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){ wrap.scrollIntoView(); }
+    }
+  });
+  apply();
+})();
 
 // ── 真太阳时控件 ──
 fillCities();
