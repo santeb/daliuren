@@ -3573,10 +3573,10 @@ document.getElementById('btnTTS').addEventListener('click',function(){
 // ── AI 白话深度解读（2026-11-18 方案C：免费限次试水）──────────
 // 纪律：
 // ① 文案口径=「课象学习参考」，禁出现「命运/测算/算命」类表述（合规红线，也是本工具立场）；
-// ② 密钥只在 Cloudflare Worker 侧（env.GLM_KEY），前端与仓库零密钥；AI_PROXY 填代理地址后功能才亮；
+// ② 密钥只在 SCF 环境变量侧（GLM_KEY），前端与仓库零密钥；AI_PROXY 填代理地址后功能才亮；
 // ③ prompt 只喂盘面事实（天地盘/四课三传/天将/课体/神煞），要求 AI 释象不断吉凶，
 //    与全页「只存其象，不取其断」口径一致。
-var AI_PROXY='';            // 部署仓库根 worker.js 后填：'https://xxxx.workers.dev'
+var AI_PROXY='https://1348414230-jbb439qtz3.ap-guangzhou.tencentscf.com';  // SCF Web函数（2026-11-18）
 var AI_FREE_PER_DAY=1;      // 每天免费次数（方案C）
 var AI_MODEL_NOTE='GLM-4-Flash · 云端生成，仅供参考';
 
