@@ -1317,6 +1317,44 @@ group('27. 神煞层二期：支破/支刑/支鬼');
 }
 
 // ───────────────────────────────────────────────
+// 28. AI 白话解读（2026-11-18 方案C：免费限次试水）
+// 锁五件事：①密钥零暴露（AI_PROXY 默认空串，页面无 Bearer/bigmodel 字样，key 只在 Worker env）；
+// ②免费限次 AI_FREE_PER_DAY=1 + localStorage 键 dlr_ai + 用后计数；
+// ③prompt 纪律：只喂盘面事实、明令「不断吉凶、不编造」；
+// ④输出零信任：模型文本必须 escHtml 转义后才进 innerHTML；
+// ⑤文案合规：入口/注释不带「命运/测算/算命」，代理未部署时按钮隐藏。
+group('28. AI 白话解读：限次/密钥零暴露/口径');
+{
+  // ① 密钥零暴露
+  ok(/var AI_PROXY='';/.test(code), 'AI_PROXY 默认空串（部署 Worker 后才填地址）');
+  ok(code.indexOf('Bearer') < 0 && code.indexOf('bigmodel') < 0,
+     'index.html 无 Bearer/上游域名字样（key 不进前端不进仓库页面）');
+
+  // ② 免费限次
+  ok(/var AI_FREE_PER_DAY=1;/.test(code), '每天免费 1 次（方案C）');
+  ok(code.indexOf("dlr_ai") >= 0, '限次计数走 localStorage 键 dlr_ai');
+  ok(/function aiUseOnce\(\)/.test(code), '用后计数函数在位');
+  ok(/qq\.left<=0/.test(code), '超限拦截在位');
+
+  // ③ prompt 纪律：盘面事实输入 + 释象不断吉凶
+  ok(/function aiBuildPrompt\(r,q\)/.test(code), 'prompt 组装函数在位');
+  ok(code.indexOf('不得断言吉凶成败') >= 0, 'prompt 明令不得断言吉凶');
+  ok(code.indexOf('严禁编造盘面里没有的信息') >= 0, 'prompt 明令禁止编造');
+  ok(/lk\.label\+'：'\+BRAN\[lk\.u\]/.test(code) && /BRAN\[r\.chu\]/.test(code),
+     'prompt 喂的是盘面事实（四课/三传）');
+
+  // ④ 模型输出零信任：转义后才渲染
+  ok(/escHtml\(paras\[pi\]\)/.test(code), 'AI 输出经 escHtml 转义后才进 innerHTML');
+  ok(code.indexOf('不代表本页立场') >= 0, '输出区挂「不代表本页立场」免责说明');
+
+  // ⑤ 文案合规 + 未部署兜底（纪律注释本身允许提及禁词，剥注释后查运行代码）
+  const codeNoCmt28 = code.replace(/\/\/[^\n]*/g, '');
+  ok(codeNoCmt28.indexOf('命运') < 0 && codeNoCmt28.indexOf('算命') < 0,
+     '运行代码无「命运/算命」字样（合规红线，AI 功能不得破例）');
+  ok(/b\.style\.display='none'/.test(code), '代理未部署时隐藏 AI 入口（防「点了没反应」）');
+}
+
+// ───────────────────────────────────────────────
 // Windows 控制台默认 GBK，而 ✗ / OK 不在 GBK 字符集中：一旦有断言失败、console.log 写出 ✗，
 // stdout 会进入错误状态，其后所有输出（含整个第 17 组与结果行）被静默丢弃，
 // 表现为「测试只跑一半、exit 0、看不到任何失败项」。故结果另存为 UTF-8 文件，与控制台编码无关。

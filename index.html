@@ -245,6 +245,7 @@ select.ipt option{background:var(--bg)}
       </div>
       <div style="margin-left:auto;display:flex;gap:8px">
         <button class="btn2" id="btnPro" title="展开十二天将、神煞、核心术语等专业细节">&#9788; 专业模式</button>
+        <button class="btn2" id="btnAI" title="AI 白话深度解读（盘面事实供学习参考）">&#10022; AI 解读</button>
         <button class="btn2" id="btnExport" title="导出JSON">&#8595; 导出</button>
         <button class="btn2" id="btnTTS" title="语音播报">&#9834; 播报</button>
       </div>
@@ -288,6 +289,13 @@ select.ipt option{background:var(--bg)}
   <div class="cd">
     <div class="ct">&#9998; 课象解读</div>
     <div id="ipEl" class="itp"></div>
+  </div>
+
+  <!-- 2026-11-18 方案C：AI 白话深度解读（免费限次试水）。
+       卡片默认隐藏，点「AI 解读」后才出现。文案口径=课象学习参考，非吉凶结论 -->
+  <div class="cd" id="aiCard" style="display:none">
+    <div class="ct">&#10022; AI 深度解读 <span id="aiQuota" style="font-size:.7rem;color:var(--dim)"></span></div>
+    <div id="aiOut" class="itp"></div>
   </div>
 
   <div id="proWrap" style="display:none">
@@ -3561,6 +3569,114 @@ document.getElementById('btnTTS').addEventListener('click',function(){
   if(typeof tts!=='undefined'){tts({text:text});}
   else{window._ttsText=text;alert('TTS正在准备中，请稍候再次点击「播报」');}
 });
+
+// ── AI 白话深度解读（2026-11-18 方案C：免费限次试水）──────────
+// 纪律：
+// ① 文案口径=「课象学习参考」，禁出现「命运/测算/算命」类表述（合规红线，也是本工具立场）；
+// ② 密钥只在 Cloudflare Worker 侧（env.GLM_KEY），前端与仓库零密钥；AI_PROXY 填代理地址后功能才亮；
+// ③ prompt 只喂盘面事实（天地盘/四课三传/天将/课体/神煞），要求 AI 释象不断吉凶，
+//    与全页「只存其象，不取其断」口径一致。
+var AI_PROXY='';            // 部署仓库根 worker.js 后填：'https://xxxx.workers.dev'
+var AI_FREE_PER_DAY=1;      // 每天免费次数（方案C）
+var AI_MODEL_NOTE='GLM-4-Flash · 云端生成，仅供参考';
+
+function aiQuota(){
+  var today=new Date().toISOString().slice(0,10);
+  try{
+    var rec=JSON.parse(localStorage.getItem('dlr_ai')||'{}');
+    if(rec.d!==today){rec={d:today,n:0};}
+    return {d:today,used:rec.n||0,left:Math.max(0,AI_FREE_PER_DAY-(rec.n||0))};
+  }catch(e){return {d:today,used:0,left:AI_FREE_PER_DAY};}
+}
+function aiUseOnce(){
+  try{
+    var qq=aiQuota();
+    localStorage.setItem('dlr_ai',JSON.stringify({d:qq.d,n:qq.used+1}));
+  }catch(e){}
+}
+function aiBuildPrompt(r,q){
+  var L=[];
+  L.push('你是大六壬课象讲解者。依据下面给出的盘面事实，写一篇 300-500 字的白话解读，帮助没学过六壬的读者理解这张盘。');
+  L.push('硬性规则：');
+  L.push('1. 只解释盘面要素的传统象意和相互关系（天将性格、生克、神煞、课体），让读者看懂盘在说什么；');
+  L.push('2. 不得断言吉凶成败，禁用「必成/大凶/不顺之兆已定」等结论性断语；');
+  L.push('3. 严禁编造盘面里没有的信息；不涉及健康、投资、婚姻决策的具体建议；');
+  L.push('4. 结尾用一段「盘面要点回顾」复述三四个可复核的事实（如三传、干上神、课体名）；');
+  L.push('5. 语言通俗，短句，不用文言腔。');
+  L.push('');
+  L.push('【盘面事实】');
+  L.push('四柱：'+STEM[r.ysb.stem]+BRAN[r.ysb.branch]+'年 '+STEM[r.msb.stem]+BRAN[r.msb.branch]+'月 '
+        +STEM[r.dsb.stem]+BRAN[r.dsb.branch]+'日 '+STEM[r.hsb.stem]+BRAN[r.hsb.branch]+'时');
+  L.push('月将：'+r.yj.name+'；占时地支：'+BRAN[r.hsb.branch]+'；起课法：'+r.zongmen+(r.method?('（'+r.method+'）'):''));
+  var hm=[];
+  for(var i=0;i<12;i++) hm.push(BRAN[i]+'上'+BRAN[r.heavenMap[i]]);
+  L.push('天地盘（地盘位→天盘神）：'+hm.join('，'));
+  L.push('四课：');
+  for(var li=0;li<r.lessons.length;li++){
+    var lk=r.lessons[li];
+    L.push('  '+lk.label+'：'+BRAN[lk.u]+'加'+BRAN[lk.l]+(lk.ke?('（'+lk.ke+'）'):''));
+  }
+  function jg(b){return (r.generals[b]&&r.generals[b].jiang)||'';}
+  L.push('三传：初传'+BRAN[r.chu]+(jg(r.chu)?('（'+jg(r.chu)+'）'):'')+' → 中传'+BRAN[r.zhang]
+        +(jg(r.zhang)?('（'+jg(r.zhang)+'）'):'')+' → 末传'+BRAN[r.mo]+(jg(r.mo)?('（'+jg(r.mo)+'）'):''));
+  L.push('干上神：'+BRAN[r.lessons[0].u]+'（'+jg(r.lessons[0].u)+'）；支上神：'+BRAN[r.lessons[2].u]+'（'+jg(r.lessons[2].u)+'）');
+  var kt=keti(r);
+  if(kt.length){
+    var kn=[];
+    for(var ki=0;ki<kt.length;ki++) kn.push(kt[ki].name+'（'+kt[ki].note+'）');
+    L.push('课体：'+kn.join('；'));
+  }
+  if(r.ss&&r.ss.length){
+    var sn=[];
+    for(var si=0;si<r.ss.length;si++) sn.push(r.ss[si].n+'：'+r.ss[si].d);
+    L.push('神煞：'+sn.join('；'));
+  }
+  if(q){
+    L.push('用户所问之事（仅供参考背景，解读仍只针对盘面）：'+q
+          +(r.qtype?('（事类：'+r.qtype.l+'）'):''));
+  }
+  return L.join('\n');
+}
+
+document.getElementById('btnAI').addEventListener('click',function(){
+  var r=window._lastR;
+  if(!r){alert('请先起课');return;}
+  if(!AI_PROXY){alert('AI 解读通道筹备中，敬请期待');return;}
+  var qq=aiQuota();
+  if(qq.left<=0){alert('今日免费解读次数已用完（每天 '+AI_FREE_PER_DAY+' 次），明天再来');return;}
+  var q=document.getElementById('iq').value;
+  var prompt=aiBuildPrompt(r,q);
+  var btn=this,card=document.getElementById('aiCard'),out=document.getElementById('aiOut'),
+      qt=document.getElementById('aiQuota');
+  card.style.display='';
+  out.innerHTML='<p style="color:var(--dim)">正在解读盘面…</p>';
+  qt.textContent='今日剩余 '+qq.left+' 次 · '+AI_MODEL_NOTE;
+  btn.disabled=true;
+  fetch(AI_PROXY,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt:prompt})
+  }).then(function(res){return res.json();}).then(function(j){
+    aiUseOnce();
+    var nq=aiQuota();
+    qt.textContent='今日剩余 '+nq.left+' 次 · '+AI_MODEL_NOTE;
+    var txt=(j&&j.text)?String(j.text):('（生成失败：'+((j&&j.error)||'未知错误')+'）');
+    // 只做转义+分段渲染，不解释 HTML —— 模型输出不信任
+    var paras=txt.split(/\n+/).filter(function(x){return x.replace(/\s/g,'')!=='';});
+    var h='';
+    for(var pi=0;pi<paras.length;pi++) h+='<p>'+escHtml(paras[pi])+'</p>';
+    h+='<p style="font-size:.72rem;color:var(--faint);text-indent:0">以上为 AI 对盘面事实的白话讲解，供学习参考；本页不作吉凶判断，AI 输出亦不代表本页立场。</p>';
+    out.innerHTML=h;
+  }).catch(function(e){
+    out.innerHTML='<p style="color:var(--dim)">（解读失败：'+escHtml(String(e&&e.message||e))+'，可稍后再试）</p>';
+  }).finally(function(){ btn.disabled=false; });
+});
+
+// 代理未部署时隐藏入口，避免「点了没反应」的差评
+(function(){
+  var b=document.getElementById('btnAI');
+  if(b&&!AI_PROXY) b.style.display='none';
+})();
 
 // ── 终身命盘 出生日期联动重算 ──
 // 含 ibsex：性别决定行年顺逆；出生数据改动后整局重算（年命段跟随更新）
