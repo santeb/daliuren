@@ -1060,6 +1060,48 @@ function calc(y,m,d,hb,opt){
   }
   if(heavenMap[dayBr]===(dayBr+6)%12) ss.push({n:'支上神冲日支', d:'对位冲：'+CHONG_YI[dayBr%6]+'（卷五支煞章）'});
 
+  // —— 支破（2026-11-18 二期新增。支煞章「酉子卯午门户败，丑辰未戌墙坟坏，亥寅巳申破终欣」：
+  //   六对相破=六合之冲：子酉/卯午/丑辰/未戌/寅亥/巳申。义总纲「支破人情暗中不顺，事多中败不完，
+  //   宜散凶，不宜成吉」。取三传上神坐破位、及支上神破日支，模式同支冲）
+  var PO_YI={'0-9':'门户败','9-0':'门户败','3-6':'门户败','6-3':'门户败','1-4':'墙坟坏','4-1':'墙坟坏','10-7':'墙坟坏','7-10':'墙坟坏','2-5':'原文「破终欣」','5-2':'原文「破终欣」','5-8':'原文「破终欣」','8-5':'原文「破终欣」'};
+  function isPo(a,b){ return PO_YI[a+'-'+b]!==undefined; }
+  for(var pk=0;pk<3;pk++){
+    var pu=chuanArr[pk][1], pd=invHM[pu];
+    if(isPo(pu,pd)) ss.push({n:chuanArr[pk][0]+BRAN[pu]+'坐破位'+BRAN[pd], d:'支破：'+PO_YI[pu+'-'+pd]+'；人情暗中不顺，事多中败不完（卷五支煞章）'});
+  }
+  if(isPo(heavenMap[dayBr],dayBr)) ss.push({n:'支上神破日支', d:'支破：'+PO_YI[heavenMap[dayBr]+'-'+dayBr]+'；宜散凶，不宜成吉（卷五支煞章）'});
+
+  // —— 支刑（2026-11-18 二期新增。支煞章逐刑对义全文：寅刑巳官灾动阻事复起，巳刑申仇将恩报
+  //   事终成，申刑寅人鬼相残各不宁，丑刑戌尊伤卑贱忧因桎，戌刑未少凌长上妻财畏，未刑丑大小
+  //   不利丧孝有，子刑卯门户败淫尊卑扰，卯刑子水路不通子不轨，自刑自逞其才妄自更。
+  //   有方向性，按「刑支加临日支位」及三传上神坐刑位判断，模式同六害）
+  var XING=[[2,5,'寅刑巳，官灾动阻事复起'],[5,8,'巳刑申，仇将恩报事终成'],[8,2,'申刑寅，人鬼相残各不宁'],[1,10,'丑刑戌，尊伤卑贱忧因桎'],[10,7,'戌刑未，少凌长上妻财畏'],[7,1,'未刑丑，大小不利丧孝有'],[0,3,'子刑卯，门户败淫尊卑扰'],[3,0,'卯刑子，水路不通子不轨']];
+  var ZIXING=[4,6,9,11]; // 辰午酉亥自刑
+  function xingYi(src,dst){
+    for(var xj=0;xj<XING.length;xj++) if(XING[xj][0]===src&&XING[xj][1]===dst) return XING[xj][2];
+    if(src===dst&&ZIXING.indexOf(src)>=0) return '自刑，自逞其才妄自更';
+    return null;
+  }
+  for(var xk2=0;xk2<3;xk2++){
+    var xu=chuanArr[xk2][1], xd=invHM[xu];
+    var xy=xingYi(xu,xd);
+    if(xy) ss.push({n:chuanArr[xk2][0]+BRAN[xu]+'坐刑位'+BRAN[xd], d:xy+'（卷五支煞章）'});
+  }
+  var xyDay=xingYi(heavenMap[dayBr],dayBr);
+  if(xyDay) ss.push({n:'支上神刑日支', d:xyDay+'（卷五支煞章）'});
+
+  // —— 支鬼（2026-11-18 二期新增。支煞章「阳克阳兮阴克阴，明伤支鬼宅中侵」：
+  //   同阴阳之支克日支者为支鬼，明相克伤。取三传上神及支上神命中者）
+  var geArr=[];
+  for(var gk=0;gk<12;gk++){
+    if(KE[ELEM[gk]]===ELEM[dayBr]&&(gk%2)===(dayBr%2)) geArr.push(gk);
+  }
+  var geStr=geArr.map(function(g){return BRAN[g];}).join('');
+  for(var gk2=0;gk2<3;gk2++){
+    if(geArr.indexOf(chuanArr[gk2][1])>=0) ss.push({n:chuanArr[gk2][0]+BRAN[chuanArr[gk2][1]]+'为支鬼', d:'明伤支鬼，宅中侵（卷五支煞章「阳克阳兮阴克阴」；日支'+BRAN[dayBr]+'之鬼在'+geStr+'）'});
+  }
+  if(geArr.indexOf(heavenMap[dayBr])>=0) ss.push({n:'支上神为支鬼', d:'明伤支鬼，宅中侵（卷五支煞章；日支'+BRAN[dayBr]+'之鬼在'+geStr+'）'});
+
   // 驿马（日支三合马，旧例）+ 桃花（咸池例）+ 三合局 —— 起例为通行法，义补卷五出处
   var YIMA=YIMA_MA;
   if(YIMA[dayBr]!==undefined){
