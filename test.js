@@ -1317,16 +1317,18 @@ group('27. 神煞层二期：支破/支刑/支鬼');
 }
 
 // ───────────────────────────────────────────────
-// 28. AI 白话解读（2026-11-18 方案C：免费限次试水）
-// 锁五件事：①密钥零暴露（AI_PROXY 默认空串，页面无 Bearer/bigmodel 字样，key 只在 Worker env）；
+// 28. AI 白话解读（2026-11-18 方案C：免费限次试水；2026-11-18 亮灯：AI_PROXY 已填 SCF 地址）
+// 锁五件事：①密钥零暴露（AI_PROXY 允许填部署地址，但必须非空且 https:// 开头，页面无 Bearer/bigmodel 字样，
+//           key 只在代理平台 env）；
 // ②免费限次 AI_FREE_PER_DAY=1 + localStorage 键 dlr_ai + 用后计数；
 // ③prompt 纪律：只喂盘面事实、明令「不断吉凶、不编造」；
 // ④输出零信任：模型文本必须 escHtml 转义后才进 innerHTML；
 // ⑤文案合规：入口/注释不带「命运/测算/算命」，代理未部署时按钮隐藏。
 group('28. AI 白话解读：限次/密钥零暴露/口径');
 {
-  // ① 密钥零暴露
-  ok(/var AI_PROXY='';/.test(code), 'AI_PROXY 默认空串（部署 Worker 后才填地址）');
+  // ① 密钥零暴露（2026-11-18 已部署：AI_PROXY 填 SCF 函数 URL，仍要求无 Bearer/bigmodel 字样）
+  ok(/var AI_PROXY='https:\/\/[^']*';/.test(code) || /var AI_PROXY='';/.test(code),
+     'AI_PROXY 为空串或 https:// 开头的部署地址（2026-11-18 起已亮灯）');
   ok(code.indexOf('Bearer') < 0 && code.indexOf('bigmodel') < 0,
      'index.html 无 Bearer/上游域名字样（key 不进前端不进仓库页面）');
 
