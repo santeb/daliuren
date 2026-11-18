@@ -32,7 +32,7 @@ function callGlm(key, prompt) {
       model: 'glm-4-flash',        // 智谱免费档，方案C零边际成本；要更好质量换 glm-4-air
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens: 1024,
+      max_tokens: 2048,            // 新手向解读 600-900 字，1024 会截断
     });
     const req = https.request({
       hostname: GLM_HOST,
