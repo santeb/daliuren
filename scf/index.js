@@ -29,7 +29,8 @@ function send(res, status, obj) {
 function callGlm(key, prompt) {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify({
-      model: 'glm-4-flash',        // 智谱免费档，方案C零边际成本；要更好质量换 glm-4-air
+      // 模型可经环境变量 GLM_MODEL 切换（默认 glm-4-flash 免费档；升级质量填 glm-4-air）
+      model: process.env.GLM_MODEL || 'glm-4-flash',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
       max_tokens: 2048,            // 新手向解读 600-900 字，1024 会截断
