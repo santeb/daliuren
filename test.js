@@ -50,7 +50,7 @@ const { STEM, BRAN, calc, daySB, hourSB, monthSB, yearSB, getYueJiang, jqTime, a
         leishenBr, leishenScore, jiangBr, LS_CAP, JIANGS_SCORE,
         panding, yingqi, LS_HEAD, HE6, relPhrase, wxRelNote, chuanRel,
         renderBaihua, JIANG_BAI, WX_BAI, TIANJIANG,
-        encodeShare, parseShareQuery } = DLR;
+        encodeShare, parseShareQuery, aiBuildPrompt } = DLR;
 
 let pass = 0, fail = 0, warn = 0;
 const failures = [];
@@ -1344,6 +1344,27 @@ group('28. AI 白话解读：限次/密钥零暴露/口径');
   ok(code.indexOf('严禁编造盘面里没有的信息') >= 0, 'prompt 明令禁止编造');
   ok(/lk\.label\+'：'\+BRAN\[lk\.u\]/.test(code) && /BRAN\[r\.chu\]/.test(code),
      'prompt 喂的是盘面事实（四课/三传）');
+
+  // ③b 类神半升级（2026-11-19）：prompt 喂类神客观事实，且禁 AI 另取类神
+  ok(code.indexOf('【类神事实】') >= 0 && /leishenBr\(r,r\.qtype\)/.test(code),
+     'prompt 含类神事实块（数据与引擎同源 leishenBr）');
+  ok(code.indexOf('禁止另行推类神') >= 0, 'prompt 明令禁止 AI 另取类神');
+  ok(/wxState\(b2,ljian\)/.test(code) && /relPhrase\(wxRel\(/.test(code),
+     '类神块喂的是可复核事实（旺衰/与日干生克走引擎同款函数）');
+  { // 动态断言：真起一课喂进去，类神块必须出现在用户问题之前且随事类出现
+    const rV = calc(2026, 11, 19, 10);
+    rV.qtype = { key: 'cai', l: QTYPES.cai.l };
+    const pV = aiBuildPrompt(rV, '我想看看最近的财运怎么样');
+    const iL = pV.indexOf('【类神事实】'), iQ = pV.indexOf('用户所问之事');
+    ok(iL > 0 && iL < iQ, '类神块位于用户问题之前（先事实后背景）');
+    const brsV = leishenBr(rV, rV.qtype).brs.map(b => BRAN[b]);
+    ok(brsV.length > 0 && brsV.every(b => pV.indexOf('类神支') >= 0),
+       '实测一课：类神块随事类出现（' + brsV.join('/') + '）');
+    const rN = calc(2026, 11, 19, 10);
+    rN.qtype = null;
+    ok(aiBuildPrompt(rN, '随便看看').indexOf('【类神事实】（') < 0,
+       '未锁定事类时不喂类神块（不硬编）');
+  }
 
   // ④ 模型输出零信任：转义后才渲染
   ok(/escHtml\(paras\[pi\]\)/.test(code), 'AI 输出经 escHtml 转义后才进 innerHTML');

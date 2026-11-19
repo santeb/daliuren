@@ -3607,6 +3607,7 @@ function aiBuildPrompt(r,q){
   L.push('3. 不得断言吉凶成败，禁用「必成/大凶/已成定局」等结论性断语；只讲象意与机制，不下判断。');
   L.push('4. 严禁编造盘面里没有的信息；不涉及健康、投资、婚姻决策的具体建议。');
   L.push('5. 语言像给朋友当面讲解：短句、多用比喻，不用文言腔，不许空泛罗列要素凑字数。');
+  L.push('6. 盘面事实若给出【类神事实】，解读须贴合所问之事展开（如问财运就往钱的方向打比方），但类神部分同样只讲象意、不作吉凶结论；禁止自行另取类神——只用给出的类神支。');
   L.push('');
   L.push('【盘面事实】');
   L.push('四柱：'+STEM[r.ysb.stem]+BRAN[r.ysb.branch]+'年 '+STEM[r.msb.stem]+BRAN[r.msb.branch]+'月 '
@@ -3634,6 +3635,28 @@ function aiBuildPrompt(r,q){
     var sn=[];
     for(var si=0;si<r.ss.length;si++) sn.push(r.ss[si].n+'：'+r.ss[si].d);
     L.push('神煞：'+sn.join('；'));
+  }
+  if(r.qtype){
+    // 2026-11-19 半升级：所问事类的类神事实也喂给 AI。纪律与判词层一致——
+    // 只喂可机械复核的客观盘面数据（何支/入传/旺衰/与日干生克/乘将/空亡），
+    // 不喂「可/难/吉/凶」等评断，AI 拿到后贴合所问讲象但不下断语。
+    var lbr=leishenBr(r,r.qtype);
+    if(lbr.brs&&lbr.brs.length){
+      L.push('【类神事实】（所问之事的类神盘面数据，供解读贴合所问；只用这些类神支，禁止另行推类神）');
+      L.push('事类：'+r.qtype.l+(lbr.liu?('；六亲正类神：'+lbr.liu):'')+(lbr.zhu?('；主神天将：'+lbr.zhu):''));
+      var lchuan=[r.chu,r.zhang,r.mo];
+      var ljian=(r.msb&&typeof r.msb.branch==='number')?(r.msb.branch%12):0;
+      var ldayE=r.dayElem||ELEM_S[r.dsb.stem];
+      for(var li2=0;li2<lbr.brs.length;li2++){
+        var b2=lbr.brs[li2],pi2=lchuan.indexOf(b2);
+        L.push('  类神支'+(li2+1)+'：'+BRAN[b2]+'，五行'+ELEM[b2]
+          +'，'+(pi2>=0?('入'+['初传','中传','末传'][pi2]):'不入三传')
+          +'，'+wxState(b2,ljian)+'于月令'
+          +'，'+relPhrase(wxRel(ELEM[b2],ldayE))
+          +((r.generals[b2]&&r.generals[b2].jiang)?('，乘'+r.generals[b2].jiang):'')
+          +((r.kvmWang||[]).indexOf(b2)>=0?'，落旬空':''));
+      }
+    }
   }
   if(q){
     L.push('用户所问之事（仅供参考背景，解读仍只针对盘面）：'+q
@@ -3779,7 +3802,9 @@ globalThis.DLR={
   // 白话解读（2026-11-16）：renderBaihua 是纯函数（只读 r 不出 DOM），可直接在 node 里断言
   renderBaihua:renderBaihua,JIANG_BAI:JIANG_BAI,WX_BAI:WX_BAI,
   // 分享链接（2026-11-16）：纯函数可往返测试；qchips 只读不出 DOM
-  encodeShare:encodeShare,parseShareQuery:parseShareQuery
+  encodeShare:encodeShare,parseShareQuery:parseShareQuery,
+  // AI prompt 组装（2026-11-19 类神半升级）：纯函数，供守门员直接断言喂了什么
+  aiBuildPrompt:aiBuildPrompt
 };
 
 })();
