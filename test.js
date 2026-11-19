@@ -1339,15 +1339,15 @@ group('28. AI 白话解读：限次/密钥零暴露/口径');
   ok(/qq\.left<=0/.test(code), '超限拦截在位');
 
   // ③ prompt 纪律：盘面事实输入 + 释象不断吉凶
-  ok(/function aiBuildPrompt\(r,q\)/.test(code), 'prompt 组装函数在位');
+  ok(/function aiBuildPrompt\(r,q,qtOverride\)/.test(code), 'prompt 组装函数在位');
   ok(code.indexOf('不得断言吉凶成败') >= 0, 'prompt 明令不得断言吉凶');
   ok(code.indexOf('严禁编造盘面里没有的信息') >= 0, 'prompt 明令禁止编造');
   ok(/lk\.label\+'：'\+BRAN\[lk\.u\]/.test(code) && /BRAN\[r\.chu\]/.test(code),
      'prompt 喂的是盘面事实（四课/三传）');
 
   // ③b 类神半升级（2026-11-19）：prompt 喂类神客观事实，且禁 AI 另取类神
-  ok(code.indexOf('【类神事实】') >= 0 && /leishenBr\(r,r\.qtype\)/.test(code),
-     'prompt 含类神事实块（数据与引擎同源 leishenBr）');
+  ok(code.indexOf('【类神事实】') >= 0 && /leishenBr\(r,qt\)/.test(code),
+     'prompt 含类神事实块（数据与引擎同源 leishenBr，事类走本次生效值）');
   ok(code.indexOf('禁止另行推类神') >= 0, 'prompt 明令禁止 AI 另取类神');
   ok(/wxState\(b2,ljian\)/.test(code) && /relPhrase\(wxRel\(/.test(code),
      '类神块喂的是可复核事实（旺衰/与日干生克走引擎同款函数）');
@@ -1364,6 +1364,14 @@ group('28. AI 白话解读：限次/密钥零暴露/口径');
     rN.qtype = null;
     ok(aiBuildPrompt(rN, '随便看看').indexOf('【类神事实】（') < 0,
        '未锁定事类时不喂类神块（不硬编）');
+    // 起课后才点事类按钮：qtOverride 必须生效（2026-11-19 修复「后选类拿不到类神块」）
+    const pO = aiBuildPrompt(Object.assign({}, rN), '随便看看', { key: 'bing', l: '健康' });
+    ok(pO.indexOf('【类神事实】（') >= 0 && pO.indexOf('事类：健康') >= 0,
+       'qtOverride（起课后点按钮）能喂进类神块');
+    // 问题框关键词兜底：不点按钮、只打字也能取到事类
+    const pK = aiBuildPrompt(Object.assign({}, rN), '最近身体老不舒服，想看看');
+    ok(pK.indexOf('【类神事实】（') >= 0,
+       '问题框关键词（detectQ）兜底喂类神块');
   }
 
   // ④ 模型输出零信任：转义后才渲染

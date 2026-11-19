@@ -3594,12 +3594,16 @@ function aiUseOnce(){
     localStorage.setItem('dlr_ai',JSON.stringify({d:qq.d,n:qq.used+1}));
   }catch(e){}
 }
-function aiBuildPrompt(r,q){
+function aiBuildPrompt(r,q,qtOverride){
+  // 2026-11-19：事类以「本次点 AI 时的最新锁定」为准——起课后才点事类按钮、
+  // 或在问题框里打了含关键词的话，都算数（此前只认起课那一刻的 r.qtype，
+  // 「先起课后选事类」的用法会拿不到类神块，AI 只能泛讲）。
+  var qt=(qtOverride||detectQ(q)||r.qtype)||null;
   var L=[];
   L.push('你是大六壬课象讲解者。读者是完全没学过六壬的新手。依据下面给出的盘面事实，写一篇 600-900 字的白话解读，让新手读完后明白「这张盘到底在说什么」。');
   L.push('硬性规则：');
   L.push('1. 按下面四个小标题分段写（用【】标出）：');
-  L.push('【这张盘在讲什么】先两三句点出整张盘的格局特点（结合课体、天地盘状态，讲它的直观含义）；');
+  L.push('【这张盘在讲什么】若给出【类神事实】，必须先用两三句点出「所问之事」落在盘上的位置（类神是什么支、入没入传、旺不旺、跟问事人的日干什么关系），再带一句整盘格局；没有【类神事实】时直接讲格局（结合课体、天地盘状态）；');
   L.push('【三传：事情发展的三步】按「开端→中间→走向」的顺序逐传讲：每一传是什么、它和日干（代表问事人自己）是生是克还是比和、这种关系在现实中通常像什么样的处境——必须用生活化的比喻讲机制，不许只报名称；');
   L.push('【几个关键名词】从这张盘里挑 3-4 个最要紧的术语（天将、生克、神煞、课体等），每个用一两句白话解释它在这张盘里扮演什么角色；');
   L.push('【盘面要点回顾】复述三四个可复核的事实（如三传、干上神、课体名）。');
@@ -3636,14 +3640,14 @@ function aiBuildPrompt(r,q){
     for(var si=0;si<r.ss.length;si++) sn.push(r.ss[si].n+'：'+r.ss[si].d);
     L.push('神煞：'+sn.join('；'));
   }
-  if(r.qtype){
+  if(qt){
     // 2026-11-19 半升级：所问事类的类神事实也喂给 AI。纪律与判词层一致——
     // 只喂可机械复核的客观盘面数据（何支/入传/旺衰/与日干生克/乘将/空亡），
     // 不喂「可/难/吉/凶」等评断，AI 拿到后贴合所问讲象但不下断语。
-    var lbr=leishenBr(r,r.qtype);
+    var lbr=leishenBr(r,qt);
     if(lbr.brs&&lbr.brs.length){
       L.push('【类神事实】（所问之事的类神盘面数据，供解读贴合所问；只用这些类神支，禁止另行推类神）');
-      L.push('事类：'+r.qtype.l+(lbr.liu?('；六亲正类神：'+lbr.liu):'')+(lbr.zhu?('；主神天将：'+lbr.zhu):''));
+      L.push('事类：'+qt.l+(lbr.liu?('；六亲正类神：'+lbr.liu):'')+(lbr.zhu?('；主神天将：'+lbr.zhu):''));
       var lchuan=[r.chu,r.zhang,r.mo];
       var ljian=(r.msb&&typeof r.msb.branch==='number')?(r.msb.branch%12):0;
       var ldayE=r.dayElem||ELEM_S[r.dsb.stem];
@@ -3660,7 +3664,7 @@ function aiBuildPrompt(r,q){
   }
   if(q){
     L.push('用户所问之事（仅供参考背景，解读仍只针对盘面）：'+q
-          +(r.qtype?('（事类：'+r.qtype.l+'）'):''));
+          +(qt?('（事类：'+qt.l+'）'):''));
   }
   return L.join('\n');
 }
@@ -3672,7 +3676,8 @@ document.getElementById('btnAI').addEventListener('click',function(){
   var qq=aiQuota();
   if(qq.left<=0){alert('今日免费解读次数已用完（每天 '+AI_FREE_PER_DAY+' 次），明天再来');return;}
   var q=document.getElementById('iq').value;
-  var prompt=aiBuildPrompt(r,q);
+  // 事类以「当下」为准：起课后才点的事类按钮、或问题框里的关键词，都生效
+  var prompt=aiBuildPrompt(r,q,_qtPick?qtypeOf(_qtPick):undefined);
   var btn=this,card=document.getElementById('aiCard'),out=document.getElementById('aiOut'),
       qt=document.getElementById('aiQuota');
   card.style.display='';
