@@ -10,6 +10,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>大六壬在线起课｜排盘 · 三传 · 十二天将 · 白话课象</title>
 <meta name="description" content="免费在线大六壬排盘工具：输入时间自动起课，支持真太阳时校正、事类锁定、类神与神煞、应期推算，附白话解读与传统文献出处。内容仅供文化研究与娱乐参考。">
+<!-- 社交分享卡片（2026-11-19）：微信/微博/QQ/Telegram 抓 og: 系列；图片与 URL 必须是绝对地址。
+     固定指向规范站 santeb.github.io，避免任何预览/镜像域名把分享落点带偏。 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="大六壬在线起课">
+<meta property="og:title" content="大六壬在线起课｜排盘 · 三传 · 十二天将 · 白话课象">
+<meta property="og:description" content="免费在线大六壬排盘：填时间自动起课，真太阳时校正、四课三传、十二天将、神煞与白话课象解读。仅供文化研究与娱乐参考。">
+<meta property="og:url" content="https://santeb.github.io/daliuren/">
+<meta property="og:image" content="https://santeb.github.io/daliuren/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://santeb.github.io/daliuren/assets/og.jpg">
+<!-- PWA（2026-11-19）：可「添加到主屏幕」，离线可用 -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#13100c">
+<link rel="icon" type="image/png" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="大六壬">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 字体异步加载：国内访问 Google Fonts 常超时，改为不阻塞首屏渲染 -->
 <link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Ma+Shan+Zheng&display=swap">
@@ -56,6 +77,19 @@ select.ipt option{background:var(--bg)}
 .btn2:hover{background:linear-gradient(135deg,#4a3e2e,#3a3020);color:var(--text)}
 /* 专业模式开关激活态（2026-11-18）：与 .qchip.on 同一色系 */
 .btn2.on{border-color:var(--gold);color:#f2d9a0;box-shadow:0 0 10px rgba(180,120,40,.22)}
+/* 课例历史（2026-11-19）：折叠列表，默认收起，不占首屏 */
+#histWrap{display:none;margin-top:14px;border-top:1px dashed var(--border);padding-top:12px}
+.histBar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.histBar .ht{font-size:.82rem;color:var(--gold2);letter-spacing:.08em}
+.histBar .hd{font-size:.68rem;color:var(--faint)}
+.histList{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}
+.histItem{display:flex;align-items:center;gap:8px;background:#0d0a06;border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.histGo{flex:1;min-width:0;text-align:left;background:none;border:none;color:var(--text);font-family:'Noto Serif SC',serif;font-size:.8rem;cursor:pointer;line-height:1.5}
+.histGo:hover{color:var(--gold2)}
+.histGo small{display:block;color:var(--faint);font-size:.68rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.histDel{background:none;border:none;color:var(--faint);cursor:pointer;font-size:1rem;padding:2px 6px;line-height:1;flex-shrink:0}
+.histDel:hover{color:var(--red)}
+.histEmpty{font-size:.74rem;color:var(--faint);padding:6px 2px}
 .fc{display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 24px;margin:0 0 16px;box-shadow:0 4px 20px rgba(0,0,0,.35);animation:fadein .4s ease}
 @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .fc-in{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
@@ -243,12 +277,23 @@ select.ipt option{background:var(--bg)}
         </div>
         <div id="mingpanResult" style="font-size:.72rem;color:var(--dim)"></div>
       </div>
-      <div style="margin-left:auto;display:flex;gap:8px">
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn2" id="btnHist" title="本设备保存的最近课例，点开可一键复现">&#128337; 课例</button>
         <button class="btn2" id="btnPro" title="展开十二天将、神煞、核心术语等专业细节">&#9788; 专业模式</button>
         <button class="btn2" id="btnAI" title="AI 白话深度解读（盘面事实供学习参考）">&#10022; AI 解读</button>
         <button class="btn2" id="btnExport" title="导出JSON">&#8595; 导出</button>
         <button class="btn2" id="btnTTS" title="语音播报">&#9834; 播报</button>
       </div>
+    </div>
+    <!-- 课例历史（2026-11-19）：本地 localStorage 存最近 N 课的参数串，默认收起不占首屏。
+         只存能复现盘面的最小参数（复用 encodeShare），不含命盘/年命，不上传。 -->
+    <div id="histWrap">
+      <div class="histBar">
+        <span class="ht">&#128337; 课例历史</span>
+        <span class="hd" id="histDesc">仅存本设备，不会上传</span>
+        <button class="btn2" id="histClear" style="height:30px;padding:0 12px;font-size:.78rem;margin-left:auto">清空</button>
+      </div>
+      <div class="histList" id="histList"></div>
     </div>
   </div>
 
@@ -3305,6 +3350,109 @@ function shareUrl(){
   return location.origin+location.pathname+'?'+encodeShare(o);
 }
 
+// ─── 课例历史（2026-11-19）─────────────────────────────────
+// 只存「能复现一盘」的参数串（encodeShare 产物）+ 展示标签，不含命盘/年命，不上传。
+// 设计原则：与分享链接同源同参 —— 存的就是点击「复制链接」那条 query，
+// 恢复时走 parseShareQuery → 回填 → divine()，排盘内核零改动。
+var HIST_KEY='dlr_hist', HIST_MAX=20;
+// 纯函数：同参数去重 + 最新置顶 + 截断到 max。导出 DLR 供守门员直接断言，不碰 DOM。
+function histPush(list,rec,max){
+  var out=(rec&&rec.qs)?[rec]:[], src=list||[];
+  for(var i=0;i<src.length;i++){
+    if(src[i]&&src[i].qs&&src[i].qs!==rec.qs) out.push(src[i]);
+  }
+  return out.slice(0,max||HIST_MAX);
+}
+function histRead(){
+  try{ var a=JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); return Object.prototype.toString.call(a)==='[object Array]'?a:[]; }
+  catch(e){ return []; }
+}
+function histWrite(a){
+  try{ localStorage.setItem(HIST_KEY,JSON.stringify(a)); return true; }catch(e){ return false; }
+}
+function histEsc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+// divine() 成功后挂钩：把当前盘面参数记一条（失败静默：隐私模式 / localStorage 满 / 桩环境）
+function histRecord(){
+  try{
+    var qs=(shareUrl().split('?')[1])||'';
+    if(!qs) return;
+    var g=function(id){return document.getElementById(id);};
+    var y=g('iy').value,m=g('im').value,d=g('id').value,h=parseInt(g('ih').value,10);
+    var qt=_qtPick?qtypeOf(_qtPick):(window._lastR?window._lastR.qtype:null);
+    var lbl=y+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2)+' '+(BRAN[h]||'')+'时';
+    if(qt&&qt.l) lbl+=' · '+qt.l;
+    var q=(g('iq').value||'').replace(/^\s+|\s+$/g,'');
+    var sub=q?('问：'+q.slice(0,26)+(q.length>26?'…':'')):'';
+    histWrite(histPush(histRead(),{qs:qs,lbl:lbl,sub:sub,t:Date.now()}));
+    histRender();
+  }catch(e){}
+}
+function histRender(){
+  var box=document.getElementById('histList'); if(!box) return;
+  var a=histRead();
+  if(!a.length){ box.innerHTML='<div class="histEmpty">还没有课例，起一课就会记在这里。</div>'; return; }
+  var html='';
+  for(var i=0;i<a.length;i++){
+    html+='<div class="histItem"><button class="histGo" data-qs="'+encodeURIComponent(a[i].qs)+'">'
+      +histEsc(a[i].lbl)+(a[i].sub?'<small>'+histEsc(a[i].sub)+'</small>':'')+'</button>'
+      +'<button class="histDel" data-del="'+i+'" title="删除这条">&#10005;</button></div>';
+  }
+  box.innerHTML=html;
+  box.onclick=function(e){
+    var t=e.target||e.srcElement; if(!t) return;
+    var dl=t.getAttribute?t.getAttribute('data-del'):null;
+    if(dl!==null&&dl!==undefined&&dl!==''){
+      var arr=histRead(); arr.splice(parseInt(dl,10),1); histWrite(arr); histRender(); return;
+    }
+    var go=t.getAttribute?t.getAttribute('data-qs'):null;
+    if(go) histApply(decodeURIComponent(go));
+  };
+}
+function histApply(qs){
+  var o=parseShareQuery(qs); if(!o) return;
+  applyShareObj(o);
+  try{ window.scrollTo(0,0); }catch(e){}
+}
+// 事件绑定：折叠开关（localStorage 记忆，try/catch 兜底）、清空、初始渲染
+function initHist(){
+  var btn=document.getElementById('btnHist'),wrap=document.getElementById('histWrap');
+  var clr=document.getElementById('histClear');
+  if(btn&&wrap){
+    var on=false; try{ on=localStorage.getItem('dlr_hist_open')==='1'; }catch(e){}
+    function ap(){ wrap.style.display=on?'block':'none'; btn.className=on?'btn2 on':'btn2'; }
+    ap();
+    btn.addEventListener('click',function(){
+      on=!on; try{ localStorage.setItem('dlr_hist_open',on?'1':'0'); }catch(e){}
+      ap(); if(on){ histRender(); try{ wrap.scrollIntoView({behavior:'smooth',block:'nearest'}); }catch(e){} }
+    });
+  }
+  if(clr) clr.addEventListener('click',function(){
+    histWrite([]); histRender();
+  });
+  histRender();
+}
+
+function applyShareObj(o){
+  document.getElementById('iy').value=o.y;
+  document.getElementById('im').value=o.m;
+  document.getElementById('id').value=o.d;
+  document.getElementById('ih').value=o.h;
+  document.getElementById('iq').value=o.q||'';
+  document.getElementById('cbSolar').checked=o.s;
+  if(o.s){
+    if(o.tm) document.getElementById('itm').value=o.tm;
+    if(o.lng) document.getElementById('ilng').value=o.lng;
+  }
+  if(o.yj!==null&&o.yj!==undefined) document.getElementById('iyj').value=o.yj;
+  if(o.qt&&o.qt!==_qtPick){ _qtPick=o.qt; renderQChips(); }
+  updateSolarHint();
+  divine();
+}
+
 function divine(){
   var y=parseInt(document.getElementById('iy').value,10);
   var m=parseInt(document.getElementById('im').value,10);
@@ -3366,6 +3514,8 @@ function divine(){
   window._shareUrl=shareUrl();
   var bs=document.getElementById('btnShare');
   if(bs) bs.style.display='';
+  // 课例历史：起课成功记一条（2026-11-19）。放最后，确保盘面已完整算出再存。
+  try{ histRecord(); }catch(e){}
 }
 
 function useNow(){
@@ -3750,29 +3900,18 @@ function initShare(){
 }
 function applyUrlParams(){
   // 链接带参数 → 覆盖默认值并自动起课。命盘不回放（分享者个人信息不进 URL）。
+  // 2026-11-19：回填逻辑抽到 applyShareObj，与「课例历史恢复」共用同一条路，避免两处走偏。
   var qs=(location.search||'').replace(/^\?/,'');
   if(!qs) return;
   var o=parseShareQuery(qs);
   if(!o) return;                                  // 脏链接静默忽略，按正常空表进入
-  document.getElementById('iy').value=o.y;
-  document.getElementById('im').value=o.m;
-  document.getElementById('id').value=o.d;
-  document.getElementById('ih').value=o.h;
-  document.getElementById('iq').value=o.q||'';
-  document.getElementById('cbSolar').checked=o.s;
-  if(o.s){
-    if(o.tm) document.getElementById('itm').value=o.tm;
-    if(o.lng) document.getElementById('ilng').value=o.lng;
-  }
-  if(o.yj!==null&&o.yj!==undefined) document.getElementById('iyj').value=o.yj;
-  if(o.qt&&o.qt!==_qtPick){ _qtPick=o.qt; renderQChips(); }   // 重绘按钮让锁定态高亮
-  updateSolarHint();
-  divine();
+  applyShareObj(o);
 }
 renderQChips();     // 事类按钮（依赖 QTYPES，须在其定义后调用）
 useNow();           // 先填「现在」
 initShare();
 applyUrlParams();   // URL 有参数则覆盖 useNow 的值并自动起课 —— 必须排在 useNow 之后，否则日期被洗掉
+initHist();         // 课例历史：折叠开关/清空绑定 + 初始渲染（2026-11-19）
 
 // 错误捕获
 window.onerror=function(msg,url,line){
@@ -3809,7 +3948,9 @@ globalThis.DLR={
   // 分享链接（2026-11-16）：纯函数可往返测试；qchips 只读不出 DOM
   encodeShare:encodeShare,parseShareQuery:parseShareQuery,
   // AI prompt 组装（2026-11-19 类神半升级）：纯函数，供守门员直接断言喂了什么
-  aiBuildPrompt:aiBuildPrompt
+  aiBuildPrompt:aiBuildPrompt,
+  // 课例历史（2026-11-19）：纯函数 histPush/histEsc 导出供守门员断言去重/截断/转义
+  histPush:histPush,histEsc:histEsc,HIST_KEY:HIST_KEY,HIST_MAX:HIST_MAX
 };
 
 })();
@@ -3819,5 +3960,14 @@ globalThis.DLR={
   <a href="https://github.com/santeb/daliuren" target="_blank" rel="noopener" style="color:var(--faint);text-decoration:none;border-bottom:1px dotted var(--border)">MIT License</a>
   <br>内容源自传统术数文献整理，仅供文化研究与娱乐参考，请勿作为重大决策依据
 </footer>
+<!-- PWA：注册 Service Worker（2026-11-19）。独立短脚本 + 守卫：
+     相对路径 'sw.js' 让 scope 自动落在 /daliuren/；node 回归桩里 navigator 为空对象，不会注册。 -->
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+</script>
 </body>
 </html>

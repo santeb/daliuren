@@ -1385,6 +1385,79 @@ group('28. AI 白话解读：限次/密钥零暴露/口径');
   ok(/b\.style\.display='none'/.test(code), '代理未部署时隐藏 AI 入口（防「点了没反应」）');
 }
 
+// ─────────────────────────────────────────────
+// 29. 引流三件套（2026-11-19）：OG 分享卡片 / 课例历史 / PWA
+// ─────────────────────────────────────────────
+group('29. 引流三件套：OG 卡片 / 课例历史 / PWA');
+{
+  const pg = fs.readFileSync(HTML, 'utf8');
+  const ASSET = f => fs.existsSync(path.join(__dirname, f));
+
+  // ① OG 分享卡片：图片/URL 必须绝对地址，指向规范站，尺寸标注正确
+  ok(/<meta property="og:title"/.test(pg) && /<meta property="og:description"/.test(pg),
+     'OG 卡片 og:title/og:description 在位');
+  ok(/og:image" content="https:\/\/santeb\.github\.io\/daliuren\/assets\/og\.jpg"/.test(pg),
+     'og:image 是绝对地址且指向规范站封面图');
+  ok(/og:url" content="https:\/\/santeb\.github\.io\/daliuren\/"/.test(pg),
+     'og:url 固定规范域名（不被预览/镜像域名带偏）');
+  ok(/og:image:width" content="1200"/.test(pg) && /og:image:height" content="630"/.test(pg),
+     'OG 图尺寸标注 1200x630');
+  ok(/twitter:card" content="summary_large_image"/.test(pg), 'twitter 大图卡片兼容');
+  ok(ASSET('assets/og.jpg') && ASSET('assets/icon-192.png') && ASSET('assets/icon-512.png'),
+     'OG 封面与两档图标文件都在');
+
+  // ② 课例历史：纯函数去重/置顶/截断 + 转义 + 接线
+  const { histPush, histEsc, HIST_MAX } = DLR;
+  ok(typeof histPush === 'function' && typeof histEsc === 'function',
+     'histPush/histEsc 已导出供直接断言');
+  const empty = histPush([], { qs: 'a', t: 1 }, HIST_MAX);
+  ok(empty.length === 1 && empty[0].qs === 'a', 'histPush 空表插入一条');
+  const src = [{ qs: 'a', t: 1 }, { qs: 'b', t: 1 }, { qs: 'c', t: 1 }];
+  const dedup = histPush(src, { qs: 'a', t: 2 }, HIST_MAX);
+  ok(dedup.length === 3 && dedup[0].qs === 'a' && dedup[0].t === 2,
+     'histPush 同参数去重 + 最新置顶');
+  ok(!dedup.some(x => x.qs === 'a' && x.t === 1), 'histPush 旧的同参数项被移除');
+  ok(src.length === 3 && src[0].qs === 'a', 'histPush 不改原数组（纯函数）');
+  let many = []; for (let i = 0; i < 30; i++) many.push({ qs: 'q' + i });
+  ok(histPush(many, { qs: 'top' }, HIST_MAX).length === HIST_MAX,
+     'histPush 截断到 HIST_MAX（20 条）');
+  ok(histEsc('<img src=x onerror=1>').indexOf('<') < 0 &&
+     histEsc('<b>').indexOf('&lt;') >= 0, 'histEsc 转义 HTML，防问题文本注入');
+  ok(/id="btnHist"/.test(pg) && /id="histWrap"/.test(pg) && /id="histList"/.test(pg),
+     '课例历史 UI（按钮/折叠容器/列表）在位');
+  ok(/try\{ histRecord\(\); \}catch\(e\)\{\}/.test(code), 'divine 成功后挂钩 histRecord');
+  ok(/initHist\(\);/.test(code) && /function initHist\(/.test(code), 'initHist 接入初始化');
+  ok(/applyShareObj\(o\);/.test(code) && /var o=parseShareQuery\(qs\);/.test(code),
+     'applyUrlParams 复用 applyShareObj（URL 参数与历史恢复同一条路）');
+  ok(/function histApply\(qs\)/.test(code), '历史条目可一键恢复起课');
+  ok(code.indexOf("'dlr_hist'") >= 0, '课例数据键 dlr_hist 落在 localStorage');
+
+  // ③ PWA：manifest 合法 + 图标齐全 + SW network-first + 跨域放行 + 注册守卫
+  let mf = null;
+  try { mf = JSON.parse(fs.readFileSync(path.join(__dirname, 'manifest.json'), 'utf8')); } catch (e) {}
+  ok(mf && mf.display === 'standalone' && mf.start_url === './' && mf.scope === './',
+     'manifest.json 合法且 standalone/相对 scope（适配 Pages 子路径）');
+  ok(mf && mf.theme_color === '#13100c' && mf.background_color === '#13100c',
+     'manifest 主题色与页面暗色一致');
+  ok(mf && Array.isArray(mf.icons) && mf.icons.length >= 2 &&
+     mf.icons.every(ic => ASSET(ic.src)), 'manifest 两档图标均指向存在的文件');
+  ok(/<link rel="manifest" href="manifest.json">/.test(pg) &&
+     /<meta name="theme-color"/.test(pg) && /apple-touch-icon/.test(pg),
+     'head 挂 manifest/theme-color/apple-touch-icon');
+  let sw = '';
+  try { sw = fs.readFileSync(path.join(__dirname, 'sw.js'), 'utf8'); } catch (e) {}
+  ok(/addEventListener\('install'/.test(sw) && /addEventListener\('activate'/.test(sw) &&
+     /addEventListener\('fetch'/.test(sw), 'sw.js 三事件齐全');
+  ok(/fetch\(req\)\.then/.test(sw) && /\.catch\(function \(\)/.test(sw),
+     'SW HTML 走 network-first、失败回落缓存（线上永远最新版）');
+  ok(/url\.origin !== self\.location\.origin/.test(sw),
+     'SW 跨域请求放行（AI 代理/字体/统计不被缓存污染）');
+  ok(/skipWaiting/.test(sw) && /clients\.claim/.test(sw), 'SW 升级即时接管');
+  ok(/serviceWorker' in navigator/.test(pg) && /register\('sw\.js'\)/.test(pg),
+     'SW 注册脚本带守卫且用相对路径');
+}
+
+
 // ───────────────────────────────────────────────
 // Windows 控制台默认 GBK，而 ✗ / OK 不在 GBK 字符集中：一旦有断言失败、console.log 写出 ✗，
 // stdout 会进入错误状态，其后所有输出（含整个第 17 组与结果行）被静默丢弃，
