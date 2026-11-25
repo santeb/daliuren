@@ -50,7 +50,7 @@ const { STEM, BRAN, calc, daySB, hourSB, monthSB, yearSB, getYueJiang, jqTime, a
         leishenBr, leishenScore, jiangBr, LS_CAP, JIANGS_SCORE,
         panding, yingqi, LS_HEAD, HE6, relPhrase, wxRelNote, chuanRel,
         renderBaihua, JIANG_BAI, WX_BAI, TIANJIANG,
-        encodeShare, parseShareQuery, aiBuildPrompt } = DLR;
+        encodeShare, parseShareQuery, aiBuildPrompt, bifaHits } = DLR;
 
 let pass = 0, fail = 0, warn = 0;
 const failures = [];
@@ -1309,11 +1309,34 @@ group('27. 神煞层二期：支破/支刑/支鬼');
   // ④ 出处纪律：三段新 tag 全部挂「卷五支煞章」
   ok((code.match(/卷五支煞章/g) || []).length >= 5, '支破/支刑/支鬼出处齐挂「卷五支煞章」',
      (code.match(/卷五支煞章/g) || []).length + ' 处');
-  // ⑤ 待考纪律：华盖/死符起例缺，不得以自创起例混进引擎
-  //   （注释里的登记待考说明允许存在，剥掉 // 注释后查运行代码）
+  // ⑤ 华盖/死符（2026-11-25 收口，原登记待考）：
+  //   华盖起例卷五圆图未载 → 据《协纪辨方书》三合墓辰补（tag 必须挂「非卷五原文」声明）；
+  //   死符歌句「申亥寅巳辰」重读为按岁干分组（甲乙申 丙丁亥 戊己寅 庚辛巳 壬癸辰，克岁干孟位）。
   const codeNoCmt = code.replace(/\/\/[^\n]*/g, '');
-  ok(codeNoCmt.indexOf('华盖') < 0 && codeNoCmt.indexOf('死符') < 0,
-     '华盖/死符维持登记待考，不造数进引擎（运行代码中零出现）');
+  ok(/var HUAGAI=\{[^}]*\}/.test(codeNoCmt), '华盖起例表在位（年支三合墓位）');
+  ok(/var HUAGAI=\{[^}]*\}/.test(codeNoCmt), '华盖起例表在位（年支三合墓位）');
+  const hg = codeNoCmt.match(/var HUAGAI=\{([^}]*)\}/);
+  if (hg) {
+    const hgMap = {};
+    hg[1].split(',').forEach(p => { const kv = p.split(':').map(Number); if (!isNaN(kv[0])) hgMap[kv[0]] = kv[1]; });
+    // 逐支口径：申子辰→辰(0,4,8) 巳酉丑→丑(1,5,9) 寅午戌→戌(2,6,10) 亥卯未→未(3,7,11)
+    const HG_TBL = {0:4,4:4,8:4,1:1,5:1,9:1,2:10,6:10,10:10,3:7,7:7,11:7};
+    let hgBad = [];
+    for (let y = 0; y < 12; y++) if (hgMap[y] !== HG_TBL[y]) hgBad.push(y);
+    ok(hgBad.length === 0, '华盖三合墓位逐年核对（申子辰辰/巳酉丑丑/寅午戌戌/亥卯未未）', hgBad.join(',') || '全对');
+  }
+  ok(codeNoCmt.indexOf('非卷五原文') >= 0, '华盖 tag 挂「非卷五原文，外部补例」声明（出处纪律）');
+  const sf = codeNoCmt.match(/var SIFU=\{([^}]*)\}/);
+  ok(!!sf, '死符起例表在位（岁干口径）');
+  if (sf) {
+    const sfMap = {};
+    sf[1].split(',').forEach(p => { const kv = p.split(':').map(Number); if (!isNaN(kv[0])) sfMap[kv[0]] = kv[1]; });
+    const SF_LIT = [8, 8, 11, 11, 2, 2, 5, 5, 4, 4];  // 甲乙申 丙丁亥 戊己寅 庚辛巳 壬癸辰
+    let sfBad = [];
+    for (let s = 0; s < 10; s++) if (sfMap[s] !== SF_LIT[s]) sfBad.push(s);
+    ok(sfBad.length === 0, '死符十干逐支核对（甲乙申/丙丁亥/戊己寅/庚辛巳/壬癸辰）', sfBad.join(',') || '全对');
+  }
+  ok(codeNoCmt.indexOf('克岁干') >= 0, '死符义挂「克岁干之孟位」口径（《神煞赋》同口径）');
 }
 
 // ───────────────────────────────────────────────
@@ -1372,6 +1395,84 @@ group('28. AI 白话解读：限次/密钥零暴露/口径');
     const pK = aiBuildPrompt(Object.assign({}, rN), '最近身体老不舒服，想看看');
     ok(pK.indexOf('【类神事实】（') >= 0,
        '问题框关键词（detectQ）兜底喂类神块');
+  }
+
+  // ③c 毕法赋命中引擎（2026-11-25）：bifaHits 判定 + prompt 注入
+  {
+    // 合成盘助手：默认 甲日/子月/甲子旬空戌亥/干上子/支上子/三传子丑子（中传丑破全阳，无命中）
+    function mkR(o){
+      const base={dsb:{stem:0},msb:{branch:0},ysb:{stem:0,branch:0},hsb:{stem:0,branch:0},
+        lessons:[{u:0},{u:0},{u:0},{u:0}],chu:0,zhang:1,mo:0,
+        generals:{},kvmWang:[10,11],dayBr:0,dayLodge:2,heavenMap:null};
+      return Object.assign(base,o||{});
+    }
+    const has=(hits,n)=>hits.some(h=>h.n===n);
+    // 材料《毕法赋》课例复核（cases/source/bifa.md）
+    // 甲子日午将辰时（李小姐要账例）：四课三传上神辰午寅申全阳支 → 法5；支上寅=甲禄 → 法8
+    let h1=bifaHits(mkR({lessons:[{u:4},{u:6},{u:2},{u:4}],chu:4,zhang:6,mo:8}));
+    ok(has(h1,5)&&!has(h1,6), '六阳格：辰午寅申全阳支命中法5、不误中法6');
+    ok(has(h1,8), '权摄不正：支上寅为甲禄，命中法8');
+    // 己卯日顺间传（六阴格例）：酉亥巳未+三传亥丑卯全阴支 → 法6
+    let h2=bifaHits(mkR({dsb:{stem:5},kvmWang:[8,9],
+      lessons:[{u:9},{u:11},{u:5},{u:7}],chu:11,zhang:1,mo:3}));
+    ok(has(h2,6)&&!has(h2,5), '六阴格：酉亥巳未全阴支命中法6');
+    // 乙卯日退连茹（旺禄临身例）：干上卯=乙禄且不空 → 法7
+    let h3=bifaHits(mkR({dsb:{stem:1},kvmWang:[0,1],lessons:[{u:3},{u:3},{u:3},{u:3}]}));
+    ok(has(h3,7), '旺禄临身：干上卯为乙禄且不空，命中法7');
+    // 甲申日干上未乘天空（空上乘空例）：未落旬空+天空 → 法16
+    let h4=bifaHits(mkR({kvmWang:[6,7],lessons:[{u:7},{u:7},{u:7},{u:7}],
+      generals:{7:{jiang:'天空'}}}));
+    ok(has(h4,16), '空上乘空：干上未落空乘天空，命中法16');
+    // 壬子日进连茹三传寅卯辰全空（进茹空亡例） → 法17
+    let h5=bifaHits(mkR({dsb:{stem:8},kvmWang:[2,3],
+      lessons:[{u:0},{u:1},{u:3},{u:2}],chu:2,zhang:3,mo:4}));
+    ok(has(h5,17)&&!has(h5,18), '进茹空亡：三传寅卯辰全空顺行，命中法17');
+    // 戊申日退连茹三传卯寅丑（甲辰旬空寅卯，卯寅两传值空，材料法18 戊申日例） → 法18
+    let h6=bifaHits(mkR({dsb:{stem:4},kvmWang:[2,3],
+      lessons:[{u:0},{u:0},{u:0},{u:0}],chu:3,zhang:2,mo:1}));
+    ok(has(h6,18)&&!has(h6,17), '脚踏空亡：三传卯寅丑逆行、卯寅两传值空，命中法18');
+    // 庚寅日干上亥支上巳（交车相合例）：亥合寅支、巳合申寄宫 → 法21
+    let h7=bifaHits(mkR({dsb:{stem:6},dayBr:2,dayLodge:8,
+      lessons:[{u:11},{u:0},{u:5},{u:0}],chu:0,zhang:0,mo:0}));
+    ok(has(h7,21)&&!has(h7,22), '交车相合：干上亥合寅支、支上巳合申寄宫，命中法21');
+    // 上下皆合：干上巳合申寄宫、支上亥合寅支 → 法22
+    let h8=bifaHits(mkR({dsb:{stem:6},dayBr:2,dayLodge:8,
+      lessons:[{u:5},{u:0},{u:11},{u:0}],chu:0,zhang:0,mo:0}));
+    ok(has(h8,22)&&!has(h8,21), '上下皆合：干上巳合寄宫、支上亥合支，命中法22');
+    // 丁酉日三传亥卯未（三传递生例）：木局俱生丁火 → 法31
+    let h9=bifaHits(mkR({dsb:{stem:3},lessons:[{u:0},{u:0},{u:0},{u:0}],
+      chu:11,zhang:3,mo:7}));
+    ok(has(h9,31), '三传递生：亥卯未木局俱生丁火，命中法31');
+    // 庚辰日三传寅未子（递克例）：木克土、土克水 → 法32
+    let h10=bifaHits(mkR({dsb:{stem:6},kvmWang:[8,9],
+      lessons:[{u:1},{u:1},{u:1},{u:1}],chu:2,zhang:7,mo:0}));
+    ok(has(h10,32), '三传互克：寅克未、未克子递克，命中法32');
+    // 初遭夹克：初传辰坐卯（地盘卯木克辰土）乘六合（木将克土） → 法85
+    let h11=bifaHits(mkR({lessons:[{u:4},{u:6},{u:2},{u:4}],chu:4,zhang:6,mo:8,
+      heavenMap:[0,1,2,4,6,8,10,0,2,4,6,8],generals:{4:{jiang:'六合'}}}));
+    ok(has(h11,85), '初遭夹克：初传辰上被六合克、下被卯地盘克，命中法85');
+    // 一旬周遍：甲戌旬干上戌（旬首）、支上酉（旬尾） → 法2
+    let h12=bifaHits(mkR({kvmWang:[8,9],lessons:[{u:10},{u:10},{u:9},{u:10}],
+      chu:0,zhang:0,mo:0}));
+    ok(has(h12,2), '一旬周遍：干上旬首戌、支上旬尾酉，命中法2');
+    // 默认盘零误报
+    ok(bifaHits(mkR()).length===0, '无特征盘零命中（不硬编）');
+    // prompt 注入：命中时出现【毕法提示】，未命中时不出现（用真实 calc 盘改课传，避免合成盘缺四柱/月将等字段）
+    const rHit=calc(2026,11,19,10);
+    rHit.lessons=[{u:4,l:8,label:'一'},{u:6,l:8,label:'二'},{u:2,l:6,label:'三'},{u:4,l:8,label:'四'}];
+    rHit.chu=4;rHit.zhang=6;rHit.mo=8;
+    const pHit=aiBuildPrompt(rHit,'我想看看最近的财运怎么样');
+    ok(pHit.indexOf('【毕法提示】')>=0&&pHit.indexOf('第5法')>=0,
+       '命中毕法时 prompt 注入【毕法提示】与条文');
+    const iBf=pHit.indexOf('【毕法提示】（本盘命中'),iLs=pHit.indexOf('【类神事实】（所问之事'),iQ2=pHit.indexOf('用户所问之事');
+    ok(iBf>=0&&iLs>0&&iBf<iLs&&iLs<iQ2, '毕法块位于类神块之前、类神块位于用户问题之前');
+    const rNo=calc(2026,11,19,10);
+    rNo.lessons=[{u:4,l:8,label:'一'},{u:6,l:8,label:'二'},{u:3,l:2,label:'三'},{u:8,l:2,label:'四'}];
+    rNo.chu=4;rNo.zhang=6;rNo.mo=8;
+    rNo.generals={}; // 清掉真实天将，避免丁酉日干上辰（旬空乘蛇）误中法15，专注验证毕法注入开关
+    ok(bifaHits(rNo).length===0, '未命中盘确实零命中（前提校验）');
+    ok(aiBuildPrompt(rNo,'我想看看最近的财运怎么样').indexOf('【毕法提示】（本盘命中')<0,
+       '未命中毕法时不注入（不硬编）');
   }
 
   // ④ 模型输出零信任：转义后才渲染

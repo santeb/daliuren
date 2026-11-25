@@ -4,7 +4,8 @@
 //     一到上游调用就崩（表现为函数 URL 返回 502）。https 模块 16/18/20 通吃。
 // 部署：SCF 控制台新建「Web函数」（Node.js）→ 粘贴本文件全部内容 → 高级配置环境变量
 //       GLM_KEY=智谱Key → 创建 → 函数配置里开启「函数URL」（公网访问，无鉴权）→
-//       执行超时时间改 30 秒 → 把函数 URL 填进 index.html 的 AI_PROXY。
+//       执行超时时间改 90 秒（v3：必须 ≥ 代码里上游 timeout 80s + 余量，30 秒会先砍）→
+//       把函数 URL 填进 index.html 的 AI_PROXY。
 // 密钥纪律不变：GLM_KEY 只存平台环境变量，不进仓库、不进前端。
 
 const http = require('http');
@@ -44,7 +45,8 @@ function callGlm(key, prompt) {
         'Authorization': 'Bearer ' + key,
         'Content-Length': Buffer.byteLength(payload),
       },
-      timeout: 25000,
+      timeout: 80000,   // v3（2026-11-25）：25s→80s。实测 glm-4-flash 生成 600-900 字解读常超 25s（长 prompt 3/3 稳定超时），
+                        // 25s 硬限是「上游超时」根因。需同步把 SCF 函数「执行超时时间」改到 90 秒，否则函数层先砍。
     }, (up) => {
       let data = '';
       up.on('data', (c) => { data += c; });

@@ -1002,7 +1002,9 @@ function calc(y,m,d,hb,opt){
 
   // ═══ 神煞（2026-11-15 按卷五《大六壬神煞指南》原文重录）═══
   // 纪律：①判据全出卷五岁煞/月煞/旬煞/干煞四章文字；②辨讹章明言「非」的起法不录；
-  //   ③卷五只载义、起例在圆图内者（如华盖）不造数，登记待考；④每条 tag 挂章名出处。
+  //   ③起例存疑处必须挂明确出处——卷五原文起例优先，卷五缺处若有古籍同口径佐证可补
+  //   （须注明非卷五原文），两者皆无则不录；④每条 tag 挂章名出处。
+  //   （2026-11-25 更新：华盖/死符原登记待考，已分别按「外部补例」「卷五歌句重读」收口，见下。）
   var ss=[];
   var mb=msb.branch, yb=ysb.branch;
   var facts=[];   // 常显事实（不问命中与否，进 ssPos 呈现）
@@ -1067,6 +1069,25 @@ function calc(y,m,d,hb,opt){
     var sb=(yb+sk)%12, sHit=ssHit(sb);
     if(sHit) ss.push({n:SUI[sk][0]+sHit, d:SUI[sk][1]+'（卷五岁煞章）'});
   }
+
+  // —— 华盖（岁煞章「驿马六害华盖蟠……华盖作事昏晦」；起例卷五只在上位圆图，无文字）。
+  //   起例补证：《协纪辨方书》黄幡「常居三合墓辰」、《六壬大全·毕法赋》「华盖覆日人昏晦」——
+  //   三合墓位：申子辰在辰 巳酉丑在丑 寅午戌在戌 亥卯未在未。⚠️ 非卷五原文，外部补例。
+  var HUAGAI={0:4,4:4,8:4,1:1,5:1,9:1,2:10,6:10,10:10,3:7,7:7,11:7};
+  var huaBr=HUAGAI[yb];
+  facts.push('华盖在'+BRAN[huaBr]);
+  var huaHit=ssHit(huaBr);
+  if(huaHit) ss.push({n:'华盖'+huaHit, d:'作事昏晦（卷五岁煞章；毕法「华盖覆日人昏晦」。起例卷五圆图未载，据《协纪辨方书》三合墓辰补——非卷五原文）'});
+
+  // —— 死符（岁煞章「死符占病多凶」；起例歌句「死符申亥寅巳辰」）。
+  //   2026-11-25 重读定案：五支对十岁干两两分组——甲乙申 丙丁亥 戊己寅 庚辛巳 壬癸辰，
+  //   与《神煞赋》「死符，从年干起之，克岁干之孟位也」逐字吻合。
+  //   ⚠️ 另有年支派（协纪辨方「病符所冲则死符」），本页从卷五歌句取年干口径，两派不混用。
+  var SIFU={0:8,1:8,2:11,3:11,4:2,5:2,6:5,7:5,8:4,9:4};
+  var siBr=SIFU[ysb.stem];
+  facts.push('死符在'+BRAN[siBr]+'（克岁干孟位例）');
+  var siHit=ssHit(siBr);
+  if(siHit) ss.push({n:'死符'+siHit, d:'占病多凶（卷五岁煞章「死符占病多凶」；起例「申亥寅巳辰」按岁干分组，克岁干之孟位）'});
 
   // —— 旬煞（旬煞章全文；旬首皆甲，干位随旬内序固定：乙1 丁3 庚5 辛6 癸9）
   var xun0=dsb.idx-(dsb.idx%10);
@@ -1170,6 +1191,14 @@ function calc(y,m,d,hb,opt){
   }
   var taohua=TAOHUA[dayBr];
 
+  // 劫杀（通行例：日支三合局之绝神——申子辰在巳，巳酉丑在寅，寅午戌在亥，亥卯未在申）。
+  // 义：凶速劫盗之神。《断案》课例屡用且可反证起例：己巳日「功曹劫杀克日」（巳酉丑绝在寅）✓、
+  // 乙未日「岁贵劫杀临支」支上申（亥卯未绝在申）✓。
+  // ⚠️ 卷五岁煞章无劫杀文字起例，本例为通行法——同驿马/桃花口径，注明出处不冒充卷五。
+  // 2026-11-25 只加数据输出（result.jiesha 供课例断言层用），不入 ss 白话层（不动用户可见文案）。
+  var JIESHA={0:5,4:5,8:5,1:2,5:2,9:2,2:11,6:11,10:11,3:8,7:8,11:8};
+  var jiesha=JIESHA[dayBr];
+
   // 三合局（卷五干煞章「六三合事有成期」）
   var sanhe=null;
   if(dayBr===0||dayBr===4||dayBr===8) sanhe={n:'三合水局',d:'子辰申三合水，主流动、智谋（卷五干煞章「三合事有成期」）'};
@@ -1251,7 +1280,7 @@ function calc(y,m,d,hb,opt){
     grBr:grBr,grEarth:grEarth,shun:shun,genByEarth:genByEarth,
     dayElem:ELEM_S[dsb.stem],dayBrElem:dayBrElem,
     csMap:csMap,csChangsheng:csChangsheng,
-    yima:yima,taohua:taohua,
+    yima:yima,taohua:taohua,jiesha:jiesha,
     kvmWang:kvmWang,kv1:kv1,kv2:kv2,
     liuQinMap:liuQinMap,
     // 课体判定所需（此前算了却没导出，导致 fortune/解读层无法识别伏吟反吟）
@@ -3744,6 +3773,95 @@ function aiUseOnce(){
     localStorage.setItem('dlr_ai',JSON.stringify({d:qq.d,n:qq.used+1}));
   }catch(e){}
 }
+// ═══ 毕法赋命中引擎（2026-11-25）═══
+// 《毕法赋》百法中可由盘面机械复核的条文在此命中：
+// AI 解读据此注入【毕法提示】（全量百法约三千字会挤爆 prompt，只挑命中的 0-6 条）；
+// test.js 对同一函数做断言（句式引擎复用同一套判定，不另写）。
+// 口径注：只判「条文在盘上成立」，不做吉凶断语——断语留给 AI 讲象意。
+// 阳支=子寅辰午申戌（偶数下标），阴支=丑卯巳未酉亥（奇数下标）。
+var BIFA_TAI={'木':9,'火':0,'土':0,'金':3,'水':6};  // 胎神：甲乙酉 丙丁子 戊己子 庚辛卯 壬癸午
+var BIFA_JIANG_ELEM={'贵人':'土','螣蛇':'火','朱雀':'火','六合':'木','勾陈':'土','青龙':'木','天空':'土','白虎':'金','太常':'土','玄武':'水','太阴':'金','天后':'水'};
+var BIFA_LIUHE={0:1,1:0,2:11,11:2,3:10,10:3,4:9,9:4,5:8,8:5,6:7,7:6}; // 子丑 寅亥 卯戌 辰酉 巳申 午未
+function bifaHits(r){
+  var out=[];
+  try{
+    if(!r||!r.lessons||r.lessons.length<4||typeof r.chu!=='number'
+      ||typeof r.zhang!=='number'||typeof r.mo!=='number') return out;
+    var gan=r.lessons[0].u,zhi=r.lessons[2].u;
+    var san=[r.chu,r.zhang,r.mo];
+    var dayE=(r.dayElem!=null)?r.dayElem:ELEM_S[r.dsb.stem];
+    var kvm=r.kvmWang||[];
+    function kong(b){return kvm.indexOf(b)>=0;}
+    function jiangAt(b){return (r.generals&&r.generals[b]&&r.generals[b].jiang)||'';}
+    function hit(n,line,why){out.push({n:n,line:line,why:why});}
+    // 法2 一旬周遍（首尾相见）：干上神、支上神为同旬旬首与旬尾
+    if(kvm.length===2){
+      var s0=(kvm[0]+2)%12;
+      if((gan===s0&&zhi===kvm[1])||(gan===kvm[1]&&zhi===s0))
+        hit(2,'首尾相见始终宜','干上神与支上神为同一旬的旬首、旬尾');
+    }
+    // 法5/6 六阳/六阴：四课三传上神全阳支或全阴支
+    var ups=[r.lessons[0].u,r.lessons[1].u,r.lessons[2].u,r.lessons[3].u,san[0],san[1],san[2]];
+    var yang=0,yin=0;
+    for(var i=0;i<ups.length;i++){ if(ups[i]%2===0) yang++; else yin++; }
+    if(yang===ups.length) hit(5,'六阳数足须公用','四课三传上神全是阳支');
+    if(yin===ups.length) hit(6,'六阴相继尽昏迷','四课三传上神全是阴支');
+    // 法7 旺禄临身：日禄临干上神且不落空
+    if(gan===LU_BR[r.dsb.stem]&&!kong(gan)) hit(7,'旺禄临身徒妄作','日禄临于干上神');
+    // 法8 权摄不正禄临支：日禄加临支上神
+    if(zhi===LU_BR[r.dsb.stem]) hit(8,'权摄不正禄临支','日禄加临支上神');
+    // 法15 脱上逢脱：日干生干上神，干上神又生其天将
+    var jE=BIFA_JIANG_ELEM[jiangAt(gan)];
+    if(jE&&SHENG[ELEM[gan]]===dayE&&SHENG[jE]===ELEM[gan])
+      hit(15,'脱上逢脱防虚诈','日干生干上神，干上神又生其所乘天将');
+    // 法16 空上乘空：干上神落旬空又乘天空
+    if(kong(gan)&&jiangAt(gan)==='天空') hit(16,'空上乘空事莫追','干上神落旬空又乘天空');
+    // 法17/18 进/退连茹＋相邻两传值旬空（旬空仅两支，连茹三传不可能全空；
+    // 材料壬子日进茹例空寅卯、戊申日退茹例三传卯寅丑，均为连茹中相邻两传落空）
+    var jinru=san[1]===(san[0]+1)%12&&san[2]===(san[0]+2)%12;
+    var tuiru=san[1]===(san[0]+11)%12&&san[2]===(san[0]+10)%12;
+    if(jinru&&((kong(san[0])&&kong(san[1]))||(kong(san[1])&&kong(san[2]))))
+      hit(17,'进茹空亡宜退步','三传进连茹且相邻两传值旬空');
+    if(tuiru&&((kong(san[0])&&kong(san[1]))||(kong(san[1])&&kong(san[2]))))
+      hit(18,'脚踏空亡进用宜','三传退连茹且相邻两传值旬空');
+    // 法19/20 胎财生气/死气：干上神为日胎神作妻财，又逢月内生气/死气
+    if(r.msb&&typeof r.msb.branch==='number'){
+      var mb=r.msb.branch,tai=BIFA_TAI[dayE];
+      if(gan===tai&&KE[dayE]===ELEM[gan]){
+        if(gan===(mb+10)%12) hit(19,'胎财生气妻怀孕','干上神为日胎神、作妻财，又逢月内生气');
+        if(gan===(mb+4)%12) hit(20,'胎财死气损胎推','干上神为日胎神、作妻财，又逢月内死气');
+      }
+    }
+    // 法21 交车相合：干上神合日支、支上神合干寄宫
+    if(typeof r.dayBr==='number'&&typeof r.dayLodge==='number'){
+      if(BIFA_LIUHE[gan]===r.dayBr&&BIFA_LIUHE[zhi]===r.dayLodge)
+        hit(21,'交车相合交关利','干上神与日支相合、支上神与干寄宫相合（交车合）');
+      // 法22 上下皆合：干上神合干寄宫、支上神合日支
+      if(BIFA_LIUHE[gan]===r.dayLodge&&BIFA_LIUHE[zhi]===r.dayBr)
+        hit(22,'上下皆合两心齐','干上神合干寄宫、支上神合日支（上下皆合）');
+    }
+    // 法31 三传递生：三传成三合局且局五行生日干（材料例：丁日亥卯未木局生火），
+    // 或三传递相生（初生中、中生末）
+    var SANHE=[[11,3,7,'木'],[2,6,10,'火'],[5,9,1,'金'],[8,0,4,'水']];
+    var juE=null;
+    for(i=0;i<SANHE.length;i++)
+      if(san.indexOf(SANHE[i][0])>=0&&san.indexOf(SANHE[i][1])>=0&&san.indexOf(SANHE[i][2])>=0){juE=SANHE[i][3];break;}
+    if((juE&&SHENG[dayE]===juE)
+      ||(SHENG[ELEM[san[1]]]===ELEM[san[0]]&&SHENG[ELEM[san[2]]]===ELEM[san[1]]))
+      hit(31,'三传递生人举荐',juE?('三传成'+juE+'局生扶日干'):'三传递相生（初生中、中生末）');
+    // 法32 三传互克：递克（初克中、中克末）
+    if(KE[ELEM[san[0]]]===ELEM[san[1]]&&KE[ELEM[san[1]]]===ELEM[san[2]])
+      hit(32,'三传互克众人欺','三传递相克（初克中、中克末）');
+    // 法85 初遭夹克：初传上被天将克、下被地盘克
+    var b0=san[0],p0=-1;
+    if(r.heavenMap){for(i=0;i<12;i++) if(r.heavenMap[i]===b0){p0=i;break;}}
+    var j0=BIFA_JIANG_ELEM[jiangAt(b0)];
+    if(p0>=0&&j0&&KE[ELEM[p0]]===ELEM[b0]&&KE[j0]===ELEM[b0])
+      hit(85,'初遭夹克不由己','初传上天将克之、下地盘克之');
+  }catch(e){}
+  return out;
+}
+
 function aiBuildPrompt(r,q,qtOverride){
   // 2026-11-19：事类以「本次点 AI 时的最新锁定」为准——起课后才点事类按钮、
   // 或在问题框里打了含关键词的话，都算数（此前只认起课那一刻的 r.qtype，
@@ -3762,6 +3880,7 @@ function aiBuildPrompt(r,q,qtOverride){
   L.push('4. 严禁编造盘面里没有的信息；不涉及健康、投资、婚姻决策的具体建议。');
   L.push('5. 语言像给朋友当面讲解：短句、多用比喻，不用文言腔，不许空泛罗列要素凑字数。');
   L.push('6. 盘面事实若给出【类神事实】，解读须贴合所问之事展开（如问财运就往钱的方向打比方），但类神部分同样只讲象意、不作吉凶结论；禁止自行另取类神——只用给出的类神支。');
+  L.push('7. 盘面事实若给出【毕法提示】，说明该盘命中了《毕法赋》相应条文——在「几个关键名词」里顺带用一两句白话解释该条文的传统含义即可，不必单开一节，仍不得下吉凶结论；未给出时不要主动引用毕法。');
   L.push('');
   L.push('【盘面事实】');
   L.push('四柱：'+STEM[r.ysb.stem]+BRAN[r.ysb.branch]+'年 '+STEM[r.msb.stem]+BRAN[r.msb.branch]+'月 '
@@ -3789,6 +3908,14 @@ function aiBuildPrompt(r,q,qtOverride){
     var sn=[];
     for(var si=0;si<r.ss.length;si++) sn.push(r.ss[si].n+'：'+r.ss[si].d);
     L.push('神煞：'+sn.join('；'));
+  }
+  // 2026-11-25 毕法赋接入：只注入命中的条文（全量百法约三千字会挤爆 prompt，
+  // 命中通常 0-3 条、每条三十字内）。守同一纪律：只讲条文象意，不下吉凶断语。
+  var bf=bifaHits(r);
+  if(bf.length){
+    L.push('【毕法提示】（本盘命中的《毕法赋》条文；解读时在「关键名词」里顺带白话点出其传统象意，同样只讲象意、不下吉凶断语）');
+    for(var bi=0;bi<bf.length&&bi<6;bi++)
+      L.push('第'+bf[bi].n+'法「'+bf[bi].line+'」——'+bf[bi].why);
   }
   if(qt){
     // 2026-11-19 半升级：所问事类的类神事实也喂给 AI。纪律与判词层一致——
@@ -3834,15 +3961,27 @@ document.getElementById('btnAI').addEventListener('click',function(){
   out.innerHTML='<p style="color:var(--dim)">正在解读盘面…</p>';
   qt.textContent='今日剩余 '+qq.left+' 次 · '+AI_MODEL_NOTE;
   btn.disabled=true;
+  // 2026-11-25：解读卡片常在首屏之下，点击后滚到卡片处，用户能看到「正在解读」而不是以为没反应
+  setTimeout(function(){ try{ card.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){ card.scrollIntoView(); } },50);
   fetch(AI_PROXY,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({prompt:prompt})
   }).then(function(res){return res.json();}).then(function(j){
-    aiUseOnce();
-    var nq=aiQuota();
-    qt.textContent='今日剩余 '+nq.left+' 次 · '+AI_MODEL_NOTE;
-    var txt=(j&&j.text)?String(j.text):('（生成失败：'+((j&&j.error)||'未知错误')+'）');
+    // 2026-11-25 修复：aiUseOnce 原先在检查 j.text 之前就执行——上游超时等失败场景
+    // 也扣当天配额（HTTP 502 的 {"error":...} 也走本分支）。改为仅成功才扣次数。
+    var txt=(j&&j.text)?String(j.text):null;
+    if(txt){
+      aiUseOnce();
+      var nq=aiQuota();
+      qt.textContent='今日剩余 '+nq.left+' 次 · '+AI_MODEL_NOTE;
+    }
+    // 错误文案人话化：「上游请求失败: 上游超时」这类技术话新手看不懂
+    if(!txt){
+      var raw=(j&&j.error)||'未知错误';
+      txt=String(raw).indexOf('超时')>=0?'（AI 服务正忙，等了太久没响应——免费次数没扣，稍后再试一次）'
+        :'（生成失败：'+raw+'——免费次数没扣，可稍后再试）';
+    }
     // 只做转义+分段渲染，不解释 HTML —— 模型输出不信任
     var paras=txt.split(/\n+/).filter(function(x){return x.replace(/\s/g,'')!=='';});
     var h='';
@@ -3949,6 +4088,7 @@ globalThis.DLR={
   encodeShare:encodeShare,parseShareQuery:parseShareQuery,
   // AI prompt 组装（2026-11-19 类神半升级）：纯函数，供守门员直接断言喂了什么
   aiBuildPrompt:aiBuildPrompt,
+  bifaHits:bifaHits,
   // 课例历史（2026-11-19）：纯函数 histPush/histEsc 导出供守门员断言去重/截断/转义
   histPush:histPush,histEsc:histEsc,HIST_KEY:HIST_KEY,HIST_MAX:HIST_MAX
 };
