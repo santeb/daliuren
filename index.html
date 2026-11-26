@@ -859,8 +859,11 @@ function calc(y,m,d,hb,opt){
     // 涉害：与日干俱比（或俱不比）而无可独取者，以地盘孟仲季定之
     //   《六壬粹言》「见机在孟察微仲」：先取孟位上神曰见机，孟上无取则取仲位上神曰察微，季位不取；
     //   俱在孟位者曰复等，取四课先见者。
-    // 按：「历归本家数重害、以深者为用」乃《粹言》按语所存之古法，原书明言「近来诸家皆无用之」。
+    // 按①：「历归本家数重害、以深者为用」乃《粹言》按语所存之古法，原书明言「近来诸家皆无用之」。
     //     本实现从正文（孟仲取用），仅把古法重数附于取用说明中，以存《六壬大全·订讹》一派之数。
+    // 按②（2026-11-26 复等口径核注）：复等子格两派冲突——《大全·订讹》/《心镜》歌「复等柔辰刚日宜」（柔日取支上神、
+    //     刚日取干上神）vs《粹言》「俱深取孟，取四课先见」。本实现从《粹言》，戊辰日未将子时→子未寅 已入 test.js 硬标准。
+    //     断案 71 课（含 DA-贞-20 邵公「涉害深为用」实案）暂无复等实例，待 DA 扩容（六畜走失/亨集/终身门）时遇复等课再核。
     function firstOf(set){
       for(var q=0;q<4;q++) if(set.indexOf(lessons[q])>=0) return lessons[q];
       return set[0];
@@ -3863,6 +3866,36 @@ function bifaHits(r){
   return out;
 }
 
+// ─── 类神三传（《壬归》卷七·三才门变通法，2026-11-26 接入）────────────────
+// 原文口径：「凡占皆有所主，事各有类，类各有象，即类以定三传，即三传以言休咎，
+//   不必徒求课体。」操作：取事类主神天将所乘之神为初传，其阴神为中传，再传为末传
+//   ——类神自带一套三传，与课体三传并行（书中八月丁巳日一例：天后三传断妇女、
+//   天乙三传断贵人、太常三传断父母，一课四用）。
+// 「阳见其象，情归于阴」——类神的阳面（乘神）现象，实情在其阴神，故三传逐层取阴。
+// 配套替代链（原文仅两条）：课传无天乙取大吉（丑）三传代替，无青龙取功曹（寅）代替。
+// 纪律：本函数独立输出，不进九宗门主流、不动排盘逻辑；只给象意数据，不下吉凶断语。
+var CSC_FB={'贵人':1,'青龙':2};   // 替代链：无天乙→大吉丑，无青龙→功曹寅（壬归明载仅此两条）
+function classSanChuan(r,key){
+  if(!r||!r.generals||!r.heavenMap||!LEISHEN[key]) return null;
+  var L=LEISHEN[key].jiang,i,b,p=-1,g0='';
+  for(i=0;i<L.length&&p<0;i++)
+    for(b=0;b<12;b++)
+      if(r.generals[b]&&r.generals[b].jiang===L[i]){p=b;g0=L[i];break;}
+  if(p<0) return null;            // 十二将常在盘上，此路仅防御
+  // 替代链触发：类神乘神不上课传（三传+四课上位）且原文有载替代支
+  var fb=null,inKT=[r.chu,r.zhang,r.mo],li;
+  for(li=0;li<r.lessons.length;li++) inKT.push(r.lessons[li].u);
+  if(inKT.indexOf(p)<0&&CSC_FB[g0]!==undefined){fb=g0;p=CSC_FB[g0];}
+  var zh=r.heavenMap[p],mo=r.heavenMap[zh];
+  var kv=r.kvmWang||[],kong=[];
+  if(kv.indexOf(p)>=0)kong.push('初传'+BRAN[p]);
+  if(kv.indexOf(zh)>=0)kong.push('中传'+BRAN[zh]);
+  if(kv.indexOf(mo)>=0)kong.push('末传'+BRAN[mo]);
+  return {key:key,jiang:g0,chu:p,zhang:zh,mo:mo,fb:fb,
+    offKT:inKT.indexOf(p)<0&&fb===null,   // 乘神不上课传且无原文替代链（照取，仅标注）
+    kong:kong.join('、')||null};
+}
+
 function aiBuildPrompt(r,q,qtOverride){
   // 2026-11-19：事类以「本次点 AI 时的最新锁定」为准——起课后才点事类按钮、
   // 或在问题框里打了含关键词的话，都算数（此前只认起课那一刻的 r.qtype，
@@ -3938,6 +3971,22 @@ function aiBuildPrompt(r,q,qtOverride){
           +((r.generals[b2]&&r.generals[b2].jiang)?('，乘'+r.generals[b2].jiang):'')
           +((r.kvmWang||[]).indexOf(b2)>=0?'，落旬空':''));
       }
+    }
+    // 2026-11-26 类神三传接入（《壬归》卷七三才门）：类神自带一套三传与课体三传并行，
+    // 同毕法/类神事实纪律——只喂可复核盘面数据，不下吉凶断语。
+    var csc=classSanChuan(r,qt.key);
+    if(csc){
+      L.push('【类神三传】（《壬归》三才门变通法：'
+        +(csc.fb?(csc.fb+'不上课传，依壬归替代链取'+csc.jiang+'代之，'):'')
+        +'取'+csc.jiang+'为类神，其乘神作初传、阴神作中传、再传作末传——类神自带一套三传，与课体三传并行对照。'
+        +'口诀「阳见其象，情归于阴」：类神阳面所现之象，实情要看其阴神。此传仅供取象对照，不作吉凶断语，不必单开一节）');
+      var cbr=[csc.chu,csc.zhang,csc.mo],cparts=[];
+      for(var ci=0;ci<3;ci++){
+        var cb=cbr[ci];
+        cparts.push(['初传','中传','末传'][ci]+BRAN[cb]+'乘'+((r.generals[cb]&&r.generals[cb].jiang)||'无')
+          +((r.kvmWang||[]).indexOf(cb)>=0?'（落旬空）':''));
+      }
+      L.push(cparts.join('；')+'。');
     }
   }
   if(q){
@@ -4090,6 +4139,8 @@ globalThis.DLR={
   // AI prompt 组装（2026-11-19 类神半升级）：纯函数，供守门员直接断言喂了什么
   aiBuildPrompt:aiBuildPrompt,
   bifaHits:bifaHits,
+  // 类神三传（2026-11-26 壬归三才门）：纯函数，供守门员断言
+  classSanChuan:classSanChuan,CSC_FB:CSC_FB,
   // 课例历史（2026-11-19）：纯函数 histPush/histEsc 导出供守门员断言去重/截断/转义
   histPush:histPush,histEsc:histEsc,HIST_KEY:HIST_KEY,HIST_MAX:HIST_MAX
 };

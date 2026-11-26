@@ -511,6 +511,13 @@ group('16. 九宗门古籍课例（《六壬粹言》《六壬大全·订讹》�
     note('丁卯日两派异趣：《订讹》依古法五重>一重取亥（亥酉未），《粹言》正文孟仲取丑（丑亥酉）；本实现从《粹言》正文');
   }
 
+  // ⑤b 断案实案（DA-贞-20，2026-11-26 DA 扩容第一批入库）：庚辰日亥将辰时，四课俱下贼（卯戌亥午），
+  //    邵彦和明书「涉害深为用」，三传午丑申。庚阳日比用存午戌两候选，孟位唯午 → 见机格取午。
+  //    本实现（粹言孟仲派）与邵公实断殊途同归 —— 涉害取用首例实战课验证。
+  t = qi('庚辰', '亥', '辰');
+  ok(t.san === '午丑申', '涉害实案·庚辰日亥将辰时 → 午丑申（断案·贞-20 邵公「涉害深为用」）', t.san);
+  ok(/见机/.test(t.m), '　└ 四贼比用存午戌，孟位唯午走见机格（与邵公历数同归）', t.m);
+
   // ⑥⑦⑧ 《粹言》见机 / 察微 / 复等三格（三传为硬标准）
   t = qi('癸未', '辰', '子');
   ok(t.san === '酉丑巳', '见机·癸未日辰将子时 → 酉丑巳（《粹言》见机课）', t.san);
@@ -518,6 +525,35 @@ group('16. 九宗门古籍课例（《六壬粹言》《六壬大全·订讹》�
   ok(t.san === '申戌子', '察微·庚辰日午将辰时 → 申戌子（《粹言》察微课）', t.san);
   t = qi('戊辰', '未', '子');
   ok(t.san === '子未寅', '复等·戊辰日未将子时 → 子未寅（《粹言》复等课）', t.san);
+
+  // ⑤c 类神三传（《壬归》卷七三才门变通法，2026-11-26 接入）：类神乘神作初传、
+  //    阴神作中传、再传作末传；替代链仅两条（无天乙取大吉丑、无青龙取功曹寅）。
+  {
+    const rC = calc(2026, 11, 19, 10);
+    const cC = DLR.classSanChuan(rC, 'bing');
+    ok(cC && cC.jiang === '青龙' && BRAN[cC.chu] === '寅' && BRAN[cC.zhang] === '未' && BRAN[cC.mo] === '子',
+       '类神三传·青龙乘神寅→阴未→再阴子（实测 2026-11-19 10时盘）', cC ? BRAN[cC.chu] + BRAN[cC.zhang] + BRAN[cC.mo] : 'null');
+    ok(cC.zhang === rC.heavenMap[cC.chu] && cC.mo === rC.heavenMap[cC.zhang],
+       '　└ 逐层取阴：中传=初传之阴、末传=中传之阴（heavenMap 复核）', '');
+    // 壬归替代链：本盘贵人乘神不上课传 → 取大吉丑
+    const cG = DLR.classSanChuan(rC, 'gui');
+    ok(cG && cG.fb === '贵人' && cG.chu === 1 && BRAN[cG.zhang] === '午' && BRAN[cG.mo] === '亥',
+       '替代链·贵人不入课传 → 取大吉丑，丑午亥（壬归「课传无天乙取大吉三传代替」）', cG ? BRAN[cG.chu] + BRAN[cG.zhang] + BRAN[cG.mo] : 'null');
+    // 朱雀乘神不上课传且无原文替代链 → 照取乘神、仅标注 offKT（不硬扩替代链）
+    const cX = DLR.classSanChuan(rC, 'xue');
+    ok(cX && cX.offKT === true && cX.fb === null && cX.jiang === '朱雀' && BRAN[cX.chu] === '亥',
+       '无替代链不上课传 → 照取乘神并标注（壬归仅两条替代链）', cX ? BRAN[cX.chu] + BRAN[cX.zhang] + BRAN[cX.mo] : 'null');
+    ok(cX.zhang === rC.heavenMap[cX.chu] && cX.mo === rC.heavenMap[cX.zhang], '　└ 结构不变量同样成立', '');
+    // prompt 注入：事类盘必出【类神三传】块，位于类神事实之后、用户问题之前
+    rC.qtype = { key: 'bing', l: QTYPES.bing.l };
+    const pC = aiBuildPrompt(rC, '占病');
+    const iCs = pC.indexOf('【类神三传】（'), iLs2 = pC.indexOf('【类神事实】（'), iQ3 = pC.indexOf('用户所问之事');
+    ok(iCs >= 0 && iLs2 > 0 && iCs > iLs2 && iQ3 > iCs,
+       'prompt 注入：【类神三传】位于类神事实之后、用户问题之前', '');
+    ok(/初传寅乘青龙；中传未乘太阴；末传子乘六合/.test(pC), '　└ 逐传乘将事实行在位', '');
+    const rN2 = calc(2026, 11, 19, 10); rN2.qtype = null;
+    ok(aiBuildPrompt(rN2, '随便看看').indexOf('【类神三传】') < 0, '未锁定事类时不喂类神三传块（不硬编）', '');
+  }
 
   // ⑨ 《粹言》：「此外又有戊辰、戊戌日返吟两课」亦作缀瑕取用
   const fy1 = qi('戊辰', '午', '子'), fy2 = qi('戊戌', '午', '子');
