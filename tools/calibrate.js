@@ -29,8 +29,17 @@ function stub() {
 }
 
 const HTML = path.join(__dirname, '..', 'index.html');
-const SRC = fs.readFileSync(HTML, 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
-const ctx = vm.createContext({ document: stub(), window: stub(), console });
+// ⚠️ 取「最长」的 <script> 块当引擎（2026-11-27 修）：head 里 51.la 统计小脚本更短，
+//    第一个匹配会抓到它 → LA is not defined（与 test.js 同坑，test.js 早就修了，这里补齐）。
+const allScripts = fs.readFileSync(HTML, 'utf8').match(/<script>([\s\S]*?)<\/script>/g) || [];
+let SRC = allScripts.reduce((a, b) => (b && b.length > (a ? a.length : 0)) ? b : a, null);
+if (SRC) SRC = SRC.replace(/^<script>/, '').replace(/<\/script>$/, '');
+// location/navigator 桩：页面顶层 applyUrlParams() 会读 location.search（test.js 同款，2026-11-27 补）
+const ctx = vm.createContext({
+  document: stub(), window: stub(), console,
+  location: { search: '', origin: 'http://localhost', pathname: '/index.html' },
+  navigator: {}
+});
 vm.runInContext(SRC, ctx);
 const D = ctx.DLR;
 const OUT = [];

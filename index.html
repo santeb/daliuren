@@ -1572,7 +1572,8 @@ function ketiScore(r){
 //   分布整体收窄（P8 -6.65→-4.26、P92 8.30→6.74），阈值随之同步下调 —— 五档比例仍保持 8/22/40/22/8，
 //   但「进哪一档」的判据变了：现在由类神主导（类神最差 10% 里 0.00% 能爬进大吉档，见 calibrate 输出）。
 // ⚠️ 任何触及维度权重或分值的改动，都必须用 tools/calibrate.js 重跑 43800 局重校本阈值，否则五档比例会漂。
-var FT_TH={dj:6.7,j:2.8,p:-1.5,x:-4.3};
+// 2026-11-27 重校：类神空亡 -2.5→-4.5 后全样本分布微移（P8 -4.26→-4.57、P92 6.74→6.87），阈值同步上调
+var FT_TH={dj:6.9,j:2.9,p:-1.6,x:-4.6};
 // 事类入参归一化：调用方可能传 ①问题字符串 ②{key,l} 对象 ③null。
 // 陷阱：直接传 QTYPES[k] 是错的——它只有 {kw,l}，没有 key 字段（key 是 detectQ 才补上的），
 // 会让「用神」与「事类」两个维度静默丢分（合计约 14% 贡献度，且无任何报错）。此处一律兜住。
@@ -1932,7 +1933,12 @@ function leishenScore(r,qtype,nm){
     var b=use[i],s=0,pos=chuan.indexOf(b);
     if(inC.length) s+=[1.6,0.8,1.2][pos];            // 类神入传：初传最重
     var kong=kv.indexOf(b)>=0;
-    if(kong){ s-=2.5; anyKong=true; }                // 类神空亡：古籍近于一票否决
+    if(kong){ s-=4.5; anyKong=true; }                // 类神空亡：古籍近于一票否决。
+                                                     // 2026-11-27 加重 -2.5→-4.5：原 -2.5 配不上注释的
+                                                     // 「近于一票否决」（类神入初传+帝旺+贵人+生干可拿 +6.2，
+                                                     // 轻松补偿）。-4.5 后上限情形仅剩 ~1.7，与判词层
+                                                     // panding 的硬否决口径对齐。改动后已重跑 calibrate.js
+                                                     // 重校 FT_TH（纪律：改分值必重校）。
     var d={br:b,pos:pos,kong:kong};
     d.wx=wxState(b,jianBr);      s+=WX_SCORE[d.wx]*1.2;
     d.jiang=(g[b]&&g[b].jiang)||''; s+=(JIANGS_SCORE[d.jiang]||0)*0.8;
