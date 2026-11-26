@@ -3770,7 +3770,9 @@ var AI_FREE_PER_DAY=1;      // 每天免费次数（方案C）
 var AI_MODEL_NOTE='GLM-4-Flash · 云端生成，仅供参考';
 
 function aiQuota(){
-  var today=new Date().toISOString().slice(0,10);
+  // 2026-11-27：日期取本地时区（原 toISOString 是 UTC，中国访客要等到早上 8 点才刷新，改后 0 点即刷）
+  var now=new Date();
+  var today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
   try{
     var rec=JSON.parse(localStorage.getItem('dlr_ai')||'{}');
     if(rec.d!==today){rec={d:today,n:0};}
