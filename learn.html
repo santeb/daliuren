@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>大六壬 · 入门学习</title>
+<meta name="description" content="大六壬入门学习路线：起课七步、断课五步、必背清单，配合在线排盘工具边学边练">
+<meta name="og:title" content="大六壬 · 入门学习">
+<meta name="og:description" content="起课七步、断课五步、必背清单——配合在线排盘工具边学边练">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Ma+Shan+Zheng&display=swap">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#13100c;--surf:#1c1510;--card:#221a12;
+  --border:#3d2e1e;--gold:#c8982a;--gold2:#d4a853;
+  --text:#c8b898;--dim:#8a7a68;--faint:#5a4a38;
+  --red:#c05030;--green:#4a8a4a;
+}
+body{background:var(--bg);color:var(--text);font-family:'Noto Serif SC','Songti SC','Source Han Serif SC','SimSun',serif;min-height:100vh;overflow-x:hidden;line-height:1.8}
+body::before{content:'';position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse 70% 40% at 50% 5%,rgba(160,80,20,.1) 0%,transparent 60%),radial-gradient(ellipse 40% 50% at 90% 90%,rgba(80,40,10,.08) 0%,transparent 60%)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.hdr{text-align:center;padding:36px 20px 16px;border-bottom:1px solid rgba(180,120,40,.08)}
+.hdr h1{font-family:'Ma Shan Zheng',cursive;font-size:clamp(2.2rem,6vw,3.4rem);color:var(--gold2);text-shadow:0 0 40px rgba(180,120,40,.25),0 2px 6px rgba(0,0,0,.6);letter-spacing:.3em;margin-bottom:6px}
+.hdr sub{font-size:.85rem;color:var(--dim);letter-spacing:.2em;display:block}
+.hdr .back{display:inline-block;margin-top:10px;font-size:.8rem;color:var(--dim);text-decoration:none;border-bottom:1px dotted var(--border);letter-spacing:.1em;transition:color .3s}
+.hdr .back:hover{color:var(--gold2)}
+.wrap{max-width:820px;margin:0 auto;padding:6px 18px 40px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin:18px 0;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.ct{font-family:'Ma Shan Zheng',cursive;font-size:1.35rem;color:var(--gold2);letter-spacing:.12em;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(180,120,40,.15);display:flex;align-items:center;gap:9px}
+.ct .num{display:inline-flex;align-items:center;justify-content:center;width:1.7em;height:1.7em;border:1px solid var(--gold);border-radius:50%;font-size:.85em;color:var(--gold2);flex-shrink:0}
+.panel p{margin:8px 0;font-size:.92rem;color:var(--text)}
+.panel p b{color:var(--gold2)}
+.muted{color:var(--dim);font-size:.82rem}
+.tip{background:#0d0a06;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:9px 14px;margin:10px 0;font-size:.82rem;color:var(--dim)}
+.tip b{color:var(--gold2)}
+ol.steps{list-style:none;counter-reset:s;margin:6px 0}
+ol.steps li{counter-increment:s;position:relative;padding:10px 0 10px 44px;border-bottom:1px dashed rgba(180,120,40,.1)}
+ol.steps li:last-child{border-bottom:none}
+ol.steps li::before{content:counter(s,cjk-ideographic);position:absolute;left:0;top:10px;width:32px;height:32px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Ma Shan Zheng',cursive;color:var(--gold2);font-size:1.05rem;background:#0d0a06}
+ol.steps li h3{font-size:.98rem;color:var(--gold2);letter-spacing:.05em;font-weight:600;margin-bottom:3px}
+ol.steps li p{font-size:.86rem;margin:2px 0}
+.rule{background:#0d0a06;border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin:8px 0;font-size:.85rem}
+.rule b{color:var(--fire,#d06030)}
+details{border:1px solid var(--border);border-radius:10px;background:#0d0a06;margin:10px 0;overflow:hidden}
+details summary{cursor:pointer;padding:11px 16px;font-family:'Ma Shan Zheng',cursive;font-size:1.05rem;color:var(--gold2);letter-spacing:.08em;list-style:none;display:flex;align-items:center;gap:8px;transition:background .25s}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'▸';color:var(--faint);transition:transform .25s;flex-shrink:0}
+details[open] summary::before{transform:rotate(90deg)}
+details summary:hover{background:rgba(180,120,40,.06)}
+details .dbody{padding:4px 18px 14px;border-top:1px solid rgba(180,120,40,.1)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.85rem}
+th,td{border:1px solid var(--border);padding:6px 9px;text-align:center;color:var(--text)}
+th{background:rgba(180,120,40,.1);color:var(--gold2);font-weight:600;letter-spacing:.05em}
+td.g{color:var(--gold2);font-family:'Ma Shan Zheng',cursive;font-size:1.05rem}
+.gverse{background:#0d0a06;border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:10px 0;font-family:'Ma Shan Zheng',cursive;font-size:1.15rem;color:var(--gold2);letter-spacing:.15em;text-align:center;line-height:2}
+.chk{display:flex;align-items:center;gap:9px;margin-top:14px;padding-top:12px;border-top:1px dashed rgba(180,120,40,.12);cursor:pointer;user-select:none}
+.chk input{width:17px;height:17px;accent-color:var(--gold);cursor:pointer}
+.chk span{font-size:.82rem;color:var(--dim);letter-spacing:.05em}
+.chk input:checked+span{color:var(--gold2)}
+.pbar{position:sticky;top:0;z-index:9;background:rgba(19,16,12,.92);backdrop-filter:blur(6px);border-bottom:1px solid rgba(180,120,40,.1);padding:8px 18px;display:flex;align-items:center;gap:12px}
+.pbar .track{flex:1;height:5px;background:#0d0a06;border-radius:3px;overflow:hidden}
+.pbar .fill{height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;transition:width .5s}
+.pbar .lab{font-size:.72rem;color:var(--dim);letter-spacing:.1em;white-space:nowrap}
+.cta{text-align:center;margin:26px 0 8px}
+.cta .big{display:inline-block;background:linear-gradient(135deg,var(--gold),#8b6508);border:none;border-radius:10px;padding:14px 44px;color:#fff;font-family:'Ma Shan Zheng',cursive;font-size:1.4rem;cursor:pointer;letter-spacing:.2em;text-decoration:none;box-shadow:0 4px 14px rgba(180,120,40,.22);transition:all .3s}
+.cta .big:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(180,120,40,.3)}
+.cta .muted{display:block;margin-top:10px}
+.done{opacity:.45;transition:opacity .4s}
+.done .ct::after{content:'✓ 已学';margin-left:auto;font-family:'Noto Serif SC',serif;font-size:.72rem;color:var(--green);letter-spacing:.1em;border:1px solid var(--green);border-radius:6px;padding:1px 8px}
+footer{margin:18px auto 26px;padding:0 16px 6px;text-align:center;font-size:.68rem;color:var(--faint);line-height:1.9}
+footer a{color:var(--faint);text-decoration:none;border-bottom:1px dotted var(--border)}
+@media(max-width:560px){.panel{padding:16px 16px}.hdr{padding:28px 16px 12px}}
+</style>
+</head>
+<body>
+
+<div class="pbar">
+  <div class="track"><div class="fill" id="pfill"></div></div>
+  <div class="lab" id="plab">学习进度 0/6</div>
+</div>
+
+<div class="hdr">
+  <h1>入门学习</h1>
+  <sub>大六壬 · 从零到会看一张盘</sub>
+  <a class="back" href="index.html">← 返回排盘工具</a>
+</div>
+
+<div class="wrap">
+
+<!-- 〇 -->
+<div class="panel">
+  <div class="ct">这页怎么用</div>
+  <p>大六壬是古代「三式」之首（太乙、奇门、六壬），用<strong>天盘、地盘、四课、三传</strong>推演事情走势。它起课是纯机械规则，断课重逻辑推演，非常适合零基础入门。</p>
+  <p><b>推荐姿势</b>：左边学一条，右边开着<a href="index.html" style="color:var(--gold2)">排盘工具</a>起一课对照着看——每一步工具都替你算好了，你只管对着盘认脸。</p>
+  <p class="muted">学完一节就在底部打个勾，进度会自动保存。</p>
+</div>
+
+<!-- 一 -->
+<div class="panel" data-sec="1">
+  <div class="ct"><span class="num">一</span>一张盘上有什么</div>
+  <p>起课结果叫「课式」，一张盘固定由四层组成：</p>
+  <div class="rule"><b>地盘</b>：十二地支固定排成一圈，是「座位」。</div>
+  <div class="rule"><b>天盘</b>：十二地支按规则转起来，盖在地盘上——天盘支坐在哪个地盘支上，就叫「临」。</div>
+  <div class="rule"><b>四课</b>：以「日干」和「日支」为起点各查两次上神，一共四组「上神临下」。是你和你要问的事的现状。</div>
+  <div class="rule"><b>三传</b>：从四课里按规则选出三个支，排成 <b>初传（起因）→ 中传（过程）→ 末传（结局）</b>。是事情的骨架。</div>
+  <p>盘上还标注三样修饰信息：<b>天将</b>（十二位神煞，定性质）、<b>遁干</b>（藏在支里的天干）、<b>六亲</b>（相对日干的关系：父母/兄弟/子孙/妻财/官鬼）。</p>
+  <p class="muted">打开工具排一课，先只做一件事：认出地盘、天盘、四课、三传各在哪。</p>
+  <label class="chk"><input type="checkbox" data-sec="1"><span>这节学完了</span></label>
+</div>
+
+<!-- 二 -->
+<div class="panel" data-sec="2">
+  <div class="ct"><span class="num">二</span>起课七步（纯机械，一步不错即可）</div>
+  <ol class="steps">
+    <li><h3>定时</h3><p>年月日时四柱。时辰用真太阳时换算成十二时辰（子丑寅卯……）——你定的时辰可能差两小时，工具会自动换算。</p></li>
+    <li><h3>定月将</h3><p>按节气（中气换将）确定当月月将，把月将加在时辰之上，转出天盘。</p></li>
+    <li><h3>十干寄宫</h3><p>十个天干各自「寄」在一个支上，是四课的起点。必背，见下方清单。</p></li>
+    <li><h3>布天地盘</h3><p>月将加于时辰，顺时针排天盘。</p></li>
+    <li><h3>立四课</h3><p>日干寄宫查上神（第一课）→ 上神再查上神（第二课）；日支（第三课）→ 日支上神再查（第四课）。</p></li>
+    <li><h3>取三传（九宗门）</h3><p>按「贼克→比用→涉害→遥克→昴星→别责→八专→伏吟→反吟」九套规则依次尝试，选出三传。工具会标注你的课用了哪一宗。</p></li>
+    <li><h3>布天将 + 遁干 + 六亲</h3><p>按昼夜贵人歌诀定贵人位置，十二天将顺或逆布；遁干只看日柱所在旬；六亲以日干为准定生克。</p></li>
+  </ol>
+  <div class="tip"><b>工具对照</b>：这七步工具全部代劳。你的功课是在排好的盘上，指认出每一步的产物——认得出台盘怎么转来的，起课就算会了。</div>
+  <label class="chk"><input type="checkbox" data-sec="2"><span>这节学完了</span></label>
+</div>
+
+<!-- 三 -->
+<div class="panel" data-sec="3">
+  <div class="ct"><span class="num">三</span>断课五步（读盘的顺序）</div>
+  <ol class="steps">
+    <li><h3>看日干：先看「我」</h3><p>日干代表求测人自己。先看干上神旺衰吉凶——「我」的状态是一切判断的基准。</p></li>
+    <li><h3>看三传：事的骨架</h3><p>初传起因、中传过程、末传结局。课体定格局，三传定走势；三传有解救链——初传凶，中传克初传可救。</p></li>
+    <li><h3>找类神：问什么找什么</h3><p>问妻找天后/妻财、问官找官鬼、问财找青龙/妻财……类神必须出现在干、支、课、传、行年、本命之中，不见则断不准。</p></li>
+    <li><h3>看天将：定性质</h3><p>青龙主喜、白虎主凶、玄武主暗昧……但铁律是<b>以乘神五行为准，不以天将本五行为准</b>——乘神生干，凶将亦吉；乘神克干，吉将亦凶。</p></li>
+    <li><h3>旺衰 + 空亡收尾</h3><p>空亡只看日柱所在旬（如甲午旬空辰巳）。真空减七分、半空减三分。初传空=斩首、中传空=断桥、末传空=刖足。</p></li>
+  </ol>
+  <div class="rule">应期两法：<b>初传所合为期（成），末传所冲为散（散）</b>；初传旺相应期近，休囚应期远。</div>
+  <div class="tip"><b>工具对照</b>：工具的白话附注会标出旺衰、空亡、六亲、类神落点——先自己断三句，再对照附注核对，进步最快。</div>
+  <label class="chk"><input type="checkbox" data-sec="3"><span>这节学完了</span></label>
+</div>
+
+<!-- 四 -->
+<div class="panel" data-sec="4">
+  <div class="ct"><span class="num">四</span>必背清单（贴墙七件套）</div>
+  <p class="muted">以下七件是起课断课的地基，点开逐条过，背熟为止。</p>
+
+  <details><summary>① 十干寄宫</summary><div class="dbody">
+    <table>
+      <tr><th>甲</th><th>乙</th><th>丙</th><th>丁</th><th>戊</th><th>己</th><th>庚</th><th>辛</th><th>壬</th><th>癸</th></tr>
+      <tr><td class="g">寅</td><td class="g">辰</td><td class="g">巳</td><td class="g">未</td><td class="g">巳</td><td class="g">未</td><td class="g">申</td><td class="g">戌</td><td class="g">亥</td><td class="g">丑</td></tr>
+    </table>
+    <p class="muted">记法：阳干寄禄位邻宫，阴干寄刃位。</p>
+  </div></details>
+
+  <details><summary>② 昼夜贵人歌诀</summary><div class="dbody">
+    <div class="gverse">甲戊庚牛羊，乙己鼠猴乡，<br>丙丁猪鸡位，壬癸兔蛇藏，六辛逢马虎</div>
+    <p class="muted">昼夜以卯酉为界（对盘以工具附注为准）。贵人临地盘子寅辰午申戌为顺布，丑卯巳未酉亥为逆布。</p>
+  </div></details>
+
+  <details><summary>③ 日德歌</summary><div class="dbody">
+    <div class="gverse">甲己在寅，乙庚在申，丙辛在戌，戊癸在巳，丁壬在亥</div>
+  </div></details>
+
+  <details><summary>④ 六旬空亡表</summary><div class="dbody">
+    <table>
+      <tr><th>旬</th><th>空亡二支</th></tr>
+      <tr><td>甲子旬</td><td class="g">戌 亥</td></tr>
+      <tr><td>甲戌旬</td><td class="g">申 酉</td></tr>
+      <tr><td>甲申旬</td><td class="g">午 未</td></tr>
+      <tr><td>甲午旬</td><td class="g">辰 巳</td></tr>
+      <tr><td>甲辰旬</td><td class="g">寅 卯</td></tr>
+      <tr><td>甲寅旬</td><td class="g">子 丑</td></tr>
+    </table>
+    <p class="muted">只看旬遁，不用管其他遁法。</p>
+  </div></details>
+
+  <details><summary>⑤ 九宗门（取三传次序）</summary><div class="dbody">
+    <table>
+      <tr><th>宗门</th><th>一句话规则</th></tr>
+      <tr><td>贼克</td><td>下贼上取用（重审）；只有上克下（元首）</td></tr>
+      <tr><td>比用</td><td>两三课被克，取与日干阴阳相同者</td></tr>
+      <tr><td>涉害</td><td>比用取不出，比较受克深浅</td></tr>
+      <tr><td>遥克</td><td>四课无克，取遥克日干者（蒿矢/弹射）</td></tr>
+      <tr><td>昴星</td><td>全无上下克，阳取酉上神、阴取酉下神（虎视/冬蛇掩目）</td></tr>
+      <tr><td>别责 / 八专</td><td>四课不全时用</td></tr>
+      <tr><td>伏吟</td><td>天地盘相同，取刑取冲</td></tr>
+      <tr><td>反吟</td><td>天地盘对冲，有克取克、无克用马</td></tr>
+    </table>
+  </div></details>
+
+  <details><summary>⑥ 十二天将顺序</summary><div class="dbody">
+    <div class="gverse">贵人 → 螣蛇 → 朱雀 → 六合 → 勾陈 → 青龙<br>天空 → 白虎 → 太常 → 玄武 → 太阴 → 天后</div>
+    <p class="muted">以贵人为起点，顺逆布十二支。</p>
+  </div></details>
+
+  <details><summary>⑦ 一条铁律</summary><div class="dbody">
+    <div class="rule" style="font-size:.95rem">天将吉凶，<b>以乘神五行为准</b>：乘神生日干，凶将也作吉论；乘神克日干，吉将也作凶论。记死这条，断课不会南辕北辙。</div>
+  </div></details>
+
+  <label class="chk"><input type="checkbox" data-sec="4"><span>这节学完了</span></label>
+</div>
+
+<!-- 五 -->
+<div class="panel" data-sec="5">
+  <div class="ct"><span class="num">五</span>三条底线（防走火）</div>
+  <ol class="steps">
+    <li><h3>凡事先问占什么</h3><p>先定类神显晦再动手——问官求财类神宜显，问病讼类神宜晦。不问事就断盘是耍流氓。</p></li>
+    <li><h3>多处同向才定案</h3><p>一个吉兆不算吉，三四个信号一致才下结论。吉凶有量级，不是非吉即凶。</p></li>
+    <li><h3>再占不告</h3><p>同一件事别反复起课——第二课起就不准了。也不心绪不一地一课多占。</p></li>
+  </ol>
+  <label class="chk"><input type="checkbox" data-sec="5"><span>这节学完了</span></label>
+</div>
+
+<!-- 六 -->
+<div class="panel" data-sec="6">
+  <div class="ct"><span class="num">六</span>之后怎么进阶</div>
+  <ol class="steps">
+    <li><h3>每日一课实战</h3><p>用工具起一课，按「先锋门 → 三传 → 应期」先自断三句，再对工具的白话附注核对。卡住的盘记下来复盘。</p></li>
+    <li><h3>读《大六壬探原》</h3><p>袁树珊著，分推演篇（怎么起课）、论断篇（怎么断课）、集说篇（前人心法）三篇，本页内容即其骨架。</p></li>
+    <li><h3>再上《毕法赋》《六壬断案》</h3><p>有了三五十盘的手感，读《毕法赋》一百条断语口诀，再翻《六壬断案》古人实战课例——到时候你会回来看工具里标出的「毕法提示」。</p></li>
+  </ol>
+  <label class="chk"><input type="checkbox" data-sec="6"><span>这节学完了</span></label>
+</div>
+
+<div class="cta">
+  <a class="big" href="index.html">去起第一课</a>
+  <span class="muted">每天 1 次 AI 白话解读，正好当你的对照老师</span>
+</div>
+
+</div>
+
+<footer>
+  大六壬 · 入门学习 &nbsp;·&nbsp; 内容源自传统术数文献整理，仅供文化学习与参考<br>
+  <a href="index.html">在线排盘</a> &nbsp;·&nbsp; &copy; 2026 santeb
+</footer>
+
+<script>
+(function(){
+  var KEY='daliuren_learn_v1',total=document.querySelectorAll('input[data-sec]').length;
+  var saved={};
+  try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+  function refresh(){
+    var done=0;
+    document.querySelectorAll('input[data-sec]').forEach(function(cb){
+      var sec=cb.getAttribute('data-sec');
+      cb.checked=!!saved[sec];
+      if(cb.checked)done++;
+      var panel=document.querySelector('.panel[data-sec="'+sec+'"]');
+      if(panel)panel.classList.toggle('done',!!saved[sec]);
+    });
+    var pct=total?Math.round(done/total*100):0;
+    document.getElementById('pfill').style.width=pct+'%';
+    document.getElementById('plab').textContent='学习进度 '+done+'/'+total+(done===total?' · 全部完成':'');
+  }
+  document.querySelectorAll('input[data-sec]').forEach(function(cb){
+    cb.addEventListener('change',function(){
+      saved[cb.getAttribute('data-sec')]=cb.checked;
+      try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}
+      refresh();
+    });
+  });
+  refresh();
+})();
+</script>
+</body>
+</html>
